@@ -62,6 +62,21 @@
     --font-amaranth: 'Amaranth', sans-serif;
 }
 
+.box {
+    @apply bg-cape-palliser-50 rounded-xl p-4 border-4 border-cape-palliser-500;
+}
+.box-alt {
+    @apply bg-cape-palliser-50 rounded-xl p-4 border-4 border-new-orleans-400;
+}
+
+.max-container {
+    @apply max-w-[1080px] m-auto;
+}
+
+a:not(:is(nav *)) {
+    @apply underline;
+}
+
 .hero-img {
     background-image: url('/images/home-hero-spring.jpg');
     background-size: cover;
@@ -70,7 +85,7 @@
 }
 
 h1 {
-    @apply text-cape-palliser-600 font-bold text-5xl font-amaranth;
+    @apply text-cape-palliser-500 font-bold text-5xl font-amaranth;
 }
 h2 {
     @apply text-shakespeare-400 font-bold text-2xl font-amaranth;
@@ -79,10 +94,10 @@ h3 {
     @apply text-shakespeare-400 font-bold text-lg font-amaranth;
 }
 h4 {
-    @apply text-cape-palliser-600 font-bold text-2xl font-amaranth;
+    @apply text-new-orleans-500 font-bold text-2xl font-amaranth;
 }
 h5 {
-    @apply text-cape-palliser-600 font-bold text-lg font-amaranth;
+    @apply text-new-orleans-500 font-bold text-lg font-amaranth;
 }
 
 @theme inline {
