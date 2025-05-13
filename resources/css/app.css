@@ -1,11 +1,90 @@
 @import 'tailwindcss';
-
 @import "tw-animate-css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
-@custom-variant dark (&:is(.dark *));
+/* @custom-variant dark (&:is(.dark *)); */
+
+@theme {
+    --color-shakespeare-50: #eefafd;
+    --color-shakespeare-100: #d5f0f8;
+    --color-shakespeare-200: #b0e2f1;
+    --color-shakespeare-300: #79cce7;
+    --color-shakespeare-400: #56b8db;
+    --color-shakespeare-500: #1f90bb;
+    --color-shakespeare-600: #1d739d;
+    --color-shakespeare-700: #1e5e80;
+    --color-shakespeare-800: #214f69;
+    --color-shakespeare-900: #1f425a;
+    --color-shakespeare-950: #0f2a3d;
+
+    --color-new-orleans-50: #fdf9ef;
+    --color-new-orleans-100: #faf1da;
+    --color-new-orleans-200: #f4e0b4;
+    --color-new-orleans-300: #f0d399;
+    --color-new-orleans-400: #e5ab52;
+    --color-new-orleans-500: #de9331;
+    --color-new-orleans-600: #d07a26;
+    --color-new-orleans-700: #ad6021;
+    --color-new-orleans-800: #8a4c22;
+    --color-new-orleans-900: #70401e;
+    --color-new-orleans-950: #3c1f0e;
+
+    --color-cape-palliser-50: #f9f5f1;
+    --color-cape-palliser-100: #ede3d8;
+    --color-cape-palliser-200: #d8c5af;
+    --color-cape-palliser-300: #c4a485;
+    --color-cape-palliser-400: #b78c68;
+    --color-cape-palliser-500: #a16d50;
+    --color-cape-palliser-600: #965d49;
+    --color-cape-palliser-700: #7e493f;
+    --color-cape-palliser-800: #683d38;
+    --color-cape-palliser-900: #573330;
+    --color-cape-palliser-950: #301a18;
+
+    --color-mine-shaft-50: #f8f7f7;
+    --color-mine-shaft-100: #f0eeee;
+    --color-mine-shaft-200: #dddada;
+    --color-mine-shaft-300: #bfbaba;
+    --color-mine-shaft-400: #9c9494;
+    --color-mine-shaft-500: #807778;
+    --color-mine-shaft-600: #686162;
+    --color-mine-shaft-700: #554f4f;
+    --color-mine-shaft-800: #494343;
+    --color-mine-shaft-900: #3f3b3c;
+    --color-mine-shaft-950: #302d2d;
+
+    --font-amaranth: 'Amaranth', sans-serif;
+    --font-amaranth: 'Amaranth', sans-serif;
+}
+
+.hero-img {
+    background-image: url('/images/home-hero-spring.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+h1 {
+    @apply text-cape-palliser-600 font-bold text-5xl font-amaranth;
+}
+h2 {
+    @apply text-shakespeare-400 font-bold text-2xl font-amaranth;
+}
+h3 {
+    @apply text-shakespeare-400 font-bold text-lg font-amaranth;
+}
+h4 {
+    @apply text-cape-palliser-600 font-bold text-2xl font-amaranth;
+}
+h5 {
+    @apply text-cape-palliser-600 font-bold text-lg font-amaranth;
+}
 
 @theme inline {
   --font-sans:
@@ -126,7 +205,7 @@
     hsl(0 0% 98%);
 }
 
-.dark {
+/* .dark {
   --background: hsl(0 0% 3.9%);
   --foreground: hsl(0 0% 98%);
   --card: hsl(0 0% 3.9%);
@@ -161,7 +240,7 @@
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
   --sidebar:
     hsl(240 5.9% 10%);
-}
+} */
 
 @layer base {
     * {
