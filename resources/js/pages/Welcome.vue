@@ -41,7 +41,7 @@ function cycleBackground() {
 	</Head>
 
     <nav class="flex flex-row flex-wrap justify-around xl:justify-center xl:[&>ul]:mx-4 items-center font-amaranth font-bold text-2xl bg-new-orleans-300 [&>ul]:p-2 [&>ul]:hover:bg-shakespeare-100 [&>ul]:hover:text-shakespeare-400 border-b-4 border-new-orleans-400 [&>ul]:rounded-t-lg select-none">
-        <a href="#"><ul>Home</ul></a>
+        <ul><a href="#">Home</a></ul>
         <ul class="relative group">
             <a href="#">Getting Started</a>
             <div class="absolute hidden group-hover:block bg-shakespeare-100 text-shakespeare-400 rounded-b-lg font-sans font-normal text-lg p-2 left-0 right-0 min-w-max">
