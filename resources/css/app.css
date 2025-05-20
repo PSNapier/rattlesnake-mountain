@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
@@ -102,7 +104,9 @@ h5 {
 
 @theme inline {
 	--font-sans:
-		Instrument Sans, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+		Instrument Sans, ui-sans-serif, system-ui, sans-serif,
+		'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+		'Noto Color Emoji';
 
 	--radius-lg: var(--radius);
 	--radius-md: calc(var(--radius) - 2px);
@@ -174,7 +178,8 @@ h5 {
 	body,
 	html {
 		--font-sans:
-			'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+			'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
+			'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
 			'Noto Color Emoji';
 	}
 }
