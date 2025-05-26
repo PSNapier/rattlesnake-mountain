@@ -50,7 +50,7 @@ function cycleBackground() {
 
 	<div
 		@click="cycleBackground"
-		class="hero-img flex h-120 flex-col justify-end select-none xl:h-140">
+		class="hero-img flex h-140 flex-col justify-end select-none md:h-120 xl:h-160">
 		<div
 			class="bg-cape-palliser-100 flex flex-col items-center justify-center rounded-t-[40%] p-6 text-center lg:rounded-t-[50%]">
 			<h1>Rattlesnake Mountain</h1>
