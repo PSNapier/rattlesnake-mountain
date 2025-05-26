@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import LandingLinkBox from '@/components/custom/LandingLinkBox.vue';
 import Layout from '@/components/custom/Layout.vue';
+import { linkDict } from '@/composables/useLinkDictionary';
 </script>
 
 <template>
@@ -52,7 +53,10 @@ import Layout from '@/components/custom/Layout.vue';
 			<div class="box text-center lg:col-span-3">
 				<h2>
 					<span class="text-4xl">
-						New? Get started <a href="#"> here. </a>
+						New? Get started
+						<a :href="linkDict.GETTING_STARTED.path">
+							here.
+						</a>
 					</span>
 				</h2>
 			</div>
