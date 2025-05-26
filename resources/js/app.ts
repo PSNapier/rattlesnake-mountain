@@ -16,15 +16,21 @@ declare module 'vite/client' {
 
 	interface ImportMeta {
 		readonly env: ImportMetaEnv;
-		readonly glob: <T>(pattern: string) => Record<string, () => Promise<T>>;
+		readonly glob: <T>(
+			pattern: string,
+		) => Record<string, () => Promise<T>>;
 	}
 }
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = 'Rattlesnake Mountain';
 
 createInertiaApp({
 	title: (title) => `${title} - ${appName}`,
-	resolve: (name) => resolvePageComponent(`./pages/${name}.vue`, import.meta.glob<DefineComponent>('./pages/**/*.vue')),
+	resolve: (name) =>
+		resolvePageComponent(
+			`./pages/${name}.vue`,
+			import.meta.glob<DefineComponent>('./pages/**/*.vue'),
+		),
 	setup({ el, App, props, plugin }) {
 		createApp({ render: () => h(App, props) })
 			.use(plugin)

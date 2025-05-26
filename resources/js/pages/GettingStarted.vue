@@ -3,7 +3,7 @@ import Layout from '@/components/custom/Layout.vue';
 </script>
 
 <template>
-	<Layout>
+	<Layout title="Getting Started">
 		<template #hero>
 			<h1>Getting Started</h1>
 			<p>A quick startup guide for the new player.</p>

@@ -4,7 +4,7 @@ import Layout from '@/components/custom/Layout.vue';
 </script>
 
 <template>
-	<Layout>
+	<Layout title="Home">
 		<template #hero>
 			<h1>Rattlesnake Mountain</h1>
 			<p>An ARPG for wild horse enthusiasts!</p>

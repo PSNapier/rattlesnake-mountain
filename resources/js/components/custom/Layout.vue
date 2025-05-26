@@ -3,6 +3,10 @@ import { Head } from '@inertiajs/vue3';
 import Footer from './Footer.vue';
 import HeaderNav from './HeaderNav.vue';
 
+defineProps<{
+	title?: string;
+}>();
+
 function cycleBackground() {
 	const heroImg = document.querySelector('.hero-img') as HTMLElement;
 	if (heroImg) {
@@ -33,8 +37,8 @@ function cycleBackground() {
 </script>
 
 <template>
-	<Head>
-		<slot name="head" />
+	<Head v-if="title">
+		<title>{{ title }}</title>
 	</Head>
 
 	<HeaderNav />
