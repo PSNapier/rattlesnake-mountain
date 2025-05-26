@@ -32,7 +32,6 @@ import Layout from '@/components/custom/Layout.vue';
 
 			<div class="box">
 				<h2>News</h2>
-				mb-2
 				<h5 class="border-new-orleans-500 mb-2 border-b-1">
 					{{
 						new Date().toLocaleString('default', {
