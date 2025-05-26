@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LandingLinkBox from '@/components/custom/LandingLinkBox.vue';
 import { Head } from '@inertiajs/vue3';
 import Footer from '../components/custom/Footer.vue';
 import HeaderNav from '../components/custom/HeaderNav.vue';
@@ -107,36 +108,26 @@ function cycleBackground() {
 	<div class="bg-cape-palliser-500">
 		<div
 			class="max-container col-span-3 grid grid-cols-1 gap-4 p-4 py-8 text-center lg:grid-cols-3">
-			<div class="box-alt">
-				<h3>
-					<a
-						href="https://www.deviantart.com/rattlesnake-mountain">
-						@Rattlesnake-Mountain
-					</a>
-				</h3>
-				<img src="" />
-				<p>Find our DeviantArt Group here.</p>
-			</div>
+			<LandingLinkBox
+				title="@Rattlesnake-Mountain"
+				href="https://www.deviantart.com/rattlesnake-mountain"
+				imageSrc="/images/group-logo.png"
+				imageAlt="DeviantArt Group logo"
+				description="Find our DeviantArt Group." />
 
-			<div class="box-alt">
-				<h3>
-					<a href="https://www.deviantart.com/rattlesnakeadmin">
-						@rattlesnakeadmin
-					</a>
-				</h3>
-				<img src="" />
-				<p>
-					This account handles all imports and their information.
-				</p>
-			</div>
+			<LandingLinkBox
+				title="@rattlesnakeadmin"
+				href="https://www.deviantart.com/rattlesnakeadmin"
+				imageSrc="/images/admin-logo.png"
+				imageAlt="Admin account logo"
+				description="This account handles all imports and their information." />
 
-			<div class="box-alt">
-				<h3>
-					<a href="https://discord.gg/rArZNnkCfE"> @discord </a>
-				</h3>
-				<img src="" />
-				<p>Discord is required for play!</p>
-			</div>
+			<LandingLinkBox
+				title="@discord"
+				href="https://discord.gg/rArZNnkCfE"
+				imageSrc="/images/discord-logo.png"
+				imageAlt="Discord server logo"
+				description="Discord!" />
 		</div>
 	</div>
 
