@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import LandingLinkBox from '@/components/custom/LandingLinkBox.vue';
+import { linkDict } from '@/composables/useLinkDictionary';
 import { Head } from '@inertiajs/vue3';
 import Footer from '../components/custom/Footer.vue';
 import HeaderNav from '../components/custom/HeaderNav.vue';
@@ -99,7 +100,8 @@ function cycleBackground() {
 		<div class="box text-center lg:col-span-3">
 			<h2>
 				<span class="text-4xl">
-					New? Get started <a href="#"> here. </a>
+					New? Get started
+					<a :href="linkDict.GETTING_STARTED.path"> here. </a>
 				</span>
 			</h2>
 		</div>
