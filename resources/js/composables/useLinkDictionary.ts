@@ -27,4 +27,5 @@ export const linkDict = {
 	PLAYER_VS_PLAYER: makeLink('Player vs. Player', '/player-vs-player'),
 	// misc links
 	OWNER: makeLink('Siat-s', 'https://siat-s.deviantart.com'),
+	DISCORD: makeLink('Discord', 'https://discord.gg/rArZNnkCfE'),
 };

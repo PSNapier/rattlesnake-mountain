@@ -2,8 +2,6 @@
 
 A custom HARPG utility and site for **Siat-s**, built to support worldbuilding, interactive rollers, and member account features. This application is designed to grow with the needs of the Rattlesnake Mountain universe.
 
----
-
 ## 📦 Stack
 
 - **Laravel 12** – Back-end framework for routing, database access, and authentication.
@@ -13,9 +11,7 @@ A custom HARPG utility and site for **Siat-s**, built to support worldbuilding, 
 - **Inertia.js** – Bridges Laravel and Vue, allowing server-side routing with modern front-end interactions.
 - **Vite** – Front-end build tool for fast development and asset bundling.
 
----
-
-## ✅ Features (In Progress)
+## ✅ Planned Features
 
 - Static informational pages (Home, About, Getting Started, etc.)
 - Interactive roller utilities for breeding and training
@@ -23,26 +19,6 @@ A custom HARPG utility and site for **Siat-s**, built to support worldbuilding, 
 - User authentication: register, login, profile management
 - Admin dashboard for managing site data and user permissions
 - Responsive layout suitable for desktop and mobile
-- Component-based Vue structure for future scalability
-
----
-
-## 🛠 Developer Notes
-
-- Vue pages are stored in `resources/js/Pages/`, organized by route responsibility.
-- Inertia routes are defined in `routes/web.php`, using Laravel’s route helpers.
-- Styling follows Tailwind conventions with minimal custom CSS.
-- Components are reusable and structured to support expansion into more advanced features (e.g., inventory systems, event logging).
-
----
-
-## 🔒 Auth & Roles
-
-- Users can register and log in via Laravel Breeze + Inertia.
-- Admin role allows access to management panels (WIP).
-- Role middleware and permissions to be implemented using Laravel Policies and Gates.
-
----
 
 ## 📂 File Structure Overview
 
@@ -59,3 +35,42 @@ resources/
 │   └── app.blade.php       # Inertia mount point
 routes/
 ├── web.php                 # Route definitions
+```
+
+## Todo
+
+### 🧱 Backend
+
+- [ ] User System
+     - [ ] Register
+     - [ ] Email confirmation
+     - [ ] Login
+     - [ ] Email password reset
+     - [ ] Manage user info
+     - [ ] Delete user
+     - [ ] GDPR compliance
+- [ ] User Horses
+
+### 🖼️ Frontend
+
+- [/] Transfer all static pages
+     - [x] Home
+     - [ ] Getting Started
+     - [x] Rules
+     - [ ] Lore
+     - [ ] Character Handbook
+     - [ ] Stats & Leveling
+     - [ ] Character Upload
+     - [ ] Shop
+     - [ ] Wildlife
+     - [ ] Lifespans
+     - [ ] Story Progression
+     - [ ] Claiming NPCs
+     - [ ] Herd Unity
+     - [ ] Breeding & Foaling
+     - [ ] Player vs. Player
+     - [ ] Contact Us
+
+### 🦗 Bugs
+
+- [ ]
