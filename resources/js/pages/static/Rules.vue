@@ -6,7 +6,7 @@ import Layout from '@/components/custom/Layout.vue';
 	<Layout title="Home">
 		<template #hero>
 			<h1>Rattlesnake Mountain</h1>
-			<p>Rules page.</p>
+			<p>Be sure to follow these at all times!</p>
 		</template>
 
 		<!-- Main content for this page -->

@@ -25,7 +25,16 @@ export const linkDict = {
 	HERD_UNITY: makeLink('Herd Unity', '/herd-unity'),
 	BREEDING_FOALING: makeLink('Breeding & Foaling', '/breeding-foaling'),
 	PLAYER_VS_PLAYER: makeLink('Player vs. Player', '/player-vs-player'),
+	// lorekeepers
+	LADY: makeLink(
+		'Lady',
+		'https://www.deviantart.com/rattlesnakeadmin/art/RATTLESNAKE-MOUNTAIN-Mare-004-The-Lorekeeper-813634467',
+	),
 	// misc links
 	OWNER: makeLink('Siat-s', 'https://siat-s.deviantart.com'),
 	DISCORD: makeLink('Discord', 'https://discord.gg/rArZNnkCfE'),
+	MAP: makeLink(
+		'Map',
+		'https://www.deviantart.com/rattlesnakeadmin/art/RESOURCE-Map-813626388',
+	),
 };

@@ -55,7 +55,7 @@ routes/
 
 - [/] Transfer all static pages
      - [x] Home
-     - [ ] Getting Started
+     - [/] Getting Started
      - [x] Rules
      - [ ] Lore
      - [ ] Character Handbook
