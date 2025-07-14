@@ -33,6 +33,19 @@ export const linkDict = {
 	// misc links
 	OWNER: makeLink('Siat-s', 'https://siat-s.deviantart.com'),
 	DISCORD: makeLink('Discord', 'https://discord.gg/rArZNnkCfE'),
+	LINEART: makeLink(
+		'Lineart',
+		'https://www.deviantart.com/rattlesnakeadmin/art/RESOURCE-Lineart-Bases-812737644',
+	),
+	ADMIN: makeLink('Admin', 'https://www.deviantart.com/rattlesnakeadmin'),
+	DESIGN_RULES: makeLink(
+		'Design Rules',
+		'https://www.deviantart.com/rattlesnakeadmin/gallery/83931899/design-guide',
+	),
+	DRAFT_BREED_REF: makeLink(
+		'Draft Breed Reference',
+		'https://sites.google.com/site/vadhma/draft-breeds-and-definitions',
+	),
 	MAP: makeLink(
 		'Map',
 		'https://www.deviantart.com/rattlesnakeadmin/art/RESOURCE-Map-813626388',

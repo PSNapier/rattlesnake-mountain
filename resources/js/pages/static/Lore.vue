@@ -6,8 +6,8 @@ import { linkDict } from '@/composables/useLinkDictionary';
 <template>
 	<Layout title="Home">
 		<template #hero>
-			<h1>Rattlesnake Mountain</h1>
-			<p>Lore page.</p>
+			<h1>Lore</h1>
+			<p>The history of our world and how it came to be.</p>
 		</template>
 
 		<!-- Main content for this page -->

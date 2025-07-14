@@ -69,6 +69,11 @@
 	@apply bg-cape-palliser-50 border-new-orleans-400 rounded-xl border-4 p-4;
 }
 
+.box li:before {
+	content: '•';
+	@apply pr-2;
+}
+
 .max-container {
 	@apply m-auto max-w-[1080px];
 }
