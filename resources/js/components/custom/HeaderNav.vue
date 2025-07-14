@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { linkDict } from '@/composables/useLinkDictionary';
 import { Bars3Icon } from '@heroicons/vue/24/solid';
+import { ref } from 'vue';
+
+const navOpen = ref(false);
+function toggleNavOpen() {
+	navOpen.value = !navOpen.value;
+}
 
 const mainLinks = [
 	linkDict.HOME,
@@ -28,8 +34,8 @@ const subLinksWildlife = [
 
 <template>
 	<!-- Desktop -->
-	<!-- <nav
-		class="font-amaranth bg-new-orleans-300 [&>ul]:hover:bg-shakespeare-100 [&>ul]:hover:text-shakespeare-400 border-new-orleans-400 flex flex-row flex-wrap items-center justify-around border-b-4 text-2xl font-bold select-none xl:justify-center [&>ul]:rounded-t-lg [&>ul]:p-2 xl:[&>ul]:mx-4">
+	<nav
+		class="font-amaranth bg-new-orleans-300 [&>ul]:hover:bg-shakespeare-100 [&>ul]:hover:text-shakespeare-400 border-new-orleans-400 hidden flex-row flex-wrap items-center justify-around border-b-4 text-2xl font-bold select-none lg:flex xl:justify-center [&>ul]:rounded-t-lg [&>ul]:p-2 xl:[&>ul]:mx-4">
 		<ul
 			v-for="link in mainLinks"
 			:key="link.label"
@@ -79,11 +85,12 @@ const subLinksWildlife = [
 				</button>
 			</a>
 		</div>
-	</nav> -->
+	</nav>
 
 	<!-- Mobile -->
-	<nav class="text-right">
-		<div class="flex flex-row items-center justify-end gap-4">
+	<nav class="relative text-xl lg:hidden">
+		<div
+			class="bg-new-orleans-300 border-new-orleans-400 flex flex-row items-center justify-end gap-4 border-b-4">
 			<a
 				href="/login"
 				class="underline"
@@ -95,15 +102,18 @@ const subLinksWildlife = [
 				>Register</a
 			>
 			<button
-				class="text-cape-palliser-800 inline-flex items-center justify-center rounded-md p-2 focus:outline-none">
+				class="text-cape-palliser-800 inline-flex items-center justify-center rounded-md p-2 focus:outline-none"
+				@click="toggleNavOpen">
 				<Bars3Icon class="size-8" />
 			</button>
 		</div>
-		<div class="hidden">
+		<div
+			class="bg-new-orleans-400 text-new-orleans-100 absolute top-full right-0 z-50 w-full p-4 text-right leading-8"
+			v-if="navOpen">
 			<ul
 				v-for="link in mainLinks"
 				:key="link.label"
-				class="group relative">
+				class="group relative mb-4">
 				<a :href="link.path">{{ link.label }}</a>
 
 				<div
