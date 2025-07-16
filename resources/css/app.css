@@ -79,10 +79,6 @@
 .box img {
 	@apply mb-2 rounded-xl;
 }
-.box {
-	p + p,
-	p + 
-}
 
 .max-container {
 	@apply m-auto max-w-[1080px];
