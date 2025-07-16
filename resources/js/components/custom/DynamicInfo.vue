@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import Layout from '@/components/custom/Layout.vue';
+import markdownit from 'markdown-it';
+
+const md = markdownit();
 
 defineProps<{
 	hero: { title: string; description: string };
 	images: { name: string; link: string | false; path: string }[];
-	// content: Record<string, string | string[]>;
+	content: Record<string, string[]>;
 }>();
 </script>
 
 <template>
-	<Layout :title="hero.title">
+	<Layout
+		:title="hero.title"
+		class="info-page">
 		<template #hero>
 			<h1>{{ hero.title }}</h1>
 			<p>{{ hero.description }}</p>
@@ -20,7 +25,15 @@ defineProps<{
 			class="max-container grid grid-cols-1 items-start gap-4 p-4 lg:grid-cols-[2fr_1fr]">
 			<!-- Info column -->
 			<div class="flex flex-col gap-4">
-				<slot />
+				<div
+					v-for="(blocks, boxKey) in content"
+					:key="boxKey"
+					class="box space-y-2">
+					<div
+						v-for="(block, i) in blocks"
+						:key="i"
+						v-html="md.render(block)"></div>
+				</div>
 			</div>
 
 			<!-- Image column -->

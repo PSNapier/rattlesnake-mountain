@@ -91,7 +91,7 @@ const subLinksWildlife = [
 	<nav class="relative text-xl lg:hidden">
 		<div
 			class="bg-new-orleans-300 border-new-orleans-400 flex flex-row items-center justify-end gap-4 border-b-4">
-			<a
+			<!-- <a
 				href="/login"
 				class="underline"
 				>Login</a
@@ -100,9 +100,9 @@ const subLinksWildlife = [
 				href="/register"
 				class="underline"
 				>Register</a
-			>
+			> -->
 			<button
-				class="text-cape-palliser-800 inline-flex items-center justify-center rounded-md p-2 focus:outline-none"
+				class="bg-cape-palliser-500 text-new-orleans-200 m-2 inline-flex items-center justify-center rounded-md p-1 focus:outline-none"
 				@click="toggleNavOpen">
 				<Bars3Icon class="size-8" />
 			</button>
