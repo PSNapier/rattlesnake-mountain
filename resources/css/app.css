@@ -79,6 +79,10 @@
 .box img {
 	@apply mb-2 rounded-xl;
 }
+.box h1 {
+	all: unset;
+	@apply flex justify-center;
+}
 
 .max-container {
 	@apply m-auto max-w-[1080px];

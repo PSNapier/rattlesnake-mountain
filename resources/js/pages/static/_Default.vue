@@ -13,8 +13,9 @@ const images = [
 	},
 ];
 const content = {
-	box1: `This thing all things devours;`,
-	box2: `Birds, beasts, trees, flowers...`,
+	box1: [
+		``,
+	],
 };
 </script>
 
