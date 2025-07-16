@@ -70,7 +70,7 @@
 }
 .box li:before {
 	content: '•';
-	@apply pr-2;
+	@apply pr-2 pl-6;
 }
 .box no-bullets li:before {
 	content: '';

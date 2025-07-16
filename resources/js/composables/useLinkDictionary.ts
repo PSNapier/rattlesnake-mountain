@@ -54,4 +54,12 @@ export const linkDict = {
 		'Claimable',
 		'https://www.deviantart.com/rattlesnakeadmin/gallery?q=claimable',
 	),
+	STATS_REF: makeLink(
+		'Stats Explained',
+		'https://imgur.com/d-d-stats-explained-WzhSq42',
+	),
+	BENE_DETS: makeLink(
+		'Benefits & Detriments',
+		'https://docs.google.com/spreadsheets/d/1MdMQyHTcjdlbWutxdydxLqXIzEiRysWTnErXblHKHik/edit?gid=0#gid=0',
+	),
 };
