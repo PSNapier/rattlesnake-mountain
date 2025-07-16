@@ -68,10 +68,20 @@
 .box-alt {
 	@apply bg-cape-palliser-50 border-new-orleans-400 rounded-xl border-4 p-4;
 }
-
 .box li:before {
 	content: '•';
 	@apply pr-2;
+}
+.box no-bullets li:before {
+	content: '';
+	@apply pr-0;
+}
+.box img {
+	@apply mb-2 rounded-xl;
+}
+.box {
+	p + p,
+	p + 
 }
 
 .max-container {

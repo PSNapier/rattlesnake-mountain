@@ -50,4 +50,8 @@ export const linkDict = {
 		'Map',
 		'https://www.deviantart.com/rattlesnakeadmin/art/RESOURCE-Map-813626388',
 	),
+	CLAIMABLE: makeLink(
+		'Claimable',
+		'https://www.deviantart.com/rattlesnakeadmin/gallery?q=claimable',
+	),
 };
