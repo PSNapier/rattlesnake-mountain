@@ -3,8 +3,8 @@ import DynamicInfo from '@/components/custom/DynamicInfo.vue';
 import { linkDict } from '@/composables/useLinkDictionary';
 
 const hero = {
-	title: `Title`,
-	description: `Description.`,
+	title: `Herd Unity`,
+	description: `A measure of how close your herd is.`,
 };
 const images = [
 	{
