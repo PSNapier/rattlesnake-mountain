@@ -70,4 +70,9 @@ export const linkDict = {
 		'Example Character',
 		'https://www.deviantart.com/rattlesnakeadmin/art/RATTLESNAKE-MOUNTAIN-Stallion-B-0021-Umbreon-919282970',
 	),
+	// rollers
+	ROLLER_STORY_PROG: makeLink(
+		'Story Progression Roller',
+		'https://docs.google.com/spreadsheets/d/1noH5IwE7Zx5lBKSJco8bLbonwHDWqoDEdPqzjvJ3HiA/edit?usp=sharing',
+	),
 };
