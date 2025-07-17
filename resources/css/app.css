@@ -81,7 +81,7 @@
 }
 .box h1 {
 	all: unset;
-	@apply flex justify-center;
+	@apply flex justify-center text-center;
 }
 
 .max-container {
