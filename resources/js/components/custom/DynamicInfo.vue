@@ -44,7 +44,7 @@ defineProps<{
 					:key="'img-' + i">
 					<div class="box">
 						<img
-							:src="img.path"
+							:src="img.path.toLowerCase()"
 							:alt="`Art by ${img.name}`"
 							class="h-auto w-full rounded-xl" />
 					</div>
