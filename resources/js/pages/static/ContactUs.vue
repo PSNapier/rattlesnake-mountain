@@ -1,15 +1,27 @@
 <script setup lang="ts">
-import Layout from '@/components/custom/Layout.vue';
+import DynamicInfo from '@/components/custom/DynamicInfo.vue';
+
+const hero = {
+	title: `Contact Us`,
+	description: `Feel free to get in touch.`,
+};
+const images = [
+	{
+		name: 'Nikkayla',
+		link: 'https://www.deviantart.com/Nikkayla',
+		path: '/images/lore-art-Nikkayla.png',
+	},
+];
+const content = {
+	box1: [
+		`# [Send us an email!](mailto:abaturestudio@gmail.com?subject=Rattlesnake%20Mountain%20Contact%20Us%20Inquiry)`,
+	],
+};
 </script>
 
 <template>
-	<Layout title="Home">
-		<template #hero>
-			<h1>Rattlesnake Mountain</h1>
-			<p>Contact us page.</p>
-		</template>
-
-		<!-- Main content for this page -->
-		<div class="max-container grid grid-cols-1 gap-4 p-4"></div>
-	</Layout>
+	<DynamicInfo
+		:hero="hero"
+		:images="images"
+		:content="content" />
 </template>

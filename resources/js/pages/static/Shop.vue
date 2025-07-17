@@ -1,16 +1,27 @@
 <script setup lang="ts">
-import Layout from '@/components/custom/Layout.vue';
+import DynamicInfo from '@/components/custom/DynamicInfo.vue';
+
+const hero = {
+	title: `Shop`,
+	description: `Come shop, browse and sell.`,
+};
+const images = [
+	{
+		name: 'Nikkayla',
+		link: 'https://www.deviantart.com/Nikkayla',
+		path: '/images/lore-art-Nikkayla.png',
+	},
+];
+const content = {
+	box1: [
+		`Shop coming soon!`,
+	],
+};
 </script>
 
 <template>
-	<Layout title="Home">
-		<template #hero>
-			<h1>Rattlesnake Mountain</h1>
-			<p>[insert name] page.</p>
-		</template>
-
-		<!-- Main content for this page -->
-		<div class="max-container grid grid-cols-1 gap-4 p-4"></div>
-	</Layout>
+	<DynamicInfo
+		:hero="hero"
+		:images="images"
+		:content="content" />
 </template>
-

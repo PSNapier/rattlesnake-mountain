@@ -41,35 +41,24 @@ routes/
 
 ### 🧱 Backend
 
-- [ ] User System
-     - [ ] Register
+- [/] User System
      - [ ] Email confirmation
-     - [ ] Login
      - [ ] Email password reset
      - [ ] Manage user info
      - [ ] Delete user
      - [ ] GDPR compliance
+     - [/] Register
+     - [/] Login
+- [ ] Admin CMS
+- [ ] Image uploads
 - [ ] User Horses
 
 ### 🖼️ Frontend
 
-- [/] Transfer all static pages
-     - [x] Home
-     - [ ] Getting Started
-     - [x] Rules
-     - [ ] Lore
-     - [ ] Character Handbook
-     - [ ] Stats & Leveling
-     - [ ] Character Upload
-     - [ ] Shop
-     - [ ] Wildlife
-     - [ ] Lifespans
-     - [ ] Story Progression
-     - [ ] Claiming NPCs
-     - [ ] Herd Unity
-     - [ ] Breeding & Foaling
-     - [ ] Player vs. Player
-     - [ ] Contact Us
+- [ ] Shop page
+- [ ] Contact us page
+- [x] Transfer all static pages
+- [x] Mobile nav implemented
 
 ### 🦗 Bugs
 
