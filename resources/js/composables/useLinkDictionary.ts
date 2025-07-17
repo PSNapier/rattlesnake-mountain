@@ -62,4 +62,12 @@ export const linkDict = {
 		'Benefits & Detriments',
 		'https://docs.google.com/spreadsheets/d/1MdMQyHTcjdlbWutxdydxLqXIzEiRysWTnErXblHKHik/edit?gid=0#gid=0',
 	),
+	SUBMISSION_VID: makeLink(
+		'Submission Vid',
+		'https://drive.google.com/file/d/1S3VTPAJeEqEllVkQI-Eifcr1fRLiLr1s/view',
+	),
+	EXAMPLE_CHAR: makeLink(
+		'Example Character',
+		'https://www.deviantart.com/rattlesnakeadmin/art/RATTLESNAKE-MOUNTAIN-Stallion-B-0021-Umbreon-919282970',
+	),
 };

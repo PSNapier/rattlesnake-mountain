@@ -2,8 +2,8 @@
 import DynamicInfo from '@/components/custom/DynamicInfo.vue';
 
 const hero = {
-	title: 'Title',
-	description: 'Description.',
+	title: `Title`,
+	description: `Description.`,
 };
 const images = [
 	{
