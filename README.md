@@ -58,6 +58,7 @@ routes/
 - [ ] Shop page
 - [ ] Contact us page
 - [x] Transfer all static pages
+- [x] Mobile nav implemented
 
 ### 🦗 Bugs
 
