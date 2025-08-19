@@ -71,7 +71,7 @@ const subLinksWildlife = [
 			</div>
 		</ul>
 
-		<!-- <div class="flex flex-row">
+		<div class="flex flex-row">
 			<a href="/login">
 				<button
 					class="text-new-orleans-300 bg-cape-palliser-500 hover:bg-new-orleans-500 hover:text-new-orleans-100 flex cursor-pointer gap-4 rounded-l-xl p-2 font-sans text-sm transition-colors">
@@ -84,14 +84,14 @@ const subLinksWildlife = [
 					Register
 				</button>
 			</a>
-		</div> -->
+		</div>
 	</nav>
 
 	<!-- Mobile -->
 	<nav class="relative text-xl lg:hidden">
 		<div
 			class="bg-new-orleans-300 border-new-orleans-400 flex flex-row items-center justify-end gap-4 border-b-4">
-			<!-- <a
+			<a
 				href="/login"
 				class="underline"
 				>Login</a
@@ -100,7 +100,7 @@ const subLinksWildlife = [
 				href="/register"
 				class="underline"
 				>Register</a
-			> -->
+			>
 			<button
 				class="bg-cape-palliser-500 text-new-orleans-200 m-2 inline-flex items-center justify-center rounded-md p-1 focus:outline-none"
 				@click="toggleNavOpen">
