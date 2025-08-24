@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Development Password Protection
+    |--------------------------------------------------------------------------
+    |
+    | This password is used to protect the development site. Set to null
+    | to disable password protection entirely.
+    |
+    */
+
+    'dev_password' => env('DEV_PASSWORD', null),
+
 ];

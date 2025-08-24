@@ -1,7 +1,11 @@
 <?php
 
+use App\Http\Controllers\DevPasswordController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+Route::get('/dev-password', [DevPasswordController::class, 'show'])->name('dev-password');
+Route::post('/dev-password', [DevPasswordController::class, 'authenticate'])->name('dev-password.authenticate');
 
 Route::get('/', function () {
     return Inertia::render('static/Home');
@@ -77,4 +81,3 @@ Route::fallback(function () {
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
-
