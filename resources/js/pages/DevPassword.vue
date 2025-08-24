@@ -39,10 +39,10 @@
 				<div>
 					<button
 						type="submit"
-						:disabled="processing.value"
+						:disabled="processing"
 						class="group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50">
 						<span
-							v-if="processing.value"
+							v-if="processing"
 							class="absolute inset-y-0 left-0 flex items-center pl-3">
 							<svg
 								class="h-5 w-5 animate-spin text-white"
@@ -63,9 +63,7 @@
 							</svg>
 						</span>
 						{{
-							processing.value
-								? 'Authenticating...'
-								: 'Continue'
+							processing ? 'Authenticating...' : 'Continue'
 						}}
 					</button>
 				</div>
@@ -74,11 +72,11 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { reactive, ref } from 'vue';
 
-const props = defineProps({
+defineProps({
 	errors: Object,
 });
 
