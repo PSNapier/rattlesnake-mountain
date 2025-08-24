@@ -42,16 +42,21 @@ routes/
 ### 🧱 Backend
 
 - [/] User System
-     - [ ] Email confirmation
-     - [ ] Email password reset
-     - [ ] Manage user info
-     - [ ] Delete user
+     - [x] Email confirmation
+     - [x] Email password reset
+     - [/] Manage user info
+     - [/] Delete user
      - [ ] GDPR compliance
-     - [/] Register
-     - [/] Login
+     - [x] Register
+     - [x] Login
 - [ ] Admin CMS
 - [ ] Image uploads
 - [ ] User Horses
+- [x] 2025-08-24
+     - [x] Blank dashboard
+     - [x] Live dev server
+     - [x] Live dev server password
+     - [x] Mailgun integration
 
 ### 🖼️ Frontend
 
@@ -62,4 +67,4 @@ routes/
 
 ### 🦗 Bugs
 
-- [ ]
+- [ ] Default shadcn dropdown creates scrollbar wonkiness
