@@ -86,7 +86,7 @@ const subLinksWildlife = [
 			</div>
 		</ul>
 
-		<div class="flex flex-row items-center gap-2">
+		<div class="flex flex-row items-center">
 			<!-- Guest buttons -->
 			<template v-if="!auth.user">
 				<a href="/login">
