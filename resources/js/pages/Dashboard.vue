@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, usePage } from '@inertiajs/vue3';
@@ -84,16 +83,25 @@ const handleFileSelect = (event: Event) => {
 // Handle drag and drop
 const handleDragOver = (event: DragEvent) => {
 	event.preventDefault();
-	event.currentTarget?.classList.add('border-blue-500', 'bg-blue-50');
+	(event.currentTarget as HTMLElement)?.classList.add(
+		'border-blue-500',
+		'bg-blue-50',
+	);
 };
 
 const handleDragLeave = (event: DragEvent) => {
-	event.currentTarget?.classList.remove('border-blue-500', 'bg-blue-50');
+	(event.currentTarget as HTMLElement)?.classList.remove(
+		'border-blue-500',
+		'bg-blue-50',
+	);
 };
 
 const handleDrop = (event: DragEvent) => {
 	event.preventDefault();
-	event.currentTarget?.classList.remove('border-blue-500', 'bg-blue-50');
+	(event.currentTarget as HTMLElement)?.classList.remove(
+		'border-blue-500',
+		'bg-blue-50',
+	);
 
 	if (event.dataTransfer?.files && event.dataTransfer.files[0]) {
 		const file = event.dataTransfer.files[0];
