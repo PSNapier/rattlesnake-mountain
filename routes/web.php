@@ -1,8 +1,34 @@
 <?php
 
+use App\Http\Controllers\CharacterImageController;
 use App\Http\Controllers\DevPasswordController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+Route::get('dashboard', [CharacterImageController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+
+// Route to serve character images (must come before other character-image routes)
+Route::get('/character-images/{filename}', function ($filename) {
+    $path = storage_path('app/public/character-images/' . $filename);
+    
+    if (!file_exists($path)) {
+        abort(404);
+    }
+    
+    $file = file_get_contents($path);
+    $type = mime_content_type($path);
+    
+    return response($file, 200, [
+        'Content-Type' => $type,
+        'Cache-Control' => 'public, max-age=31536000',
+    ]);
+})->name('character-images.serve');
+
+// Character Image Routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::post('/character-images', [CharacterImageController::class, 'store'])->name('character-images.store')->middleware('rate.limit.uploads');
+    Route::delete('/character-images/{characterImage}', [CharacterImageController::class, 'destroy'])->name('character-images.destroy');
+});
 
 Route::get('/dev-password', [DevPasswordController::class, 'show'])->name('dev-password');
 Route::post('/dev-password', [DevPasswordController::class, 'authenticate'])->name('dev-password.authenticate');
@@ -70,10 +96,6 @@ Route::get('/player-vs-player', function () {
 Route::get('/contact-us', function () {
     return Inertia::render('static/ContactUs');
 })->name('contact_us');
-
-Route::get('dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::fallback(function () {
     return Inertia::render('NotFound');
