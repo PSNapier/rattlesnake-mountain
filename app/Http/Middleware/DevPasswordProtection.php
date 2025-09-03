@@ -20,6 +20,21 @@ class DevPasswordProtection
             return $next($request);
         }
 
+        // Skip auth routes
+        if ($request->is('login', 'register', 'forgot-password', 'reset-password', 'verify-email', 'confirm-password')) {
+            return $next($request);
+        }
+
+        // Skip settings routes
+        if ($request->is('settings/*')) {
+            return $next($request);
+        }
+
+        // Skip dashboard route
+        if ($request->is('dashboard')) {
+            return $next($request);
+        }
+
         // Check if user is authenticated with dev password
         if ($request->session()->get('dev_authenticated') === true) {
             return $next($request);
