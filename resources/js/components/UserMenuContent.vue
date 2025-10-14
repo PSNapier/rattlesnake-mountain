@@ -31,6 +31,18 @@ defineProps<Props>();
 	</DropdownMenuLabel>
 	<DropdownMenuSeparator />
 	<DropdownMenuGroup>
+		<DropdownMenuItem
+			v-if="user.role === 'admin'"
+			:as-child="true">
+			<Link
+				class="block w-full"
+				:href="route('admin.index')"
+				prefetch
+				as="button">
+				<Home class="mr-2 h-4 w-4" />
+				Admin
+			</Link>
+		</DropdownMenuItem>
 		<DropdownMenuItem :as-child="true">
 			<Link
 				class="block w-full"

@@ -2,10 +2,16 @@
 
 use App\Http\Controllers\CharacterImageController;
 use App\Http\Controllers\DevPasswordController;
+use App\Http\Controllers\AdminController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('dashboard', [CharacterImageController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+
+// Admin
+Route::get('/admin', [AdminController::class, 'index'])
+    ->middleware(['auth', 'verified', 'can:access-admin'])
+    ->name('admin.index');
 
 // Route to serve character images (must come before other character-image routes)
 Route::get('/character-images/{filename}', function ($filename) {
