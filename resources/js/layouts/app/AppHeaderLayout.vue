@@ -13,7 +13,7 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-	<AppShell class="flex-col">
+	<AppShell class="flex-col p-6">
 		<!-- <AppHeader :breadcrumbs="breadcrumbs" /> -->
 		<AppContent>
 			<slot />
