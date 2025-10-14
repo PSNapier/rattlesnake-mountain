@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { User } from '@/types';
 import { Link, router } from '@inertiajs/vue3';
-import { Home, LogOut, Settings } from 'lucide-vue-next';
+import { Home, LogOut, Settings, Users, Zap } from 'lucide-vue-next';
 
 interface Props {
 	user: User;
@@ -51,6 +51,26 @@ defineProps<Props>();
 				as="button">
 				<Home class="mr-2 h-4 w-4" />
 				Dashboard
+			</Link>
+		</DropdownMenuItem>
+		<DropdownMenuItem :as-child="true">
+			<Link
+				class="block w-full"
+				:href="route('herds.index')"
+				prefetch
+				as="button">
+				<Users class="mr-2 h-4 w-4" />
+				My Herds
+			</Link>
+		</DropdownMenuItem>
+		<DropdownMenuItem :as-child="true">
+			<Link
+				class="block w-full"
+				:href="route('horses.index')"
+				prefetch
+				as="button">
+				<Zap class="mr-2 h-4 w-4" />
+				My Horses
 			</Link>
 		</DropdownMenuItem>
 		<DropdownMenuItem :as-child="true">

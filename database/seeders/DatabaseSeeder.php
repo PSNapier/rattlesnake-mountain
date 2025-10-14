@@ -31,5 +31,8 @@ class DatabaseSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+
+        // Create sample herds and horses
+        $this->call(HerdHorseSeeder::class);
     }
 }

@@ -1,8 +1,13 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CharacterImageController;
 use App\Http\Controllers\DevPasswordController;
-use App\Http\Controllers\AdminController;
+use App\Http\Controllers\HerdController;
+use App\Http\Controllers\HorseController;
+use App\Models\Herd;
+use App\Models\Horse;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -15,15 +20,15 @@ Route::get('/admin', [AdminController::class, 'index'])
 
 // Route to serve character images (must come before other character-image routes)
 Route::get('/character-images/{filename}', function ($filename) {
-    $path = storage_path('app/public/character-images/' . $filename);
-    
-    if (!file_exists($path)) {
+    $path = storage_path('app/public/character-images/'.$filename);
+
+    if (! file_exists($path)) {
         abort(404);
     }
-    
+
     $file = file_get_contents($path);
     $type = mime_content_type($path);
-    
+
     return response($file, 200, [
         'Content-Type' => $type,
         'Cache-Control' => 'public, max-age=31536000',
@@ -35,6 +40,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/character-images', [CharacterImageController::class, 'store'])->name('character-images.store')->middleware('rate.limit.uploads');
     Route::delete('/character-images/{characterImage}', [CharacterImageController::class, 'destroy'])->name('character-images.destroy');
 });
+
+// Herd and Horse Routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::resource('herds', HerdController::class);
+    Route::resource('horses', HorseController::class);
+});
+
+// Public viewing routes for users' herds and horses
+Route::get('/users/{user}', function (User $user) {
+    return Inertia::render('Users/PublicProfile', [
+        'user' => $user,
+        'herdCount' => Herd::where('owner_id', $user->id)->count(),
+        'horseCount' => Horse::where('owner_id', $user->id)->count(),
+    ]);
+})->name('users.profile');
+Route::get('/users/{user}/herds', [HerdController::class, 'publicIndex'])->name('users.herds');
+Route::get('/users/{user}/horses', [HorseController::class, 'publicIndex'])->name('users.horses');
 
 Route::get('/dev-password', [DevPasswordController::class, 'show'])->name('dev-password');
 Route::post('/dev-password', [DevPasswordController::class, 'authenticate'])->name('dev-password.authenticate');
