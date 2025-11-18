@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Role;
 use App\Models\User;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
@@ -20,6 +21,37 @@ test('users can authenticate using the login screen', function () {
 
     $this->assertAuthenticated();
     $response->assertRedirect(route('dashboard', absolute: false));
+});
+
+test('users are promoted to admin when email matches config', function () {
+    config(['auth.admin_emails' => ['admin@example.com']]);
+
+    $user = User::factory()->create([
+        'email' => 'Admin@example.com',
+        'role' => Role::User,
+    ]);
+
+    $this->post('/login', [
+        'email' => $user->email,
+        'password' => 'password',
+    ])->assertRedirect(route('dashboard', absolute: false));
+
+    expect($user->fresh()->role)->toBe(Role::Admin);
+});
+
+test('admins are demoted when email no longer matches config', function () {
+    config(['auth.admin_emails' => []]);
+
+    $user = User::factory()->create([
+        'role' => Role::Admin,
+    ]);
+
+    $this->post('/login', [
+        'email' => $user->email,
+        'password' => 'password',
+    ])->assertRedirect(route('dashboard', absolute: false));
+
+    expect($user->fresh()->role)->toBe(Role::User);
 });
 
 test('users can not authenticate with invalid password', function () {
