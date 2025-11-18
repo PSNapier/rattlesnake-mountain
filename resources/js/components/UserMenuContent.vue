@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { User } from '@/types';
 import { Link, router } from '@inertiajs/vue3';
-import { Home, LogOut, Settings, Users, Zap } from 'lucide-vue-next';
+import { Crown, Home, LogOut, Settings, Users, Zap } from 'lucide-vue-next';
 
 interface Props {
 	user: User;
@@ -39,7 +39,7 @@ defineProps<Props>();
 				:href="route('admin.index')"
 				prefetch
 				as="button">
-				<Home class="mr-2 h-4 w-4" />
+				<Crown class="mr-2 h-4 w-4" />
 				Admin
 			</Link>
 		</DropdownMenuItem>
