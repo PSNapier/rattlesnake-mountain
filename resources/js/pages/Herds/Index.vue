@@ -44,6 +44,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 	},
 ];
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const canEditHerd = (herd: Herd): boolean => {
 	// Since we're on the user's own herds page, they can edit all their herds
 	return true;
