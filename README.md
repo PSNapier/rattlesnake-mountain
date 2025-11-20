@@ -37,34 +37,7 @@ routes/
 ├── web.php                 # Route definitions
 ```
 
-## Todo
+## 🦗 Bugs
 
-### 🧱 Backend
-
-- [/] User System
-     - [x] Email confirmation
-     - [x] Email password reset
-     - [/] Manage user info
-     - [/] Delete user
-     - [ ] GDPR compliance
-     - [x] Register
-     - [x] Login
-- [ ] Admin CMS
-- [ ] Image uploads
-- [ ] User Horses
-- [x] 2025-08-24
-     - [x] Blank dashboard
-     - [x] Live dev server
-     - [x] Live dev server password
-     - [x] Mailgun integration
-
-### 🖼️ Frontend
-
-- [ ] Shop page
-- [ ] Contact us page
-- [x] Transfer all static pages
-- [x] Mobile nav implemented
-
-### 🦗 Bugs
-
+- [ ] Local vs. CI test wonkiness re.
 - [ ] Default shadcn dropdown creates scrollbar wonkiness
