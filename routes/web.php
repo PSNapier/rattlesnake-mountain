@@ -45,6 +45,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('herds', HerdController::class);
     Route::resource('horses', HorseController::class);
+    Route::get('/users', function () {
+        return Inertia::render('Users/Index', [
+            'users' => User::select('id', 'name')
+                ->orderBy('name')
+                ->get(),
+        ]);
+    })->name('users.index');
 });
 
 // Public viewing routes for users' herds and horses
