@@ -39,16 +39,10 @@ routes/
 
 ## 🦗 Bugs
 
+- [ ] Footer is missing from some pages
+- [ ] Some herd/horse pages are fully public, only static/login/register pages should be visible to visitors who are not logged in
+- [ ] Misc. wonky colours
 - [ ] Local vs. CI test wonkiness re.
 - [ ] Default shadcn dropdown creates scrollbar wonkiness
 
 ## 📄 Notes
-
-### Admin Queue
-
-I want to add an admin queue system for approving all user uploads/edits to herds and horses.
-
-Let's start by implementing the queue system for herds and horses as they currently exist.
-
-- users creations are viewable by the user and admin as a pending post but are not publicly visible
-- users should be able to edit herds/horses and view their pending changes as a draft, current accepted version remains public
