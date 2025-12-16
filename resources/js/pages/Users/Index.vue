@@ -31,10 +31,11 @@ const breadcrumbs: BreadcrumbItem[] = [
 			<!-- Header -->
 			<div>
 				<h1
-					class="text-3xl font-bold text-gray-900 dark:text-white">
+					class="text-cape-palliser-950 dark:text-cape-palliser-50 text-3xl font-bold">
 					All Users
 				</h1>
-				<p class="mt-2 text-gray-600 dark:text-gray-400">
+				<p
+					class="text-cape-palliser-700 dark:text-cape-palliser-300 mt-2">
 					Browse all players and their collections
 				</p>
 			</div>
@@ -48,37 +49,32 @@ const breadcrumbs: BreadcrumbItem[] = [
 					<div
 						v-if="props.users.length > 0"
 						class="space-y-2">
-						<div
+						<Link
+							id="UsersListCard"
 							v-for="user in props.users"
 							:key="user.id"
-							class="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
-							<div class="flex items-center gap-3">
-								<div
-									class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700">
-									<span
-										class="text-sm font-semibold text-gray-600 dark:text-gray-300">
-										{{
-											user.name
-												.charAt(0)
-												.toUpperCase()
-										}}
-									</span>
-								</div>
+							:href="`/u/${user.id}`"
+							class="border-cape-palliser-200 dark:border-cape-palliser-700 hover:bg-shakespeare-200 dark:hover:bg-shakespeare-200 flex items-center gap-3 rounded-lg border p-4 no-underline transition-colors">
+							<div
+								class="bg-shakespeare-200 dark:bg-shakespeare-800 flex h-10 w-10 items-center justify-center rounded-full">
 								<span
-									class="font-medium text-gray-900 dark:text-white">
-									{{ user.name }}
+									class="text-shakespeare-700 dark:text-shakespeare-200 text-sm font-semibold">
+									{{
+										user.name
+											.charAt(0)
+											.toUpperCase()
+									}}
 								</span>
 							</div>
-							<Link
-								:href="`/u/${user.id}`"
-								class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-								View Profile →
-							</Link>
-						</div>
+							<span
+								class="text-shakespeare-600 font-medium">
+								{{ user.name }}
+							</span>
+						</Link>
 					</div>
 					<p
 						v-else
-						class="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+						class="text-cape-palliser-600 dark:text-cape-palliser-400 py-8 text-center text-sm">
 						No users found
 					</p>
 				</CardContent>
