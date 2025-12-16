@@ -125,6 +125,10 @@ Route::get('/contact-us', function () {
     return Inertia::render('static/ContactUs');
 })->name('contact_us');
 
+Route::get('/privacy-policy', function () {
+    return Inertia::render('static/PrivacyPolicy');
+})->name('privacy_policy');
+
 Route::fallback(function () {
     return Inertia::render('NotFound');
 })->name('not_found');

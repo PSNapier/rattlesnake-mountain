@@ -5,6 +5,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
 import { ZiggyVue } from 'ziggy-js';
+import CookieConsent from './components/CookieConsent.vue';
 import { initializeTheme } from './composables/useAppearance';
 
 // Extend ImportMeta interface for Vite...
@@ -32,10 +33,19 @@ createInertiaApp({
 			import.meta.glob<DefineComponent>('./pages/**/*.vue'),
 		),
 	setup({ el, App, props, plugin }) {
-		createApp({ render: () => h(App, props) })
+		const app = createApp({
+			render: () =>
+				h('div', [
+					h(App, props),
+					h(CookieConsent),
+				]),
+		})
 			.use(plugin)
-			.use(ZiggyVue)
-			.mount(el);
+			.use(ZiggyVue);
+
+		app.mount(el);
+
+		return app;
 	},
 	progress: {
 		color: '#4B5563',

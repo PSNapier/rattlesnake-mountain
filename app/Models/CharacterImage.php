@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Prunable;
 
 class CharacterImage extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Prunable;
 
     protected $fillable = [
         'user_id',
@@ -46,5 +47,10 @@ class CharacterImage extends Model
         $path = str_replace('.webp', '_thumb.webp', $this->storage_path);
 
         return asset('storage/'.$path);
+    }
+
+    public function prunable()
+    {
+        return static::where('deleted_at', '<=', now()->subDays(30));
     }
 }
