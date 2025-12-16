@@ -48,15 +48,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // Public viewing routes for users' herds and horses
-Route::get('/users/{user}', function (User $user) {
+Route::get('/u/{user}', function (User $user) {
     return Inertia::render('Users/PublicProfile', [
         'user' => $user,
         'herdCount' => Herd::where('owner_id', $user->id)->count(),
         'horseCount' => Horse::where('owner_id', $user->id)->count(),
     ]);
 })->name('users.profile');
-Route::get('/users/{user}/herds', [HerdController::class, 'publicIndex'])->name('users.herds');
-Route::get('/users/{user}/horses', [HorseController::class, 'publicIndex'])->name('users.horses');
+Route::get('/u/{user}/herds', [HerdController::class, 'publicIndex'])->name('users.herds');
+Route::get('/u/{user}/horses', [HorseController::class, 'publicIndex'])->name('users.horses');
+Route::get('/u/{user}/horses/{horse}', [HorseController::class, 'publicShow'])->name('users.horses.show');
 
 Route::get('/dev-password', [DevPasswordController::class, 'show'])->name('dev-password');
 Route::post('/dev-password', [DevPasswordController::class, 'authenticate'])->name('dev-password.authenticate');

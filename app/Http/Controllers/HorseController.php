@@ -6,6 +6,7 @@ use App\Http\Requests\StoreHorseRequest;
 use App\Http\Requests\UpdateHorseRequest;
 use App\Models\Herd;
 use App\Models\Horse;
+use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -163,6 +164,29 @@ class HorseController extends Controller
         return Inertia::render('Horses/PublicIndex', [
             'user' => $user,
             'horses' => $horses,
+        ]);
+    }
+
+    /**
+     * Display a public view of a specific horse.
+     */
+    public function publicShow(User $user, Horse $horse): Response
+    {
+        // Ensure the horse belongs to the user
+        if ($horse->owner_id !== $user->id) {
+            abort(404);
+        }
+
+        $this->authorize('view', $horse);
+
+        $horse->load(['owner', 'bredBy', 'herd']);
+
+        return Inertia::render('Horses/Show', [
+            'horse' => $horse,
+            'can' => [
+                'update' => Auth::check() && Auth::user()->can('update', $horse),
+                'delete' => Auth::check() && Auth::user()->can('delete', $horse),
+            ],
         ]);
     }
 }
