@@ -14,9 +14,11 @@ use Inertia\Inertia;
 Route::get('dashboard', [CharacterImageController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 // Admin
-Route::get('/admin', [AdminController::class, 'index'])
-    ->middleware(['auth', 'verified', 'can:access-admin'])
-    ->name('admin.index');
+Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
+    Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
+    Route::post('/admin/horses/{horse}/archive', [AdminController::class, 'archive'])->name('admin.horses.archive');
+    Route::post('/admin/horses/{horse}/contact', [AdminController::class, 'contact'])->name('admin.horses.contact');
+});
 
 // Route to serve character images (must come before other character-image routes)
 Route::get('/character-images/{filename}', function ($filename) {

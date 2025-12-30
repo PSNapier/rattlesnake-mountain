@@ -34,6 +34,7 @@ interface Submission {
 	date_submitted: string;
 	status: Status;
 	last_contact_date: string | null;
+	last_admin_name?: string | null;
 	public_horse_id?: number | null;
 	is_edit?: boolean;
 }
@@ -164,13 +165,39 @@ const closeReviewModal = (): void => {
 };
 
 const handleArchive = (): void => {
-	// TODO: Implement archive functionality
-	closeReviewModal();
+	if (!selectedSubmission.value) {
+		return;
+	}
+
+	router.post(
+		route('admin.horses.archive', selectedSubmission.value.id),
+		{
+			notes: reviewNotes.value,
+		},
+		{
+			onSuccess: () => {
+				closeReviewModal();
+			},
+		},
+	);
 };
 
 const handleContactOwner = (): void => {
-	// TODO: Implement contact owner functionality
-	closeReviewModal();
+	if (!selectedSubmission.value) {
+		return;
+	}
+
+	router.post(
+		route('admin.horses.contact', selectedSubmission.value.id),
+		{
+			notes: reviewNotes.value,
+		},
+		{
+			onSuccess: () => {
+				closeReviewModal();
+			},
+		},
+	);
 };
 
 const handleApprove = (): void => {
@@ -354,6 +381,10 @@ const handleApprove = (): void => {
 										</div>
 									</th>
 									<th
+										class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+										Last Admin
+									</th>
+									<th
 										class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold"></th>
 								</tr>
 							</thead>
@@ -364,7 +395,7 @@ const handleApprove = (): void => {
 									"
 									class="border-b border-gray-200">
 									<td
-										colspan="6"
+										colspan="7"
 										class="text-cape-palliser-600 px-4 py-8 text-center">
 										No submissions found
 									</td>
@@ -460,6 +491,13 @@ const handleApprove = (): void => {
 											formatDate(
 												submission.last_contact_date,
 											)
+										}}
+									</td>
+									<td
+										class="text-cape-palliser-700 px-4 py-3 text-sm">
+										{{
+											submission.last_admin_name ||
+											'—'
 										}}
 									</td>
 									<td class="px-4 py-3 text-sm">

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Horse extends Model
 {
@@ -29,6 +30,8 @@ class Horse extends Model
         'state',
         'public_horse_id',
         'approved_at',
+        'archived_at',
+        'contacted_at',
     ];
 
     protected function casts(): array
@@ -41,6 +44,8 @@ class Horse extends Model
             'equipment' => 'array',
             'state' => HorseState::class,
             'approved_at' => 'datetime',
+            'archived_at' => 'datetime',
+            'contacted_at' => 'datetime',
         ];
     }
 
@@ -67,6 +72,16 @@ class Horse extends Model
     public function pendingVersions(): HasMany
     {
         return $this->hasMany(Horse::class, 'public_horse_id');
+    }
+
+    public function adminLogs(): HasMany
+    {
+        return $this->hasMany(AdminSubmissionLog::class);
+    }
+
+    public function latestAdminLog(): HasOne
+    {
+        return $this->hasOne(AdminSubmissionLog::class)->latestOfMany();
     }
 
     public function scopePublic(Builder $query): Builder

@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AdminAction;
 use App\Enums\HorseState;
 use App\Http\Requests\StoreHorseRequest;
 use App\Http\Requests\UpdateHorseRequest;
+use App\Models\AdminSubmissionLog;
 use App\Models\Herd;
 use App\Models\Horse;
 use App\Models\User;
@@ -350,6 +352,14 @@ class HorseController extends Controller
             'approved_at' => now(),
         ]);
 
+        // Log the approval action
+        AdminSubmissionLog::create([
+            'horse_id' => $horse->id,
+            'admin_id' => Auth::id(),
+            'action' => AdminAction::Approved,
+            'notes' => null,
+        ]);
+
         return redirect()->route('horses.show', $publicHorse)
             ->with('success', 'Pending changes approved and merged successfully!');
     }
@@ -370,6 +380,14 @@ class HorseController extends Controller
         $horse->update([
             'state' => HorseState::Public,
             'approved_at' => now(),
+        ]);
+
+        // Log the approval action
+        AdminSubmissionLog::create([
+            'horse_id' => $horse->id,
+            'admin_id' => Auth::id(),
+            'action' => AdminAction::Approved,
+            'notes' => null,
         ]);
 
         return redirect()->route('horses.show', $horse)
