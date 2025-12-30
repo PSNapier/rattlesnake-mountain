@@ -20,7 +20,7 @@ class HorseFactory extends Factory
         return [
             'name' => fake()->firstName(),
             'age' => fake()->numberBetween(0, 20),
-            'geno' => fake()->regexify('[A-Za-z]{2}[0-9]{2}[A-Za-z]{2}'),
+            'geno' => $this->generateEquineGeno(),
             'design_link' => fake()->optional(0.7)->imageUrl(400, 400, 'horses'),
             'bloodline' => [],
             'progeny' => [],
@@ -34,5 +34,35 @@ class HorseFactory extends Factory
             'equipment' => [],
             'state' => HorseState::Pending,
         ];
+    }
+
+    private function generateEquineGeno(): string
+    {
+        $genePairs = [];
+        $numPairs = fake()->numberBetween(2, 4);
+
+        // Common equine gene pairs
+        $possibleGenes = [
+            ['ee', 'Ee', 'EE'], // Extension
+            ['aa', 'Aa', 'AA'], // Agouti
+            ['gg', 'Gg', 'GG'], // Gray
+            ['tt', 'Tt', 'TT'], // Tobiano
+            ['ww', 'Ww', 'WW'], // White
+        ];
+
+        // Special genes (less common)
+        $specialGenes = ['nCr', 'Ncr', 'NCr', 'ncr'];
+
+        for ($i = 0; $i < $numPairs; $i++) {
+            if ($i === $numPairs - 1 && fake()->boolean(20)) {
+                // 20% chance for a special gene
+                $genePairs[] = fake()->randomElement($specialGenes);
+            } else {
+                $geneSet = fake()->randomElement($possibleGenes);
+                $genePairs[] = fake()->randomElement($geneSet);
+            }
+        }
+
+        return implode(' ', $genePairs);
     }
 }
