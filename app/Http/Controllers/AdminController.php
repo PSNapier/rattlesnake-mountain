@@ -76,23 +76,9 @@ class AdminController extends Controller
             abort(400, 'Only pending, unapproved horses can be archived.');
         }
 
-        // If this is a pending edit (has public_horse_id), delete it instead of archiving
-        // Archived pending edits should be disposed of, leaving only the public state
-        if ($horse->public_horse_id) {
-            AdminSubmissionLog::create([
-                'horse_id' => $horse->id,
-                'admin_id' => Auth::id(),
-                'action' => AdminAction::Archived,
-                'notes' => $request->input('notes'),
-            ]);
-
-            $horse->delete();
-
-            return redirect()->route('admin.index')
-                ->with('success', 'Pending edit archived and disposed of successfully.');
-        }
-
-        // For new pending horses (not edits), mark as archived
+        // Mark as archived (for both pending edits and new pending horses)
+        // Archived pending edits are functionally disposed of (filtered out from editing)
+        // but remain in the queue for historical purposes
         $horse->update([
             'archived_at' => now(),
         ]);
@@ -103,6 +89,11 @@ class AdminController extends Controller
             'action' => AdminAction::Archived,
             'notes' => $request->input('notes'),
         ]);
+
+        if ($horse->public_horse_id) {
+            return redirect()->route('admin.index')
+                ->with('success', 'Pending edit archived and disposed of successfully.');
+        }
 
         return redirect()->route('admin.index')
             ->with('success', 'Submission archived successfully.');

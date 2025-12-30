@@ -295,7 +295,7 @@ it('pending horses are only visible to owner and admin', function () {
     $response->assertSuccessful();
 });
 
-it('deletes pending edit when archived and allows editing public horse', function () {
+it('marks pending edit as archived and allows editing public horse', function () {
     $publicHorse = Horse::factory()
         ->for($this->user, 'owner')
         ->for($this->user, 'bredBy')
@@ -322,8 +322,13 @@ it('deletes pending edit when archived and allows editing public horse', functio
 
     $response->assertRedirect();
 
-    // Pending edit should be deleted
-    $this->assertDatabaseMissing('horses', ['id' => $pendingEdit->id]);
+    // Pending edit should be marked as archived (not deleted)
+    $pendingEdit->refresh();
+    $this->assertNotNull($pendingEdit->archived_at);
+    $this->assertDatabaseHas('horses', [
+        'id' => $pendingEdit->id,
+        'archived_at' => $pendingEdit->archived_at,
+    ]);
 
     // Public horse should remain unchanged
     $this->assertDatabaseHas('horses', [
@@ -333,7 +338,11 @@ it('deletes pending edit when archived and allows editing public horse', functio
         'state' => HorseState::Public->value,
     ]);
 
-    // Should be able to edit the public horse (no archived pending edit should be found)
+    // Archived pending edit should redirect to public horse when trying to edit
+    $response = $this->actingAs($this->user)->get(route('horses.edit', $pendingEdit));
+    $response->assertRedirect(route('horses.edit', $publicHorse));
+
+    // Should be able to edit the public horse (archived pending edit should be filtered out)
     $response = $this->actingAs($this->user)->get(route('horses.edit', $publicHorse));
     $response->assertSuccessful();
     $response->assertInertia(fn ($page) => $page->component('Horses/Edit'));
@@ -355,10 +364,11 @@ it('deletes pending edit when archived and allows editing public horse', functio
     $response = $this->actingAs($this->user)->put(route('horses.update', $publicHorse), $updateData);
     $response->assertRedirect();
 
-    // New pending version should be created
+    // New pending version should be created (archived one should be filtered out)
     $this->assertDatabaseHas('horses', [
         'name' => 'New Pending Edit',
         'state' => HorseState::Pending->value,
         'public_horse_id' => $publicHorse->id,
+        'archived_at' => null, // New one should not be archived
     ]);
 });
