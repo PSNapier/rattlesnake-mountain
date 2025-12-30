@@ -167,11 +167,31 @@ class HorseController extends Controller
             }
         }
 
+        // Load admin contact logs for pending horses
+        $adminLogs = [];
+        if ($horse->state === HorseState::Pending) {
+            $adminLogs = $horse->adminLogs()
+                ->with('admin')
+                ->where('action', AdminAction::Contacted)
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($log) {
+                    return [
+                        'id' => $log->id,
+                        'admin_name' => $log->admin->name,
+                        'notes' => $log->notes,
+                        'created_at' => $log->created_at->toIso8601String(),
+                    ];
+                })
+                ->toArray();
+        }
+
         return Inertia::render('Horses/Edit', [
             'horse' => $horse,
             'herds' => $herds,
             'isPendingEdit' => $isPendingEdit,
             'publicHorse' => $publicHorse,
+            'adminLogs' => $adminLogs,
             'can' => [
                 'update' => Auth::user()->can('update', $horse),
             ],

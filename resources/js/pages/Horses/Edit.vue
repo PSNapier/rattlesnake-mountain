@@ -27,11 +27,19 @@ interface Horse {
 	equipment: any[];
 }
 
+interface AdminLog {
+	id: number;
+	admin_name: string;
+	notes: string | null;
+	created_at: string;
+}
+
 interface Props {
 	horse: Horse;
 	herds: Herd[];
 	isPendingEdit?: boolean;
 	publicHorse?: Horse | null;
+	adminLogs?: AdminLog[];
 }
 
 const props = defineProps<Props>();
@@ -109,6 +117,43 @@ const submit = () => {
 										remains unchanged until your
 										edits are approved.
 									</p>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div
+						v-if="
+							props.adminLogs && props.adminLogs.length > 0
+						"
+						class="mt-4 space-y-3">
+						<h2 class="text-lg font-semibold">
+							Admin Messages
+						</h2>
+						<div
+							v-for="log in props.adminLogs"
+							:key="log.id"
+							class="rounded-md border border-blue-200 bg-blue-50 p-4">
+							<div
+								class="flex items-start justify-between">
+								<div class="flex-1">
+									<div
+										class="text-sm font-medium text-blue-900">
+										Message from
+										{{ log.admin_name }}
+									</div>
+									<div
+										class="mt-1 text-sm text-blue-800">
+										{{ log.notes }}
+									</div>
+									<div
+										class="mt-2 text-xs text-blue-600">
+										{{
+											new Date(
+												log.created_at,
+											).toLocaleDateString()
+										}}
+									</div>
 								</div>
 							</div>
 						</div>
