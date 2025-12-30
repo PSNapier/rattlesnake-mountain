@@ -22,4 +22,4 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
-database/seeders/DatabaseSeeder.php
+database/seeders/LocalOnly.php

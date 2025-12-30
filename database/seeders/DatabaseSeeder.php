@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Role;
+use App\Models\Horse;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -14,25 +14,29 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
-
-        // Ensure a known admin exists for testing
-        User::query()->updateOrCreate(
-            ['email' => 'arjones.tx@gmail.com'],
+        // Create test user
+        $test = User::query()->updateOrCreate(
+            ['email' => 'test@gmail.com'],
             [
-                'name' => 'Admin User',
-                'password' => 'password',
-                'role' => Role::Admin,
+                'name' => 'test',
+                'password' => 'testing123',
                 'email_verified_at' => now(),
             ]
         );
 
+        // Create 5 random horses for test user
+        Horse::factory()
+            ->count(5)
+            ->for($test, 'owner')
+            ->for($test, 'bredBy')
+            ->create();
+
         // Create sample herds and horses
         $this->call(HerdHorseSeeder::class);
+
+        // Run local-only seeder if it exists (not present on server)
+        if (class_exists('Database\Seeders\LocalOnly')) {
+            $this->call('Database\Seeders\LocalOnly');
+        }
     }
 }

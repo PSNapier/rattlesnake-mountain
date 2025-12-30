@@ -14,15 +14,12 @@ class HerdHorseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Find or create the test user
-        $user = User::where('email', 'arjones.tx@gmail.com')->first();
+        // Find or create a test user
+        $user = User::first();
 
         if (! $user) {
-            $user = User::create([
+            $user = User::factory()->create([
                 'name' => 'Test User',
-                'email' => 'arjones.tx@gmail.com',
-                'password' => bcrypt('password'),
-                'email_verified_at' => now(),
             ]);
         }
 
