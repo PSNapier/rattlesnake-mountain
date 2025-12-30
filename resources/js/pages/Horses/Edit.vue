@@ -82,7 +82,7 @@ const submit = () => {
 					</p>
 					<div
 						v-if="props.isPendingEdit"
-						class="mt-4 rounded-md bg-yellow-50 border border-yellow-200 p-4">
+						class="mt-4 rounded-md border border-yellow-200 bg-yellow-50 p-4">
 						<div class="flex">
 							<div class="flex-shrink-0">
 								<svg
@@ -96,14 +96,17 @@ const submit = () => {
 								</svg>
 							</div>
 							<div class="ml-3">
-								<h3 class="text-sm font-medium text-yellow-800">
+								<h3
+									class="text-sm font-medium text-yellow-800">
 									Pending Edits
 								</h3>
-								<div class="mt-2 text-sm text-yellow-700">
+								<div
+									class="mt-2 text-sm text-yellow-700">
 									<p>
-										You have pending edits for this horse
-										waiting for admin approval. The public
-										version remains unchanged until your
+										You have pending edits for
+										this horse waiting for admin
+										approval. The public version
+										remains unchanged until your
 										edits are approved.
 									</p>
 								</div>
