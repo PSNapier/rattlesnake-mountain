@@ -24,8 +24,8 @@ class AdminController extends Controller
                     'name' => $horse->name,
                     'name_type' => 'horse',
                     'date_submitted' => $horse->created_at->toIso8601String(),
-                    'status' => 'pending',
-                    'last_contact_date' => null,
+                    'status' => $horse->approved_at ? 'approved' : 'pending',
+                    'last_contact_date' => $horse->approved_at?->toIso8601String(),
                     'public_horse_id' => $horse->public_horse_id,
                     'is_edit' => $horse->public_horse_id !== null,
                 ];

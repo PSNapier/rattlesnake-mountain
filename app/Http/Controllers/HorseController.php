@@ -292,8 +292,10 @@ class HorseController extends Controller
             'equipment' => $horse->equipment,
         ]);
 
-        // Delete the pending version
-        $horse->delete();
+        // Mark the pending version as approved instead of deleting
+        $horse->update([
+            'approved_at' => now(),
+        ]);
 
         return redirect()->route('horses.show', $publicHorse)
             ->with('success', 'Pending changes approved and merged successfully!');
@@ -304,7 +306,7 @@ class HorseController extends Controller
      */
     public function publish(Horse $horse): RedirectResponse
     {
-        if (!Auth::user()->isAdmin()) {
+        if (! Auth::user()->isAdmin()) {
             abort(403);
         }
 
@@ -314,6 +316,7 @@ class HorseController extends Controller
 
         $horse->update([
             'state' => HorseState::Public,
+            'approved_at' => now(),
         ]);
 
         return redirect()->route('horses.show', $horse)

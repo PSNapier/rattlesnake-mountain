@@ -378,7 +378,7 @@ const handleApprove = (): void => {
 											'approved' ||
 										submission.status ===
 											'archived'
-											? 'opacity-50'
+											? 'opacity-75'
 											: '',
 									]">
 									<td
@@ -400,7 +400,8 @@ const handleApprove = (): void => {
 										class="text-cape-palliser-950 px-4 py-3 text-sm">
 										<Link
 											:href="
-												submission.is_edit
+												submission.is_edit &&
+												submission.public_horse_id
 													? route(
 															'horses.show',
 															submission.public_horse_id,
@@ -463,6 +464,10 @@ const handleApprove = (): void => {
 									</td>
 									<td class="px-4 py-3 text-sm">
 										<Button
+											v-if="
+												submission.status !==
+												'approved'
+											"
 											variant="outline"
 											size="sm"
 											@click="
@@ -472,6 +477,11 @@ const handleApprove = (): void => {
 											">
 											Review
 										</Button>
+										<span
+											v-else
+											class="text-cape-palliser-500 text-sm">
+											Approved
+										</span>
 									</td>
 								</tr>
 							</tbody>
@@ -568,21 +578,31 @@ const handleApprove = (): void => {
 
 				<DialogFooter class="gap-2">
 					<Button
+						v-if="selectedSubmission?.status !== 'approved'"
 						variant="outline"
 						@click="handleArchive">
 						Archive
 					</Button>
 					<Button
+						v-if="selectedSubmission?.status !== 'approved'"
 						variant="outline"
 						@click="handleContactOwner">
 						Contact Owner
 					</Button>
-					<Button @click="handleApprove">
+					<Button
+						v-if="selectedSubmission?.status !== 'approved'"
+						@click="handleApprove">
 						{{
 							selectedSubmission?.is_edit
 								? 'Approve Changes'
 								: 'Publish Horse'
 						}}
+					</Button>
+					<Button
+						v-else
+						variant="outline"
+						@click="closeReviewModal">
+						Close
 					</Button>
 				</DialogFooter>
 			</DialogContent>

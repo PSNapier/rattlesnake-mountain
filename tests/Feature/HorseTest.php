@@ -252,8 +252,13 @@ it('allows admin to approve pending horse changes', function () {
         'state' => HorseState::Public->value,
     ]);
 
-    // Pending version should be deleted
-    $this->assertDatabaseMissing('horses', ['id' => $pendingHorse->id]);
+    // Pending version should be marked as approved (not deleted)
+    $pendingHorse->refresh();
+    $this->assertNotNull($pendingHorse->approved_at);
+    $this->assertDatabaseHas('horses', [
+        'id' => $pendingHorse->id,
+        'state' => HorseState::Pending->value,
+    ]);
 });
 
 it('public horses are visible to all users', function () {

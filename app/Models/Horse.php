@@ -28,6 +28,7 @@ class Horse extends Model
         'equipment',
         'state',
         'public_horse_id',
+        'approved_at',
     ];
 
     protected function casts(): array
@@ -39,6 +40,7 @@ class Horse extends Model
             'inventory' => 'array',
             'equipment' => 'array',
             'state' => HorseState::class,
+            'approved_at' => 'datetime',
         ];
     }
 
