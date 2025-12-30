@@ -380,6 +380,12 @@ class HorseController extends Controller
             'notes' => null,
         ]);
 
+        // If this is an Inertia request (from admin queue), redirect back to admin
+        if (request()->header('X-Inertia')) {
+            return redirect()->route('admin.index')
+                ->with('success', 'Pending changes approved and merged successfully!');
+        }
+
         return redirect()->route('horses.show', $publicHorse)
             ->with('success', 'Pending changes approved and merged successfully!');
     }
@@ -409,6 +415,12 @@ class HorseController extends Controller
             'action' => AdminAction::Approved,
             'notes' => null,
         ]);
+
+        // If this is an Inertia request (from admin queue), redirect back to admin
+        if (request()->header('X-Inertia')) {
+            return redirect()->route('admin.index')
+                ->with('success', 'Horse published successfully!');
+        }
 
         return redirect()->route('horses.show', $horse)
             ->with('success', 'Horse published successfully!');
