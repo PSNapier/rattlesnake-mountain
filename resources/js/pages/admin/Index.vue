@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
@@ -27,79 +27,22 @@ type SortDirection = 'asc' | 'desc' | null;
 
 interface Submission {
 	id: number;
+	user_id: number;
 	user_name: string;
 	name: string;
 	name_type: 'herd' | 'horse';
 	date_submitted: string;
 	status: Status;
 	last_contact_date: string | null;
+	public_horse_id?: number | null;
+	is_edit?: boolean;
 }
 
-const mockSubmissions: Submission[] = [
-	{
-		id: 1,
-		user_name: 'HorseLover123',
-		name: 'Thunder Herd',
-		name_type: 'herd',
-		date_submitted: '2024-01-15T10:30:00Z',
-		status: 'pending',
-		last_contact_date: null,
-	},
-	{
-		id: 2,
-		user_name: 'WildRider99',
-		name: 'Storm Runner',
-		name_type: 'horse',
-		date_submitted: '2024-01-14T14:20:00Z',
-		status: 'contacted',
-		last_contact_date: '2024-01-16T09:15:00Z',
-	},
-	{
-		id: 3,
-		user_name: 'PrairieDreams',
-		name: 'Wild Breeze',
-		name_type: 'herd',
-		date_submitted: '2024-01-13T08:45:00Z',
-		status: 'approved',
-		last_contact_date: '2024-01-18T11:30:00Z',
-	},
-	{
-		id: 4,
-		user_name: 'MidnightStallion',
-		name: 'Midnight Shadow',
-		name_type: 'horse',
-		date_submitted: '2024-01-12T16:00:00Z',
-		status: 'pending',
-		last_contact_date: null,
-	},
-	{
-		id: 5,
-		user_name: 'DesertWind456',
-		name: 'Prairie Wind',
-		name_type: 'herd',
-		date_submitted: '2024-01-11T12:30:00Z',
-		status: 'contacted',
-		last_contact_date: '2024-01-17T10:00:00Z',
-	},
-	{
-		id: 6,
-		user_name: 'ThunderHooves',
-		name: 'Lightning Strike',
-		name_type: 'horse',
-		date_submitted: '2024-01-10T09:15:00Z',
-		status: 'archived',
-		last_contact_date: '2024-01-20T14:00:00Z',
-	},
-	{
-		id: 7,
-		user_name: 'MountainView87',
-		name: 'Highland Herd',
-		name_type: 'herd',
-		date_submitted: '2024-01-09T11:20:00Z',
-		status: 'archived',
-		last_contact_date: '2024-01-19T16:30:00Z',
-	},
-];
+interface Props {
+	submissions: Submission[];
+}
+
+const props = defineProps<Props>();
 
 const searchQuery = ref('');
 const statusFilter = ref<Status | 'all'>('all');
@@ -111,7 +54,7 @@ const selectedSubmission = ref<Submission | null>(null);
 const reviewNotes = ref('');
 
 const filteredAndSorted = computed(() => {
-	let result = [...mockSubmissions];
+	let result = [...props.submissions];
 
 	// Filter by search query
 	if (searchQuery.value.trim()) {
@@ -231,8 +174,36 @@ const handleContactOwner = (): void => {
 };
 
 const handleApprove = (): void => {
-	// TODO: Implement approve functionality
-	closeReviewModal();
+	if (!selectedSubmission.value) {
+		return;
+	}
+
+	// If it's an edit (has public_horse_id), use the approve endpoint
+	if (
+		selectedSubmission.value.is_edit &&
+		selectedSubmission.value.public_horse_id
+	) {
+		router.post(
+			route('horses.approve', selectedSubmission.value.id),
+			{},
+			{
+				onSuccess: () => {
+					closeReviewModal();
+				},
+			},
+		);
+	} else {
+		// For new horses, publish them to make them public
+		router.post(
+			route('horses.publish', selectedSubmission.value.id),
+			{},
+			{
+				onSuccess: () => {
+					closeReviewModal();
+				},
+			},
+		);
+	}
 };
 </script>
 
@@ -413,7 +384,12 @@ const handleApprove = (): void => {
 									<td
 										class="text-cape-palliser-950 px-4 py-3 text-sm">
 										<Link
-											href="#"
+											:href="
+												route(
+													'users.profile',
+													submission.user_id,
+												)
+											"
 											class="hover:text-shakespeare-600 hover:underline">
 											{{
 												submission.user_name
@@ -423,9 +399,26 @@ const handleApprove = (): void => {
 									<td
 										class="text-cape-palliser-950 px-4 py-3 text-sm">
 										<Link
-											href="#"
+											:href="
+												submission.is_edit
+													? route(
+															'horses.show',
+															submission.public_horse_id,
+														)
+													: route(
+															'horses.show',
+															submission.id,
+														)
+											"
 											class="hover:text-shakespeare-600 hover:underline">
 											{{ submission.name }}
+											<span
+												v-if="
+													submission.is_edit
+												"
+												class="text-cape-palliser-500 ml-1 text-xs">
+												(Edit)
+											</span>
 										</Link>
 									</td>
 									<td
@@ -493,16 +486,75 @@ const handleApprove = (): void => {
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>
-						Review Submission
+						Review Horse Submission
 						<span
 							v-if="selectedSubmission"
 							class="text-cape-palliser-700 text-sm font-normal">
-							— {{ selectedSubmission.user_name }}
+							— {{ selectedSubmission.name }}
 						</span>
 					</DialogTitle>
 				</DialogHeader>
 
 				<div class="space-y-4">
+					<div v-if="selectedSubmission">
+						<div class="mb-4 space-y-2 text-sm">
+							<p>
+								<strong>Owner:</strong>
+								<Link
+									:href="
+										route(
+											'users.profile',
+											selectedSubmission.user_id,
+										)
+									"
+									class="text-shakespeare-600 hover:underline">
+									{{ selectedSubmission.user_name }}
+								</Link>
+							</p>
+							<p>
+								<strong>Horse Name:</strong>
+								{{ selectedSubmission.name }}
+							</p>
+							<p>
+								<strong>Type:</strong>
+								{{
+									selectedSubmission.is_edit
+										? 'Edit to existing horse'
+										: 'New horse'
+								}}
+							</p>
+							<p>
+								<strong>Submitted:</strong>
+								{{
+									formatDate(
+										selectedSubmission.date_submitted,
+									)
+								}}
+							</p>
+							<div class="pt-2">
+								<Link
+									:href="
+										selectedSubmission.is_edit &&
+										selectedSubmission.public_horse_id
+											? route(
+													'horses.show',
+													selectedSubmission.public_horse_id,
+												)
+											: route(
+													'horses.show',
+													selectedSubmission.id,
+												)
+									"
+									target="_blank">
+									<Button
+										variant="outline"
+										size="sm">
+										View Horse
+									</Button>
+								</Link>
+							</div>
+						</div>
+					</div>
 					<div>
 						<Label for="review-notes">Admin Notes</Label>
 						<textarea
@@ -525,7 +577,13 @@ const handleApprove = (): void => {
 						@click="handleContactOwner">
 						Contact Owner
 					</Button>
-					<Button @click="handleApprove"> Approve </Button>
+					<Button @click="handleApprove">
+						{{
+							selectedSubmission?.is_edit
+								? 'Approve Changes'
+								: 'Publish Horse'
+						}}
+					</Button>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

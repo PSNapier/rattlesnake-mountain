@@ -46,6 +46,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('herds', HerdController::class);
     Route::resource('horses', HorseController::class);
     Route::post('/horses/{horse}/approve', [HorseController::class, 'approve'])->name('horses.approve');
+    Route::post('/horses/{horse}/publish', [HorseController::class, 'publish'])->name('horses.publish');
     Route::get('/users', function () {
         return Inertia::render('Users/Index', [
             'users' => User::select('id', 'name')

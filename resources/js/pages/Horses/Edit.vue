@@ -199,8 +199,8 @@ const submit = () => {
 									:disabled="form.processing">
 									{{
 										form.processing
-											? 'Updating...'
-											: 'Update Horse'
+											? 'Submitting...'
+											: 'Submit Edits'
 									}}
 								</Button>
 								<Button

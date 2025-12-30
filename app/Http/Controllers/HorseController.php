@@ -89,8 +89,15 @@ class HorseController extends Controller
 
         $horse->load(['owner', 'bredBy', 'herd']);
 
+        // Check if this public horse has a pending version
+        $pendingVersion = null;
+        if ($horse->state === HorseState::Public) {
+            $pendingVersion = $horse->pendingVersions()->where('state', HorseState::Pending)->first();
+        }
+
         return Inertia::render('Horses/Show', [
             'horse' => $horse,
+            'pendingVersion' => $pendingVersion,
             'can' => [
                 'update' => Auth::user()->can('update', $horse),
                 'delete' => Auth::user()->can('delete', $horse),
@@ -240,8 +247,15 @@ class HorseController extends Controller
 
         $horse->load(['owner', 'bredBy', 'herd']);
 
+        // Check if this public horse has a pending version
+        $pendingVersion = null;
+        if ($horse->state === HorseState::Public) {
+            $pendingVersion = $horse->pendingVersions()->where('state', HorseState::Pending)->first();
+        }
+
         return Inertia::render('Horses/Show', [
             'horse' => $horse,
+            'pendingVersion' => $pendingVersion,
             'can' => [
                 'update' => Auth::check() && Auth::user()->can('update', $horse),
                 'delete' => Auth::check() && Auth::user()->can('delete', $horse),
@@ -283,5 +297,26 @@ class HorseController extends Controller
 
         return redirect()->route('horses.show', $publicHorse)
             ->with('success', 'Pending changes approved and merged successfully!');
+    }
+
+    /**
+     * Publish a new pending horse (make it public).
+     */
+    public function publish(Horse $horse): RedirectResponse
+    {
+        if (!Auth::user()->isAdmin()) {
+            abort(403);
+        }
+
+        if ($horse->state !== HorseState::Pending || $horse->public_horse_id !== null) {
+            abort(400, 'Only new pending horses can be published.');
+        }
+
+        $horse->update([
+            'state' => HorseState::Public,
+        ]);
+
+        return redirect()->route('horses.show', $horse)
+            ->with('success', 'Horse published successfully!');
     }
 }
