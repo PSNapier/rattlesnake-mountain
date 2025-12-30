@@ -294,3 +294,71 @@ it('pending horses are only visible to owner and admin', function () {
     $response = $this->actingAs($this->admin)->get(route('horses.show', $pendingHorse));
     $response->assertSuccessful();
 });
+
+it('deletes pending edit when archived and allows editing public horse', function () {
+    $publicHorse = Horse::factory()
+        ->for($this->user, 'owner')
+        ->for($this->user, 'bredBy')
+        ->create([
+            'state' => HorseState::Public,
+            'name' => 'Original Name',
+            'age' => 5,
+        ]);
+
+    $pendingEdit = Horse::factory()
+        ->for($this->user, 'owner')
+        ->for($this->user, 'bredBy')
+        ->create([
+            'state' => HorseState::Pending,
+            'public_horse_id' => $publicHorse->id,
+            'name' => 'Pending Edit Name',
+            'age' => 10,
+        ]);
+
+    // Archive the pending edit
+    $response = $this->actingAs($this->admin)->post(route('admin.horses.archive', $pendingEdit), [
+        'notes' => 'Test archive',
+    ]);
+
+    $response->assertRedirect();
+
+    // Pending edit should be deleted
+    $this->assertDatabaseMissing('horses', ['id' => $pendingEdit->id]);
+
+    // Public horse should remain unchanged
+    $this->assertDatabaseHas('horses', [
+        'id' => $publicHorse->id,
+        'name' => 'Original Name',
+        'age' => 5,
+        'state' => HorseState::Public->value,
+    ]);
+
+    // Should be able to edit the public horse (no archived pending edit should be found)
+    $response = $this->actingAs($this->user)->get(route('horses.edit', $publicHorse));
+    $response->assertSuccessful();
+    $response->assertInertia(fn ($page) => $page->component('Horses/Edit'));
+
+    // Should be able to create a new pending edit
+    $updateData = [
+        'name' => 'New Pending Edit',
+        'age' => 15,
+        'geno' => 'AaBbCc',
+        'design_link' => null,
+        'herd_id' => null,
+        'bloodline' => [],
+        'progeny' => [],
+        'stats' => [],
+        'inventory' => [],
+        'equipment' => [],
+    ];
+
+    $response = $this->actingAs($this->user)->put(route('horses.update', $publicHorse), $updateData);
+    $response->assertRedirect();
+
+    // New pending version should be created
+    $this->assertDatabaseHas('horses', [
+        'name' => 'New Pending Edit',
+        'state' => HorseState::Pending->value,
+        'public_horse_id' => $publicHorse->id,
+    ]);
+});
