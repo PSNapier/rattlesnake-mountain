@@ -177,6 +177,7 @@ const handleArchive = (): void => {
 		{
 			onSuccess: () => {
 				closeReviewModal();
+				router.reload();
 			},
 		},
 	);
@@ -195,6 +196,7 @@ const handleContactOwner = (): void => {
 		{
 			onSuccess: () => {
 				closeReviewModal();
+				router.reload();
 			},
 		},
 	);
@@ -216,6 +218,7 @@ const handleApprove = (): void => {
 			{
 				onSuccess: () => {
 					closeReviewModal();
+					router.reload();
 				},
 			},
 		);
@@ -227,6 +230,7 @@ const handleApprove = (): void => {
 			{
 				onSuccess: () => {
 					closeReviewModal();
+					router.reload();
 				},
 			},
 		);
