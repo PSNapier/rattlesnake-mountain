@@ -26,8 +26,17 @@ class HorseController extends Controller
         $this->authorize('viewAny', Horse::class);
 
         // Only show the current user's horses on their personal page
+        // Exclude approved pending versions that are edits (they're historical records, not active horses)
+        // Approved new horses (without public_horse_id) should still show as they're now public
         $horses = Horse::with(['owner', 'bredBy', 'herd'])
             ->where('owner_id', Auth::id())
+            ->where(function ($query) {
+                $query->whereNull('approved_at')
+                    ->orWhere(function ($q) {
+                        $q->whereNotNull('approved_at')
+                            ->whereNull('public_horse_id');
+                    });
+            })
             ->latest()
             ->get();
 
@@ -87,12 +96,20 @@ class HorseController extends Controller
     {
         $this->authorize('view', $horse);
 
+        // If trying to view an approved pending version (edit), redirect to the public horse
+        if ($horse->state === HorseState::Pending && $horse->approved_at && $horse->public_horse_id) {
+            return redirect()->route('horses.show', $horse->public_horse_id);
+        }
+
         $horse->load(['owner', 'bredBy', 'herd']);
 
         // Check if this public horse has a pending version
         $pendingVersion = null;
         if ($horse->state === HorseState::Public) {
-            $pendingVersion = $horse->pendingVersions()->where('state', HorseState::Pending)->first();
+            $pendingVersion = $horse->pendingVersions()
+                ->where('state', HorseState::Pending)
+                ->whereNull('approved_at')
+                ->first();
         }
 
         return Inertia::render('Horses/Show', [
@@ -112,10 +129,18 @@ class HorseController extends Controller
     {
         $this->authorize('update', $horse);
 
+        // If trying to edit an approved pending version, redirect to the public horse
+        if ($horse->state === HorseState::Pending && $horse->approved_at && $horse->public_horse_id) {
+            return redirect()->route('horses.edit', $horse->public_horse_id);
+        }
+
         // If editing a public horse, check if there's a pending version
         // If so, redirect to edit the pending version instead
         if ($horse->state === HorseState::Public) {
-            $pendingVersion = $horse->pendingVersions()->where('state', HorseState::Pending)->first();
+            $pendingVersion = $horse->pendingVersions()
+                ->where('state', HorseState::Pending)
+                ->whereNull('approved_at')
+                ->first();
             if ($pendingVersion) {
                 return redirect()->route('horses.edit', $pendingVersion);
             }
@@ -139,10 +164,19 @@ class HorseController extends Controller
     {
         $this->authorize('update', $horse);
 
+        // Prevent updating approved pending versions (they're historical records)
+        if ($horse->state === HorseState::Pending && $horse->approved_at && $horse->public_horse_id) {
+            return redirect()->route('horses.edit', $horse->public_horse_id)
+                ->with('error', 'Cannot edit an approved pending version. Please edit the public horse instead.');
+        }
+
         // If the horse is public, create a pending version instead of updating directly
         if ($horse->state === HorseState::Public) {
-            // Check if there's already a pending version
-            $pendingVersion = $horse->pendingVersions()->where('state', HorseState::Pending)->first();
+            // Check if there's already a pending version (excluding approved ones)
+            $pendingVersion = $horse->pendingVersions()
+                ->where('state', HorseState::Pending)
+                ->whereNull('approved_at')
+                ->first();
 
             if ($pendingVersion) {
                 // Update existing pending version
