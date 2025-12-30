@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8 dark:bg-gray-900">
+		class="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8 dark:bg-gray-900">
 		<div class="w-full max-w-md space-y-8">
 			<div>
 				<h2
@@ -69,10 +69,12 @@
 				</div>
 			</form>
 		</div>
+		<Footer />
 	</div>
 </template>
 
 <script setup lang="ts">
+import Footer from '@/components/custom/Footer.vue';
 import { router } from '@inertiajs/vue3';
 import { reactive, ref } from 'vue';
 

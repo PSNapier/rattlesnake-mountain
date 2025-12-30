@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppContent from '@/components/AppContent.vue';
 import AppShell from '@/components/AppShell.vue';
+import Footer from '@/components/custom/Footer.vue';
 import type { BreadcrumbItemType } from '@/types';
 
 interface Props {
@@ -18,5 +19,6 @@ withDefaults(defineProps<Props>(), {
 		<AppContent>
 			<slot />
 		</AppContent>
+		<Footer />
 	</AppShell>
 </template>
