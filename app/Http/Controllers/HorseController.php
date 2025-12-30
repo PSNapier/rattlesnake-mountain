@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\HorseState;
 use App\Http\Requests\StoreHorseRequest;
 use App\Http\Requests\UpdateHorseRequest;
 use App\Models\Herd;
@@ -72,6 +73,7 @@ class HorseController extends Controller
             'stats' => $request->stats ?? [],
             'inventory' => $request->inventory ?? [],
             'equipment' => $request->equipment ?? [],
+            'state' => HorseState::Pending,
         ]);
 
         return redirect()->route('horses.show', $horse)
@@ -103,6 +105,15 @@ class HorseController extends Controller
     {
         $this->authorize('update', $horse);
 
+        // If editing a public horse, check if there's a pending version
+        // If so, redirect to edit the pending version instead
+        if ($horse->state === HorseState::Public) {
+            $pendingVersion = $horse->pendingVersions()->where('state', HorseState::Pending)->first();
+            if ($pendingVersion) {
+                return redirect()->route('horses.edit', $pendingVersion);
+            }
+        }
+
         $herds = Herd::where('owner_id', Auth::id())->get();
 
         return Inertia::render('Horses/Edit', [
@@ -121,6 +132,53 @@ class HorseController extends Controller
     {
         $this->authorize('update', $horse);
 
+        // If the horse is public, create a pending version instead of updating directly
+        if ($horse->state === HorseState::Public) {
+            // Check if there's already a pending version
+            $pendingVersion = $horse->pendingVersions()->where('state', HorseState::Pending)->first();
+
+            if ($pendingVersion) {
+                // Update existing pending version
+                $pendingVersion->update([
+                    'name' => $request->name,
+                    'age' => $request->age,
+                    'design_link' => $request->design_link,
+                    'geno' => $request->geno,
+                    'herd_id' => $request->herd_id,
+                    'bloodline' => $request->bloodline ?? [],
+                    'progeny' => $request->progeny ?? [],
+                    'stats' => $request->stats ?? [],
+                    'inventory' => $request->inventory ?? [],
+                    'equipment' => $request->equipment ?? [],
+                ]);
+
+                return redirect()->route('horses.show', $pendingVersion)
+                    ->with('success', 'Pending changes updated. Waiting for approval.');
+            }
+
+            // Create new pending version
+            $pendingVersion = Horse::create([
+                'owner_id' => $horse->owner_id,
+                'bred_by' => $horse->bred_by,
+                'name' => $request->name,
+                'age' => $request->age,
+                'design_link' => $request->design_link,
+                'geno' => $request->geno,
+                'herd_id' => $request->herd_id,
+                'bloodline' => $request->bloodline ?? [],
+                'progeny' => $request->progeny ?? [],
+                'stats' => $request->stats ?? [],
+                'inventory' => $request->inventory ?? [],
+                'equipment' => $request->equipment ?? [],
+                'state' => HorseState::Pending,
+                'public_horse_id' => $horse->id,
+            ]);
+
+            return redirect()->route('horses.show', $pendingVersion)
+                ->with('success', 'Pending changes created. Waiting for approval.');
+        }
+
+        // For pending horses, update directly
         $horse->update([
             'name' => $request->name,
             'age' => $request->age,
@@ -158,6 +216,7 @@ class HorseController extends Controller
     {
         $horses = Horse::with(['owner', 'bredBy', 'herd'])
             ->where('owner_id', $user->id)
+            ->visibleTo(Auth::user())
             ->latest()
             ->get();
 
@@ -188,5 +247,41 @@ class HorseController extends Controller
                 'delete' => Auth::check() && Auth::user()->can('delete', $horse),
             ],
         ]);
+    }
+
+    /**
+     * Approve a pending horse version and merge it with the public version.
+     */
+    public function approve(Horse $horse): RedirectResponse
+    {
+        if (! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+
+        if ($horse->state !== HorseState::Pending || ! $horse->public_horse_id) {
+            abort(400, 'Only pending versions linked to public horses can be approved.');
+        }
+
+        $publicHorse = Horse::findOrFail($horse->public_horse_id);
+
+        // Update the public horse with pending changes
+        $publicHorse->update([
+            'name' => $horse->name,
+            'age' => $horse->age,
+            'design_link' => $horse->design_link,
+            'geno' => $horse->geno,
+            'herd_id' => $horse->herd_id,
+            'bloodline' => $horse->bloodline,
+            'progeny' => $horse->progeny,
+            'stats' => $horse->stats,
+            'inventory' => $horse->inventory,
+            'equipment' => $horse->equipment,
+        ]);
+
+        // Delete the pending version
+        $horse->delete();
+
+        return redirect()->route('horses.show', $publicHorse)
+            ->with('success', 'Pending changes approved and merged successfully!');
     }
 }

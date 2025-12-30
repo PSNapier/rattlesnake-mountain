@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\HorseState;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -31,6 +32,7 @@ class HorseFactory extends Factory
             ],
             'inventory' => [],
             'equipment' => [],
+            'state' => HorseState::Pending,
         ];
     }
 }
