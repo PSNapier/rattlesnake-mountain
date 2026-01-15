@@ -582,16 +582,20 @@ const handleApprove = (): void => {
 						<div class="mb-4 space-y-2 text-sm">
 							<p>
 								<strong>Owner:</strong>
-								<Link
-									:href="
-										route(
-											'users.profile',
-											selectedSubmission.user_id,
-										)
-									"
-									class="text-shakespeare-600 hover:underline">
-									{{ selectedSubmission.user_name }}
-								</Link>
+								<span class="ml-1">
+									<Link
+										:href="
+											route(
+												'users.profile',
+												selectedSubmission.user_id,
+											)
+										"
+										class="text-shakespeare-600 hover:underline">
+										{{
+											selectedSubmission.user_name
+										}}
+									</Link>
+								</span>
 							</p>
 							<p>
 								<strong>Horse Name:</strong>
