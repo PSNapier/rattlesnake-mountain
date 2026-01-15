@@ -30,6 +30,24 @@ interface Herd {
 	name: string;
 }
 
+interface Comment {
+	id: number;
+	body: string;
+	created_at: string;
+	user: {
+		id: number;
+		name: string;
+		is_admin: boolean;
+	};
+}
+
+interface Message {
+	id: number;
+	subject: string;
+	initial_message?: string | null;
+	admin_edits?: Record<string, unknown> | null;
+}
+
 interface Submission {
 	id: number;
 	user_id: number;
@@ -46,6 +64,8 @@ interface Submission {
 	age?: number;
 	geno?: string;
 	herd_id?: number | null;
+	message?: Message | null;
+	comments?: Comment[];
 }
 
 interface Props {
@@ -196,6 +216,16 @@ const formatDate = (dateString: string | null): string => {
 		return '—';
 	}
 	return new Date(dateString).toLocaleDateString();
+};
+
+const formatDateTime = (dateString: string): string => {
+	return new Date(dateString).toLocaleDateString('en-US', {
+		year: 'numeric',
+		month: 'short',
+		day: 'numeric',
+		hour: '2-digit',
+		minute: '2-digit',
+	});
 };
 
 const getStatusBadgeClass = (status: Status): string => {
@@ -993,6 +1023,107 @@ const handleApprove = (): void => {
 							rows="6"
 							class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 mt-1 flex w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
 							placeholder="Add notes about this submission..." />
+					</div>
+
+					<!-- Comments Section -->
+					<div
+						v-if="
+							currentSubmission?.message ||
+							(currentSubmission?.comments &&
+								currentSubmission.comments.length > 0)
+						"
+						class="space-y-4">
+						<h3 class="text-sm font-semibold">
+							Conversation
+							<span
+								v-if="
+									currentSubmission?.comments &&
+									currentSubmission.comments.length >
+										0
+								"
+								class="text-cape-palliser-500 font-normal">
+								({{
+									currentSubmission.comments.length
+								}})
+							</span>
+						</h3>
+
+						<!-- Initial Message -->
+						<div
+							v-if="
+								currentSubmission?.message
+									?.initial_message
+							"
+							class="rounded-md border border-blue-200 bg-blue-50 p-4">
+							<p class="text-sm font-medium text-gray-700">
+								Initial Message:
+							</p>
+							<p class="mt-1 text-sm text-gray-600">
+								{{
+									currentSubmission.message
+										.initial_message
+								}}
+							</p>
+						</div>
+
+						<!-- Comments -->
+						<div
+							v-if="
+								currentSubmission?.comments &&
+								currentSubmission.comments.length > 0
+							"
+							class="space-y-3">
+							<div
+								v-for="comment in currentSubmission.comments"
+								:key="comment.id"
+								:class="[
+									'rounded-md border p-4',
+									comment.user.is_admin
+										? 'border-blue-200 bg-blue-50'
+										: 'border-gray-200 bg-gray-50',
+								]">
+								<div
+									class="flex items-start justify-between">
+									<div class="flex-1">
+										<p
+											class="text-sm font-medium">
+											{{ comment.user.name }}
+											<span
+												v-if="
+													comment.user
+														.is_admin
+												"
+												class="text-xs text-blue-600">
+												(Admin)
+											</span>
+											<span
+												v-else
+												class="text-xs text-gray-600">
+												(Owner)
+											</span>
+										</p>
+										<p
+											class="mt-1 text-sm text-gray-700">
+											{{ comment.body }}
+										</p>
+									</div>
+									<p
+										class="text-cape-palliser-500 ml-4 text-xs">
+										{{
+											formatDateTime(
+												comment.created_at,
+											)
+										}}
+									</p>
+								</div>
+							</div>
+						</div>
+
+						<div
+							v-else-if="currentSubmission?.message"
+							class="rounded-md border border-gray-200 bg-gray-50 p-4 text-center text-sm text-gray-500">
+							No comments yet.
+						</div>
 					</div>
 
 					<!-- Warning if edits have been made -->

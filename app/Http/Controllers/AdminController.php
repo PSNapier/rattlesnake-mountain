@@ -47,6 +47,28 @@ class AdminController extends Controller
                     $lastInteractionDate = $horse->approved_at->toIso8601String();
                 }
 
+                // Load message and comments for this horse
+                $message = Message::with(['comments.user'])
+                    ->where('horse_id', $horse->id)
+                    ->latest()
+                    ->first();
+
+                $comments = [];
+                if ($message) {
+                    $comments = $message->comments->map(function ($comment) {
+                        return [
+                            'id' => $comment->id,
+                            'body' => $comment->body,
+                            'created_at' => $comment->created_at->toIso8601String(),
+                            'user' => [
+                                'id' => $comment->user->id,
+                                'name' => $comment->user->name,
+                                'is_admin' => $comment->user->isAdmin(),
+                            ],
+                        ];
+                    })->toArray();
+                }
+
                 return [
                     'id' => $horse->id,
                     'user_id' => $horse->owner->id,
@@ -63,6 +85,13 @@ class AdminController extends Controller
                     'age' => $horse->age,
                     'geno' => $horse->geno,
                     'herd_id' => $horse->herd_id,
+                    'message' => $message ? [
+                        'id' => $message->id,
+                        'subject' => $message->subject,
+                        'initial_message' => $message->initial_message,
+                        'admin_edits' => $message->admin_edits,
+                    ] : null,
+                    'comments' => $comments,
                 ];
             });
 

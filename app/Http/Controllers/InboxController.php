@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AdminAction;
 use App\Enums\HorseState;
+use App\Models\AdminSubmissionLog;
 use App\Models\Horse;
 use App\Models\Message;
 use App\Models\MessageComment;
@@ -121,10 +123,28 @@ class InboxController extends Controller
             'body' => $validated['body'],
         ]);
 
-        // If owner comments, mark message as unread for admin
+        // If owner comments on a 'contacted' horse, reset it to 'pending' and update the date
         if ($message->user_id === Auth::id()) {
-            // Admin will see it when they check their side
-            // For now, we'll just update the message timestamp
+            $horse = $message->horse;
+            
+            // Check if horse is in 'contacted' state (has contacted_at but not approved/archived)
+            if ($horse->contacted_at && ! $horse->approved_at && ! $horse->archived_at) {
+                // Reset contacted_at to null (makes it 'pending' again)
+                $horse->update([
+                    'contacted_at' => null,
+                ]);
+
+                // Create a new admin log entry to update the last_contact_date
+                // This will show the owner's reply as a fresh action
+                AdminSubmissionLog::create([
+                    'horse_id' => $horse->id,
+                    'admin_id' => $message->admin_id, // Use the original admin who contacted
+                    'action' => AdminAction::Contacted,
+                    'notes' => "Owner replied: {$validated['body']}",
+                ]);
+            }
+
+            // Update message timestamp
             $message->touch();
         }
 
