@@ -37,6 +37,7 @@ interface Submission {
 	last_admin_name?: string | null;
 	public_horse_id?: number | null;
 	is_edit?: boolean;
+	design_link?: string | null;
 }
 
 interface Props {
@@ -433,29 +434,39 @@ const handleApprove = (): void => {
 									</td>
 									<td
 										class="text-cape-palliser-950 px-4 py-3 text-sm">
-										<Link
-											:href="
-												submission.is_edit &&
-												submission.public_horse_id
-													? route(
-															'horses.show',
-															submission.public_horse_id,
-														)
-													: route(
-															'horses.show',
-															submission.id,
-														)
-											"
-											class="hover:text-shakespeare-600 hover:underline">
-											{{ submission.name }}
-											<span
-												v-if="
-													submission.is_edit
+										<div class="flex items-center gap-3">
+											<div
+												v-if="submission.design_link"
+												class="flex-shrink-0">
+												<img
+													:src="submission.design_link"
+													:alt="submission.name"
+													class="h-12 w-12 rounded object-cover border border-gray-200" />
+											</div>
+											<Link
+												:href="
+													submission.is_edit &&
+													submission.public_horse_id
+														? route(
+																'horses.show',
+																submission.public_horse_id,
+															)
+														: route(
+																'horses.show',
+																submission.id,
+															)
 												"
-												class="text-cape-palliser-500 ml-1 text-xs">
-												(Edit)
-											</span>
-										</Link>
+												class="hover:text-shakespeare-600 hover:underline">
+												{{ submission.name }}
+												<span
+													v-if="
+														submission.is_edit
+													"
+													class="text-cape-palliser-500 ml-1 text-xs">
+													(Edit)
+												</span>
+											</Link>
+										</div>
 									</td>
 									<td
 										class="text-cape-palliser-700 px-4 py-3 text-sm">

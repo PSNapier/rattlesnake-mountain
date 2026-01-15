@@ -58,6 +58,7 @@ class AdminController extends Controller
                     'last_admin_name' => $latestLog?->admin?->name,
                     'public_horse_id' => $horse->public_horse_id,
                     'is_edit' => $horse->public_horse_id !== null,
+                    'design_link' => $horse->design_link,
                 ];
             });
 
