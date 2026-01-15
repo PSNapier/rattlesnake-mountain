@@ -275,6 +275,7 @@ onBeforeUnmount(() => {
 						or
 					</p>
 					<Button
+						type="button"
 						@click="triggerFileInput"
 						variant="outline"
 						class="mt-2">

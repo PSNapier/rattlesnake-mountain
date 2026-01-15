@@ -37,6 +37,23 @@ Route::get('/character-images/{filename}', function ($filename) {
     ]);
 })->name('character-images.serve');
 
+// Route to serve horse images (must come before other horse-image routes)
+Route::get('/horse-images/{filename}', function ($filename) {
+    $path = storage_path('app/public/horse-images/'.$filename);
+
+    if (! file_exists($path)) {
+        abort(404);
+    }
+
+    $file = file_get_contents($path);
+    $type = mime_content_type($path);
+
+    return response($file, 200, [
+        'Content-Type' => $type,
+        'Cache-Control' => 'public, max-age=31536000',
+    ]);
+})->name('horse-images.serve');
+
 // Character Image Routes
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/character-images', [CharacterImageController::class, 'store'])->name('character-images.store')->middleware('rate.limit.uploads');
@@ -49,6 +66,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('horses', HorseController::class);
     Route::post('/horses/{horse}/approve', [HorseController::class, 'approve'])->name('horses.approve');
     Route::post('/horses/{horse}/publish', [HorseController::class, 'publish'])->name('horses.publish');
+    Route::post('/horses/upload-image', [HorseController::class, 'uploadImage'])->name('horses.upload-image')->middleware('rate.limit.uploads');
     Route::get('/users', function () {
         return Inertia::render('Users/Index', [
             'users' => User::select('id', 'name')

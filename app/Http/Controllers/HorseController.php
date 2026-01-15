@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\AdminAction;
 use App\Enums\HorseState;
+use App\Http\Requests\HorseImageUploadRequest;
 use App\Http\Requests\StoreHorseRequest;
 use App\Http\Requests\UpdateHorseRequest;
 use App\Models\AdminSubmissionLog;
@@ -11,10 +12,15 @@ use App\Models\Herd;
 use App\Models\Horse;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\ImageManager;
 
 class HorseController extends Controller
 {
@@ -432,5 +438,55 @@ class HorseController extends Controller
 
         return redirect()->route('horses.show', $horse)
             ->with('success', 'Horse published successfully!');
+    }
+
+    /**
+     * Upload a horse design image.
+     */
+    public function uploadImage(HorseImageUploadRequest $request): JsonResponse
+    {
+        try {
+            $file = $request->file('image');
+
+            // Generate unique filename
+            $filename = Str::random(40).'.webp';
+
+            // Create image manager
+            $manager = new ImageManager(new Driver);
+
+            // Process and store main image
+            $image = $manager->read($file);
+            $width = $image->width();
+            $height = $image->height();
+
+            // Resize if too large (max 1200x1200)
+            if ($width > 1200 || $height > 1200) {
+                $image->scaleDown(1200);
+            }
+
+            // Convert to WebP and store
+            $webpData = $image->toWebp(85);
+            Storage::disk('public')->put('horse-images/'.$filename, $webpData);
+
+            // Generate URL using a route (we'll create this route)
+            $url = route('horse-images.serve', $filename);
+
+            return response()->json([
+                'success' => true,
+                'url' => $url,
+                'message' => 'Image uploaded successfully!',
+            ]);
+
+        } catch (\Exception $e) {
+            // Clean up any uploaded files on error
+            if (isset($filename) && Storage::disk('public')->exists('horse-images/'.$filename)) {
+                Storage::disk('public')->delete('horse-images/'.$filename);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to upload image. Please try again.',
+            ], 500);
+        }
     }
 }

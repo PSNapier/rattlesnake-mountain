@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import ImageUpload from '@/components/ImageUpload.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 
 interface Herd {
 	id: number;
@@ -45,6 +46,10 @@ const form = useForm({
 
 const submit = () => {
 	form.post(route('horses.store'));
+};
+
+const handleImageUploadSuccess = (data: { url: string }) => {
+	form.design_link = data.url;
 };
 </script>
 
@@ -130,22 +135,42 @@ const submit = () => {
 
 							<div>
 								<Label for="design_link"
-									>Design Link (Optional)</Label
+									>Design Image (Optional)</Label
 								>
-								<Input
-									id="design_link"
-									v-model="form.design_link"
-									type="url"
-									placeholder="Enter design image URL"
-									:class="{
-										'border-red-500':
-											form.errors.design_link,
-									}" />
-								<p
-									v-if="form.errors.design_link"
-									class="mt-1 text-sm text-red-500">
-									{{ form.errors.design_link }}
-								</p>
+								<div class="space-y-2">
+									<ImageUpload
+										:upload-url="route('horses.upload-image')"
+										accept="image/png,image/jpeg,image/jpg"
+										:max-size="2 * 1024 * 1024"
+										drag-drop-text="Drop your horse design image here"
+										file-type-hint="PNG, JPG, or JPEG files only, max 2MB"
+										@success="handleImageUploadSuccess" />
+									<div class="text-sm text-gray-500">
+										Or enter a URL manually:
+									</div>
+									<Input
+										id="design_link"
+										v-model="form.design_link"
+										type="url"
+										placeholder="Enter design image URL"
+										:class="{
+											'border-red-500':
+												form.errors.design_link,
+										}" />
+									<p
+										v-if="form.errors.design_link"
+										class="mt-1 text-sm text-red-500">
+										{{ form.errors.design_link }}
+									</p>
+									<div
+										v-if="form.design_link"
+										class="mt-2">
+										<img
+											:src="form.design_link"
+											alt="Horse design preview"
+											class="h-32 w-full rounded object-contain border" />
+									</div>
+								</div>
 							</div>
 
 							<div>
@@ -187,11 +212,7 @@ const submit = () => {
 								<Button
 									type="button"
 									variant="outline"
-									@click="
-										$inertia.visit(
-											route('horses.index'),
-										)
-									">
+									@click="router.visit(route('horses.index'))">
 									Cancel
 								</Button>
 							</div>
