@@ -25,6 +25,11 @@ type SortField =
 	| 'last_contact_date';
 type SortDirection = 'asc' | 'desc' | null;
 
+interface Herd {
+	id: number;
+	name: string;
+}
+
 interface Submission {
 	id: number;
 	user_id: number;
@@ -38,6 +43,14 @@ interface Submission {
 	public_horse_id?: number | null;
 	is_edit?: boolean;
 	design_link?: string | null;
+	age?: number;
+	geno?: string;
+	herd_id?: number | null;
+}
+
+interface Props {
+	submissions: Submission[];
+	herds?: Herd[];
 }
 
 interface Props {
@@ -54,6 +67,53 @@ const sortDirection = ref<SortDirection>('desc');
 const showReviewModal = ref(false);
 const selectedSubmission = ref<Submission | null>(null);
 const reviewNotes = ref('');
+
+// Admin-editable form state
+const adminForm = ref({
+	name: '',
+	age: 0,
+	geno: '',
+	herd_id: null as number | null,
+	design_link: '',
+});
+
+// Initialize admin form when submission is selected
+const initializeAdminForm = (submission: Submission): void => {
+	adminForm.value = {
+		name: submission.name || '',
+		age: submission.age || 0,
+		geno: submission.geno || '',
+		herd_id: submission.herd_id || null,
+		design_link: submission.design_link || '',
+	};
+};
+
+// Check if a field has been changed
+const isFieldChanged = (field: keyof typeof adminForm.value): boolean => {
+	if (!selectedSubmission.value) {
+		return false;
+	}
+	const original = selectedSubmission.value[field] ?? null;
+	const edited = adminForm.value[field] ?? null;
+	return String(original || '') !== String(edited || '');
+};
+
+// Check if any fields have been changed
+const hasAnyEdits = computed((): boolean => {
+	if (!selectedSubmission.value) {
+		return false;
+	}
+	return (
+		isFieldChanged('name') ||
+		isFieldChanged('age') ||
+		isFieldChanged('geno') ||
+		isFieldChanged('herd_id') ||
+		isFieldChanged('design_link')
+	);
+});
+
+// Computed property to safely access selected submission
+const currentSubmission = computed(() => selectedSubmission.value);
 
 const filteredAndSorted = computed(() => {
 	let result = [...props.submissions];
@@ -156,6 +216,7 @@ const getStatusBadgeClass = (status: Status): string => {
 const openReviewModal = (submission: Submission): void => {
 	selectedSubmission.value = submission;
 	reviewNotes.value = '';
+	initializeAdminForm(submission);
 	showReviewModal.value = true;
 };
 
@@ -208,6 +269,14 @@ const handleApprove = (): void => {
 		return;
 	}
 
+	const formData = {
+		name: adminForm.value.name,
+		age: adminForm.value.age,
+		geno: adminForm.value.geno,
+		herd_id: adminForm.value.herd_id,
+		design_link: adminForm.value.design_link,
+	};
+
 	// If it's an edit (has public_horse_id), use the approve endpoint
 	if (
 		selectedSubmission.value.is_edit &&
@@ -215,7 +284,7 @@ const handleApprove = (): void => {
 	) {
 		router.post(
 			route('horses.approve', selectedSubmission.value.id),
-			{},
+			formData,
 			{
 				onSuccess: () => {
 					closeReviewModal();
@@ -227,7 +296,7 @@ const handleApprove = (): void => {
 		// For new horses, publish them to make them public
 		router.post(
 			route('horses.publish', selectedSubmission.value.id),
-			{},
+			formData,
 			{
 				onSuccess: () => {
 					closeReviewModal();
@@ -560,85 +629,353 @@ const handleApprove = (): void => {
 					<DialogTitle>
 						Review Horse Submission
 						<span
-							v-if="selectedSubmission"
+							v-if="currentSubmission"
 							class="text-cape-palliser-700 text-sm font-normal">
-							— {{ selectedSubmission.name }}
+							— {{ currentSubmission.name }}
 						</span>
 					</DialogTitle>
 				</DialogHeader>
 
 				<div class="flex-1 space-y-4 overflow-y-auto pr-2">
-					<div v-if="selectedSubmission">
+					<div v-if="currentSubmission">
 						<!-- Horse Image Preview -->
 						<div
-							v-if="selectedSubmission.design_link"
+							v-if="currentSubmission.design_link"
 							class="mb-4 flex justify-center">
 							<img
-								:src="selectedSubmission.design_link"
-								:alt="selectedSubmission.name"
+								:src="currentSubmission.design_link"
+								:alt="currentSubmission.name"
 								class="max-h-48 max-w-full rounded-lg border object-contain" />
 						</div>
 
-						<div class="mb-4 space-y-2 text-sm">
-							<p>
-								<strong>Owner:</strong>
-								<span class="ml-1">
-									<Link
-										:href="
-											route(
-												'users.profile',
-												selectedSubmission.user_id,
-											)
-										"
-										class="text-shakespeare-600 hover:underline">
-										{{
-											selectedSubmission.user_name
-										}}
-									</Link>
-								</span>
-							</p>
-							<p>
-								<strong>Horse Name:</strong>
-								{{ selectedSubmission.name }}
-							</p>
-							<p>
-								<strong>Type:</strong>
-								{{
-									selectedSubmission.is_edit
-										? 'Edit to existing horse'
-										: 'New horse'
-								}}
-							</p>
-							<p>
-								<strong>Submitted:</strong>
-								{{
-									formatDate(
-										selectedSubmission.date_submitted,
-									)
-								}}
-							</p>
-							<div class="pt-2">
-								<Link
-									:href="
-										selectedSubmission.is_edit &&
-										selectedSubmission.public_horse_id
-											? route(
-													'horses.show',
-													selectedSubmission.public_horse_id,
-												)
-											: route(
-													'horses.show',
-													selectedSubmission.id,
-												)
-									"
-									target="_blank">
-									<Button
-										variant="outline"
-										size="sm">
-										View Horse
-									</Button>
-								</Link>
+						<!-- Two Column Layout -->
+						<div class="space-y-4">
+							<!-- Headers -->
+							<div class="grid grid-cols-2 gap-4">
+								<h3
+									class="text-sm font-semibold text-gray-700">
+									As Submitted
+								</h3>
+								<h3
+									class="text-sm font-semibold text-gray-700">
+									Admin Edit
+								</h3>
 							</div>
+
+							<!-- Owner Row (read-only on both sides) -->
+							<div class="grid grid-cols-2 gap-4">
+								<div>
+									<Label
+										class="text-xs text-gray-500"
+										>Owner</Label
+									>
+									<p class="mt-1 text-sm">
+										<Link
+											:href="
+												route(
+													'users.profile',
+													currentSubmission.user_id,
+												)
+											"
+											class="text-shakespeare-600 hover:underline">
+											{{
+												currentSubmission.user_name
+											}}
+										</Link>
+									</p>
+								</div>
+								<div>
+									<Label
+										class="text-xs text-gray-500"
+										>Owner</Label
+									>
+									<p
+										class="mt-1 text-sm text-gray-400">
+										(Not editable)
+									</p>
+								</div>
+							</div>
+
+							<!-- Horse Name Row -->
+							<div
+								:class="[
+									'-m-1 grid grid-cols-2 gap-4 rounded border p-3 transition-colors',
+									isFieldChanged('name')
+										? 'border-red-200 bg-red-50'
+										: 'border-transparent bg-transparent',
+								]">
+								<div>
+									<Label
+										class="text-xs text-gray-500"
+										>Horse Name</Label
+									>
+									<p class="mt-1 text-sm">
+										{{ currentSubmission.name }}
+									</p>
+								</div>
+								<div>
+									<Label
+										for="admin-name"
+										class="text-xs text-gray-500"
+										>Horse Name</Label
+									>
+									<div class="mt-1">
+										<Input
+											id="admin-name"
+											v-model="adminForm.name"
+											type="text"
+											class="w-full" />
+									</div>
+								</div>
+							</div>
+
+							<!-- Age Row -->
+							<div
+								:class="[
+									'-m-1 grid grid-cols-2 gap-4 rounded border p-3 transition-colors',
+									isFieldChanged('age')
+										? 'border-red-200 bg-red-50'
+										: 'border-transparent bg-transparent',
+								]">
+								<div>
+									<Label
+										class="text-xs text-gray-500"
+										>Age</Label
+									>
+									<p class="mt-1 text-sm">
+										{{
+											currentSubmission.age ??
+											'—'
+										}}
+									</p>
+								</div>
+								<div>
+									<Label
+										for="admin-age"
+										class="text-xs text-gray-500"
+										>Age</Label
+									>
+									<div class="mt-1">
+										<Input
+											id="admin-age"
+											v-model.number="
+												adminForm.age
+											"
+											type="number"
+											min="0"
+											max="50"
+											class="w-full" />
+									</div>
+								</div>
+							</div>
+
+							<!-- Geno Row -->
+							<div
+								:class="[
+									'-m-1 grid grid-cols-2 gap-4 rounded border p-3 transition-colors',
+									isFieldChanged('geno')
+										? 'border-red-200 bg-red-50'
+										: 'border-transparent bg-transparent',
+								]">
+								<div>
+									<Label
+										class="text-xs text-gray-500"
+										>Geno</Label
+									>
+									<p class="mt-1 font-mono text-xs">
+										{{
+											currentSubmission.geno ??
+											'—'
+										}}
+									</p>
+								</div>
+								<div>
+									<Label
+										for="admin-geno"
+										class="text-xs text-gray-500"
+										>Geno</Label
+									>
+									<div class="mt-1">
+										<Input
+											id="admin-geno"
+											v-model="adminForm.geno"
+											type="text"
+											class="w-full font-mono text-xs" />
+									</div>
+								</div>
+							</div>
+
+							<!-- Herd Row -->
+							<div
+								:class="[
+									'-m-1 grid grid-cols-2 gap-4 rounded border p-3 transition-colors',
+									isFieldChanged('herd_id')
+										? 'border-red-200 bg-red-50'
+										: 'border-transparent bg-transparent',
+								]">
+								<div>
+									<Label
+										class="text-xs text-gray-500"
+										>Herd</Label
+									>
+									<p class="mt-1 text-sm">
+										{{
+											currentSubmission?.herd_id
+												? props.herds?.find(
+														(h) =>
+															h.id ===
+															currentSubmission?.herd_id,
+													)?.name || '—'
+												: '—'
+										}}
+									</p>
+								</div>
+								<div>
+									<Label
+										for="admin-herd"
+										class="text-xs text-gray-500"
+										>Herd</Label
+									>
+									<div class="mt-1">
+										<Select
+											id="admin-herd"
+											v-model="
+												adminForm.herd_id
+											"
+											:options="[
+												{
+													value: null,
+													label: 'No herd',
+												},
+												...(
+													props.herds ||
+													[]
+												).map((herd) => ({
+													value: herd.id,
+													label: herd.name,
+												})),
+											]"
+											placeholder="Select a herd"
+											class="w-full" />
+									</div>
+								</div>
+							</div>
+
+							<!-- Design Link Row -->
+							<div
+								:class="[
+									'-m-1 grid grid-cols-2 gap-4 rounded border p-3 transition-colors',
+									isFieldChanged('design_link')
+										? 'border-red-200 bg-red-50'
+										: 'border-transparent bg-transparent',
+								]">
+								<div>
+									<Label
+										class="text-xs text-gray-500"
+										>Design Link</Label
+									>
+									<p class="mt-1 text-sm break-all">
+										{{
+											currentSubmission.design_link ??
+											'—'
+										}}
+									</p>
+								</div>
+								<div>
+									<Label
+										for="admin-design-link"
+										class="text-xs text-gray-500"
+										>Design Link</Label
+									>
+									<div class="mt-1">
+										<Input
+											id="admin-design-link"
+											v-model="
+												adminForm.design_link
+											"
+											type="url"
+											class="w-full text-xs" />
+									</div>
+								</div>
+							</div>
+
+							<!-- Type Row (read-only) -->
+							<div class="grid grid-cols-2 gap-4">
+								<div>
+									<Label
+										class="text-xs text-gray-500"
+										>Type</Label
+									>
+									<p class="mt-1 text-sm">
+										{{
+											currentSubmission.is_edit
+												? 'Edit to existing horse'
+												: 'New horse'
+										}}
+									</p>
+								</div>
+								<div>
+									<Label
+										class="text-xs text-gray-500"
+										>Type</Label
+									>
+									<p
+										class="mt-1 text-sm text-gray-400">
+										(Not editable)
+									</p>
+								</div>
+							</div>
+
+							<!-- Submitted Row (read-only) -->
+							<div class="grid grid-cols-2 gap-4">
+								<div>
+									<Label
+										class="text-xs text-gray-500"
+										>Submitted</Label
+									>
+									<p class="mt-1 text-sm">
+										{{
+											formatDate(
+												currentSubmission.date_submitted,
+											)
+										}}
+									</p>
+								</div>
+								<div>
+									<Label
+										class="text-xs text-gray-500"
+										>Submitted</Label
+									>
+									<p
+										class="mt-1 text-sm text-gray-400">
+										(Not editable)
+									</p>
+								</div>
+							</div>
+						</div>
+
+						<div class="pt-4">
+							<Link
+								:href="
+									currentSubmission?.is_edit &&
+									currentSubmission?.public_horse_id
+										? route(
+												'horses.show',
+												currentSubmission.public_horse_id,
+											)
+										: route(
+												'horses.show',
+												currentSubmission?.id ||
+													0,
+											)
+								"
+								target="_blank">
+								<Button
+									variant="outline"
+									size="sm">
+									View Horse
+								</Button>
+							</Link>
 						</div>
 					</div>
 					<div>
@@ -649,6 +986,42 @@ const handleApprove = (): void => {
 							rows="6"
 							class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 mt-1 flex w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
 							placeholder="Add notes about this submission..." />
+					</div>
+
+					<!-- Warning if edits have been made -->
+					<div
+						v-if="hasAnyEdits"
+						class="rounded-md border border-yellow-200 bg-yellow-50 p-4">
+						<div class="flex">
+							<div class="flex-shrink-0">
+								<svg
+									class="h-5 w-5 text-yellow-400"
+									viewBox="0 0 20 20"
+									fill="currentColor">
+									<path
+										fill-rule="evenodd"
+										d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+										clip-rule="evenodd" />
+								</svg>
+							</div>
+							<div class="ml-3">
+								<h3
+									class="text-sm font-medium text-yellow-800">
+									Edits Require Owner Acceptance
+								</h3>
+								<div
+									class="mt-2 text-sm text-yellow-700">
+									<p>
+										You have made edits to this
+										submission. The owner must
+										accept these changes before
+										the horse can be published.
+										Use "Contact Owner" to notify
+										them of the edits.
+									</p>
+								</div>
+							</div>
+						</div>
 					</div>
 				</div>
 
@@ -667,6 +1040,7 @@ const handleApprove = (): void => {
 					</Button>
 					<Button
 						v-if="selectedSubmission?.status !== 'approved'"
+						:disabled="hasAnyEdits"
 						@click="handleApprove">
 						{{
 							selectedSubmission?.is_edit

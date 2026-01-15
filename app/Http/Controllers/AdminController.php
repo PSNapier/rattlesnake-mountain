@@ -59,11 +59,19 @@ class AdminController extends Controller
                     'public_horse_id' => $horse->public_horse_id,
                     'is_edit' => $horse->public_horse_id !== null,
                     'design_link' => $horse->design_link,
+                    'age' => $horse->age,
+                    'geno' => $horse->geno,
+                    'herd_id' => $horse->herd_id,
                 ];
             });
 
+        $herds = \App\Models\Herd::select('id', 'name')
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('admin/Index', [
             'submissions' => $horses,
+            'herds' => $herds,
         ]);
     }
 
