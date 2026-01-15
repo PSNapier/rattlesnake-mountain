@@ -99,12 +99,19 @@ const adminForm = ref({
 
 // Initialize admin form when submission is selected
 const initializeAdminForm = (submission: Submission): void => {
+	// If there are admin edits in the message, use those; otherwise use current horse values
+	const adminEdits = submission.message?.admin_edits;
+
 	adminForm.value = {
-		name: submission.name || '',
-		age: submission.age || 0,
-		geno: submission.geno || '',
-		herd_id: submission.herd_id || null,
-		design_link: submission.design_link || '',
+		name: (adminEdits?.name as string) ?? submission.name ?? '',
+		age: (adminEdits?.age as number) ?? submission.age ?? 0,
+		geno: (adminEdits?.geno as string) ?? submission.geno ?? '',
+		herd_id:
+			(adminEdits?.herd_id as number) ?? submission.herd_id ?? null,
+		design_link:
+			(adminEdits?.design_link as string) ??
+			submission.design_link ??
+			'',
 	};
 };
 
