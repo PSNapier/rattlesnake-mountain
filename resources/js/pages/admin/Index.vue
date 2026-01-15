@@ -434,14 +434,21 @@ const handleApprove = (): void => {
 									</td>
 									<td
 										class="text-cape-palliser-950 px-4 py-3 text-sm">
-										<div class="flex items-center gap-3">
+										<div
+											class="flex items-center gap-3">
 											<div
-												v-if="submission.design_link"
+												v-if="
+													submission.design_link
+												"
 												class="flex-shrink-0">
 												<img
-													:src="submission.design_link"
-													:alt="submission.name"
-													class="h-12 w-12 rounded object-cover border border-gray-200" />
+													:src="
+														submission.design_link
+													"
+													:alt="
+														submission.name
+													"
+													class="h-12 w-12 rounded border border-gray-200 object-cover" />
 											</div>
 											<Link
 												:href="
@@ -457,7 +464,9 @@ const handleApprove = (): void => {
 															)
 												"
 												class="hover:text-shakespeare-600 hover:underline">
-												{{ submission.name }}
+												{{
+													submission.name
+												}}
 												<span
 													v-if="
 														submission.is_edit
@@ -546,7 +555,7 @@ const handleApprove = (): void => {
 
 		<!-- Review Modal -->
 		<Dialog v-model:open="showReviewModal">
-			<DialogContent>
+			<DialogContent class="flex max-h-[90vh] flex-col">
 				<DialogHeader>
 					<DialogTitle>
 						Review Horse Submission
@@ -558,8 +567,18 @@ const handleApprove = (): void => {
 					</DialogTitle>
 				</DialogHeader>
 
-				<div class="space-y-4">
+				<div class="flex-1 space-y-4 overflow-y-auto pr-2">
 					<div v-if="selectedSubmission">
+						<!-- Horse Image Preview -->
+						<div
+							v-if="selectedSubmission.design_link"
+							class="mb-4 flex justify-center">
+							<img
+								:src="selectedSubmission.design_link"
+								:alt="selectedSubmission.name"
+								class="max-h-48 max-w-full rounded-lg border object-contain" />
+						</div>
+
 						<div class="mb-4 space-y-2 text-sm">
 							<p>
 								<strong>Owner:</strong>
