@@ -37,29 +37,13 @@ routes/
 ├── web.php                 # Route definitions
 ```
 
-## Todo
+## 🦗 Bugs
 
-### 🧱 Backend
+- [ ] Some herd/horse pages are fully public, only static/login/register pages should be visible to visitors who are not logged in
+- [ ] Misc. wonky colours
+- [ ] Local vs. CI test wonkiness re.
+- [ ] Default shadcn dropdown creates scrollbar wonkiness
+- [x] Admin/herd/horse pages loading info funky, not displaying updated info automatically as they should (working on reload)
+- [x] Footer is missing from some pages
 
-- [/] User System
-     - [ ] Email confirmation
-     - [ ] Email password reset
-     - [ ] Manage user info
-     - [ ] Delete user
-     - [ ] GDPR compliance
-     - [/] Register
-     - [/] Login
-- [ ] Admin CMS
-- [ ] Image uploads
-- [ ] User Horses
-
-### 🖼️ Frontend
-
-- [ ] Shop page
-- [ ] Contact us page
-- [x] Transfer all static pages
-- [x] Mobile nav implemented
-
-### 🦗 Bugs
-
-- [ ]
+## 📄 Notes

@@ -1,7 +1,102 @@
 <?php
 
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\CharacterImageController;
+use App\Http\Controllers\DevPasswordController;
+use App\Http\Controllers\HerdController;
+use App\Http\Controllers\HorseController;
+use App\Models\Herd;
+use App\Models\Horse;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+Route::get('dashboard', [CharacterImageController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+
+// Admin
+Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
+    Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
+    Route::post('/admin/horses/{horse}/archive', [AdminController::class, 'archive'])->name('admin.horses.archive');
+    Route::post('/admin/horses/{horse}/contact', [AdminController::class, 'contact'])->name('admin.horses.contact');
+});
+
+// Route to serve character images (must come before other character-image routes)
+Route::get('/character-images/{filename}', function ($filename) {
+    $path = storage_path('app/public/character-images/'.$filename);
+
+    if (! file_exists($path)) {
+        abort(404);
+    }
+
+    $file = file_get_contents($path);
+    $type = mime_content_type($path);
+
+    return response($file, 200, [
+        'Content-Type' => $type,
+        'Cache-Control' => 'public, max-age=31536000',
+    ]);
+})->name('character-images.serve');
+
+// Route to serve horse images (must come before other horse-image routes)
+Route::get('/horse-images/{filename}', function ($filename) {
+    $path = storage_path('app/public/horse-images/'.$filename);
+
+    if (! file_exists($path)) {
+        abort(404);
+    }
+
+    $file = file_get_contents($path);
+    $type = mime_content_type($path);
+
+    return response($file, 200, [
+        'Content-Type' => $type,
+        'Cache-Control' => 'public, max-age=31536000',
+    ]);
+})->name('horse-images.serve');
+
+// Character Image Routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::post('/character-images', [CharacterImageController::class, 'store'])->name('character-images.store')->middleware('rate.limit.uploads');
+    Route::delete('/character-images/{characterImage}', [CharacterImageController::class, 'destroy'])->name('character-images.destroy');
+});
+
+// Herd and Horse Routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::resource('herds', HerdController::class);
+    Route::resource('horses', HorseController::class);
+    Route::post('/horses/{horse}/approve', [HorseController::class, 'approve'])->name('horses.approve');
+    Route::post('/horses/{horse}/publish', [HorseController::class, 'publish'])->name('horses.publish');
+    Route::post('/horses/upload-image', [HorseController::class, 'uploadImage'])->name('horses.upload-image')->middleware('rate.limit.uploads');
+    Route::get('/users', function () {
+        return Inertia::render('Users/Index', [
+            'users' => User::select('id', 'name')
+                ->orderBy('name')
+                ->get(),
+        ]);
+    })->name('users.index');
+
+    // Inbox Routes
+    Route::get('/inbox', [\App\Http\Controllers\InboxController::class, 'index'])->name('inbox.index');
+    Route::get('/inbox/{message}', [\App\Http\Controllers\InboxController::class, 'show'])->name('inbox.show');
+    Route::post('/inbox/{message}/comments', [\App\Http\Controllers\InboxController::class, 'storeComment'])->name('inbox.comments.store');
+    Route::post('/inbox/{message}/accept', [\App\Http\Controllers\InboxController::class, 'accept'])->name('inbox.accept');
+    Route::post('/inbox/{message}/decline', [\App\Http\Controllers\InboxController::class, 'decline'])->name('inbox.decline');
+});
+
+// Public viewing routes for users' herds and horses
+Route::get('/u/{user}', function (User $user) {
+    return Inertia::render('Users/PublicProfile', [
+        'user' => $user,
+        'herdCount' => Herd::where('owner_id', $user->id)->count(),
+        'horseCount' => Horse::where('owner_id', $user->id)->count(),
+    ]);
+})->name('users.profile');
+Route::get('/u/{user}/herds', [HerdController::class, 'publicIndex'])->name('users.herds');
+Route::get('/u/{user}/horses', [HorseController::class, 'publicIndex'])->name('users.horses');
+Route::get('/u/{user}/horses/{horse}', [HorseController::class, 'publicShow'])->name('users.horses.show');
+
+Route::get('/dev-password', [DevPasswordController::class, 'show'])->name('dev-password');
+Route::post('/dev-password', [DevPasswordController::class, 'authenticate'])->name('dev-password.authenticate');
 
 Route::get('/', function () {
     return Inertia::render('static/Home');
@@ -67,9 +162,9 @@ Route::get('/contact-us', function () {
     return Inertia::render('static/ContactUs');
 })->name('contact_us');
 
-Route::get('dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/privacy-policy', function () {
+    return Inertia::render('static/PrivacyPolicy');
+})->name('privacy_policy');
 
 Route::fallback(function () {
     return Inertia::render('NotFound');
@@ -77,4 +172,3 @@ Route::fallback(function () {
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
-

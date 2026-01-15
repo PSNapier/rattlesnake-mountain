@@ -88,9 +88,9 @@
 	@apply m-auto max-w-[1080px];
 }
 
-a:not(:is(nav *)) {
+/* a:not(:is(nav *)) {
 	@apply underline;
-}
+} */
 
 .hero-img {
 	background-image: url('/images/home-hero-spring.jpg');

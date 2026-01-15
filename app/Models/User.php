@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
@@ -21,6 +22,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
     ];
 
     /**
@@ -43,6 +45,37 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'role' => Role::class,
         ];
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === Role::Admin;
+    }
+
+    public function characterImages(): HasMany
+    {
+        return $this->hasMany(CharacterImage::class);
+    }
+
+    public function herds(): HasMany
+    {
+        return $this->hasMany(Herd::class, 'owner_id');
+    }
+
+    public function createdHerds(): HasMany
+    {
+        return $this->hasMany(Herd::class, 'created_by');
+    }
+
+    public function horses(): HasMany
+    {
+        return $this->hasMany(Horse::class, 'owner_id');
+    }
+
+    public function bredHorses(): HasMany
+    {
+        return $this->hasMany(Horse::class, 'bred_by');
     }
 }

@@ -1,12 +1,32 @@
 <script setup lang="ts">
+import UserMenuContent from '@/components/UserMenuContent.vue';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useInitials } from '@/composables/useInitials';
 import { linkDict } from '@/composables/useLinkDictionary';
-import { Bars3Icon } from '@heroicons/vue/24/solid';
-import { ref } from 'vue';
+import type { SharedData } from '@/types';
+import { Bars3Icon, EnvelopeIcon } from '@heroicons/vue/24/solid';
+import { Link, usePage } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 
 const navOpen = ref(false);
 function toggleNavOpen() {
 	navOpen.value = !navOpen.value;
 }
+
+const page = usePage<SharedData>();
+const auth = computed(() => page.props.auth);
+const unreadCount = computed(
+	() =>
+		(page.props as { unreadMessageCount?: number }).unreadMessageCount ??
+		0,
+);
+const { getInitials } = useInitials();
 
 const mainLinks = [
 	linkDict.HOME,
@@ -71,38 +91,137 @@ const subLinksWildlife = [
 			</div>
 		</ul>
 
-		<!-- <div class="flex flex-row">
-			<a href="/login">
-				<button
-					class="text-new-orleans-300 bg-cape-palliser-500 hover:bg-new-orleans-500 hover:text-new-orleans-100 flex cursor-pointer gap-4 rounded-l-xl p-2 font-sans text-sm transition-colors">
-					Login
-				</button>
-			</a>
-			<a href="/register">
-				<button
-					class="text-new-orleans-300 bg-cape-palliser-500 hover:bg-new-orleans-500 hover:text-new-orleans-100 flex cursor-pointer gap-4 rounded-r-xl p-2 font-sans text-sm transition-colors">
-					Register
-				</button>
-			</a>
-		</div> -->
+		<div class="flex flex-row items-center">
+			<!-- Guest buttons -->
+			<template v-if="!auth.user">
+				<a href="/login">
+					<button
+						class="text-new-orleans-300 bg-cape-palliser-500 hover:bg-new-orleans-500 hover:text-new-orleans-100 flex cursor-pointer gap-4 rounded-l-xl p-2 font-sans text-sm transition-colors">
+						Login
+					</button>
+				</a>
+				<a href="/register">
+					<button
+						class="text-new-orleans-300 bg-cape-palliser-500 hover:bg-new-orleans-500 hover:text-new-orleans-100 flex cursor-pointer gap-4 rounded-r-xl p-2 font-sans text-sm transition-colors">
+						Register
+					</button>
+				</a>
+			</template>
+
+			<!-- Authenticated user menu -->
+			<template v-else>
+				<!-- Inbox Icon -->
+				<Link
+					:href="route('inbox.index')"
+					class="focus-within:ring-primary relative mr-2">
+					<Button
+						variant="ghost"
+						size="icon"
+						class="focus-within:ring-primary relative size-10 rounded-full">
+						<EnvelopeIcon class="size-6" />
+						<span
+							v-if="unreadCount > 0"
+							class="bg-shakespeare-500 absolute right-1 bottom-1 flex size-3.5 items-center justify-center rounded-full text-[10px] font-bold text-white">
+							{{ unreadCount > 99 ? '99+' : unreadCount }}
+						</span>
+					</Button>
+				</Link>
+
+				<DropdownMenu>
+					<DropdownMenuTrigger as-child>
+						<Button
+							variant="ghost"
+							size="icon"
+							class="focus-within:ring-primary relative size-10 w-auto rounded-full p-1 focus-within:ring-2">
+							<Avatar
+								class="size-8 overflow-hidden rounded-md">
+								<AvatarImage
+									v-if="auth.user.avatar"
+									:src="auth.user.avatar"
+									:alt="auth.user.name" />
+								<AvatarFallback
+									class="rounded-lg bg-neutral-200 font-semibold text-black dark:bg-neutral-700 dark:text-white">
+									{{ getInitials(auth.user.name) }}
+								</AvatarFallback>
+							</Avatar>
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent
+						align="end"
+						class="w-56">
+						<UserMenuContent :user="auth.user" />
+					</DropdownMenuContent>
+				</DropdownMenu>
+			</template>
+		</div>
 	</nav>
 
 	<!-- Mobile -->
 	<nav class="relative text-xl lg:hidden">
 		<div
 			class="bg-new-orleans-300 border-new-orleans-400 flex flex-row items-center justify-end gap-4 border-b-4">
-			<!-- <a
-				href="/login"
-				class="underline"
-				>Login</a
-			>
-			<a
-				href="/register"
-				class="underline"
-				>Register</a
-			> -->
+			<!-- Guest buttons -->
+			<template v-if="!auth.user">
+				<a
+					href="/login"
+					class="underline"
+					>Login</a
+				>
+				<a
+					href="/register"
+					class="underline"
+					>Register</a
+				>
+			</template>
+
+			<!-- Authenticated user menu -->
+			<template v-else>
+				<!-- Inbox Icon -->
+				<Link
+					:href="route('inbox.index')"
+					class="focus-within:ring-primary relative mr-2">
+					<Button
+						variant="ghost"
+						size="icon"
+						class="focus-within:ring-primary relative size-9 rounded-full">
+						<EnvelopeIcon class="size-6" />
+						<span
+							v-if="unreadCount > 0"
+							class="absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+							{{ unreadCount > 99 ? '99+' : unreadCount }}
+						</span>
+					</Button>
+				</Link>
+
+				<DropdownMenu>
+					<DropdownMenuTrigger as-child>
+						<Button
+							variant="ghost"
+							size="icon"
+							class="size-8 rounded-full p-1">
+							<Avatar
+								class="size-9 overflow-hidden rounded-md">
+								<AvatarImage
+									v-if="auth.user.avatar"
+									:src="auth.user.avatar"
+									:alt="auth.user.name" />
+								<AvatarFallback
+									class="rounded-lg bg-neutral-200 text-xs font-semibold text-black dark:bg-neutral-700 dark:text-white">
+									{{ getInitials(auth.user.name) }}
+								</AvatarFallback>
+							</Avatar>
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent
+						align="end"
+						class="w-56">
+						<UserMenuContent :user="auth.user" />
+					</DropdownMenuContent>
+				</DropdownMenu>
+			</template>
+
 			<button
-				class="bg-cape-palliser-500 text-new-orleans-200 m-2 inline-flex items-center justify-center rounded-md p-1 focus:outline-none"
+				class="bg-cape-palliser-500 text-new-orleans-200 m-2 ml-1 inline-flex size-9 items-center justify-center rounded-md p-1 focus:outline-none"
 				@click="toggleNavOpen">
 				<Bars3Icon class="size-8" />
 			</button>

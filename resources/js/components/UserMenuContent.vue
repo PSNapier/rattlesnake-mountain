@@ -1,9 +1,22 @@
 <script setup lang="ts">
 import UserInfo from '@/components/UserInfo.vue';
-import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import {
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import type { User } from '@/types';
 import { Link, router } from '@inertiajs/vue3';
-import { LogOut, Settings } from 'lucide-vue-next';
+import {
+	Crown,
+	Home,
+	LogOut,
+	Settings,
+	Users,
+	UserSearch,
+	Zap,
+} from 'lucide-vue-next';
 
 interface Props {
 	user: User;
@@ -21,19 +34,68 @@ defineProps<Props>();
 		<div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
 			<UserInfo
 				:user="user"
-				:show-email="true"
-			/>
+				:show-email="true" />
 		</div>
 	</DropdownMenuLabel>
 	<DropdownMenuSeparator />
 	<DropdownMenuGroup>
+		<DropdownMenuItem
+			v-if="user.role === 'admin'"
+			:as-child="true">
+			<Link
+				class="block w-full"
+				:href="route('admin.index')"
+				as="button">
+				<Crown class="mr-2 h-4 w-4" />
+				Admin
+			</Link>
+		</DropdownMenuItem>
+		<DropdownMenuItem :as-child="true">
+			<Link
+				class="block w-full"
+				:href="route('dashboard')"
+				prefetch
+				as="button">
+				<Home class="mr-2 h-4 w-4" />
+				Dashboard
+			</Link>
+		</DropdownMenuItem>
+		<DropdownMenuItem :as-child="true">
+			<Link
+				class="block w-full"
+				:href="route('herds.index')"
+				prefetch
+				as="button">
+				<Users class="mr-2 h-4 w-4" />
+				My Herds
+			</Link>
+		</DropdownMenuItem>
+		<DropdownMenuItem :as-child="true">
+			<Link
+				class="block w-full"
+				:href="route('horses.index')"
+				prefetch
+				as="button">
+				<Zap class="mr-2 h-4 w-4" />
+				My Horses
+			</Link>
+		</DropdownMenuItem>
+		<DropdownMenuItem :as-child="true">
+			<Link
+				class="block w-full"
+				:href="route('users.index')"
+				prefetch
+				as="button">
+				<UserSearch class="mr-2 h-4 w-4" />
+				All Users
+			</Link>
+		</DropdownMenuItem>
 		<DropdownMenuItem :as-child="true">
 			<Link
 				class="block w-full"
 				:href="route('profile.edit')"
 				prefetch
-				as="button"
-			>
+				as="button">
 				<Settings class="mr-2 h-4 w-4" />
 				Settings
 			</Link>
@@ -46,8 +108,7 @@ defineProps<Props>();
 			method="post"
 			:href="route('logout')"
 			@click="handleLogout"
-			as="button"
-		>
+			as="button">
 			<LogOut class="mr-2 h-4 w-4" />
 			Log out
 		</Link>

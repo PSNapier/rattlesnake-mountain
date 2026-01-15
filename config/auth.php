@@ -112,4 +112,20 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Email List
+    |--------------------------------------------------------------------------
+    |
+    | Provide a comma-separated list of email addresses in the ADMIN_EMAILS
+    | environment variable to automatically promote / demote users during
+    | authentication.
+    |
+    */
+
+    'admin_emails' => array_values(array_filter(array_map(
+        static fn (string $email): string => strtolower(trim($email)),
+        explode(',', env('ADMIN_EMAILS', '')),
+    ))),
+
 ];
