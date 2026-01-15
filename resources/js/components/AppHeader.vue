@@ -32,6 +32,7 @@ import {
 import UserMenuContent from '@/components/UserMenuContent.vue';
 import { getInitials } from '@/composables/useInitials';
 import type { BreadcrumbItem, NavItem } from '@/types';
+import { EnvelopeIcon } from '@heroicons/vue/24/solid';
 import { Link, usePage } from '@inertiajs/vue3';
 import { Menu, Search } from 'lucide-vue-next';
 import { computed } from 'vue';
@@ -46,6 +47,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const page = usePage();
 const auth = computed(() => page.props.auth);
+const unreadCount = computed(() => (page.props as { unreadMessageCount?: number }).unreadMessageCount ?? 0);
 
 const isCurrentRoute = computed(() => (url: string) => page.url === url);
 
@@ -234,6 +236,28 @@ const rightNavItems: NavItem[] = [
 							</template>
 						</div>
 					</div>
+
+					<!-- Inbox Icon -->
+					<Link
+						v-if="auth.user"
+						:href="route('inbox.index')"
+						class="focus-within:ring-primary relative">
+						<Button
+							variant="ghost"
+							size="icon"
+							class="focus-within:ring-primary relative h-9 w-9">
+							<EnvelopeIcon class="size-6 opacity-80" />
+							<span
+								v-if="unreadCount > 0"
+								class="bg-red-500 absolute -bottom-1 -right-1 flex size-3.5 items-center justify-center rounded-full text-[10px] font-bold text-white">
+								{{
+									unreadCount > 99
+										? '99+'
+										: unreadCount
+								}}
+							</span>
+						</Button>
+					</Link>
 
 					<DropdownMenu>
 						<DropdownMenuTrigger :as-child="true">

@@ -74,6 +74,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->get(),
         ]);
     })->name('users.index');
+
+    // Inbox Routes
+    Route::get('/inbox', [\App\Http\Controllers\InboxController::class, 'index'])->name('inbox.index');
+    Route::get('/inbox/{message}', [\App\Http\Controllers\InboxController::class, 'show'])->name('inbox.show');
+    Route::post('/inbox/{message}/comments', [\App\Http\Controllers\InboxController::class, 'storeComment'])->name('inbox.comments.store');
+    Route::post('/inbox/{message}/accept', [\App\Http\Controllers\InboxController::class, 'accept'])->name('inbox.accept');
+    Route::post('/inbox/{message}/decline', [\App\Http\Controllers\InboxController::class, 'decline'])->name('inbox.decline');
 });
 
 // Public viewing routes for users' herds and horses

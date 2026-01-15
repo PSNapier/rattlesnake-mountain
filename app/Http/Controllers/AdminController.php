@@ -6,6 +6,7 @@ use App\Enums\AdminAction;
 use App\Enums\HorseState;
 use App\Models\AdminSubmissionLog;
 use App\Models\Horse;
+use App\Models\Message;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -129,7 +130,29 @@ class AdminController extends Controller
             'notes' => $request->input('notes'),
         ]);
 
+        // Create a message for the owner
+        $adminEdits = [];
+        $adminForm = $request->only(['name', 'age', 'geno', 'herd_id', 'design_link']);
+        foreach ($adminForm as $field => $value) {
+            if ($value !== null && $value !== $horse->$field) {
+                $adminEdits[$field] = $value;
+            }
+        }
+
+        $subject = $horse->public_horse_id
+            ? "Review requested for edits to {$horse->name}"
+            : "Review requested for {$horse->name}";
+
+        Message::create([
+            'horse_id' => $horse->id,
+            'user_id' => $horse->owner_id,
+            'admin_id' => Auth::id(),
+            'subject' => $subject,
+            'initial_message' => $request->input('notes'),
+            'admin_edits' => ! empty($adminEdits) ? $adminEdits : null,
+        ]);
+
         return redirect()->route('admin.index')
-            ->with('success', 'Owner contact logged successfully.');
+            ->with('success', 'Owner contacted and message sent successfully.');
     }
 }

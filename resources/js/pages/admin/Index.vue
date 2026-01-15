@@ -250,11 +250,18 @@ const handleContactOwner = (): void => {
 		return;
 	}
 
+	const formData = {
+		notes: reviewNotes.value,
+		name: adminForm.value.name,
+		age: adminForm.value.age,
+		geno: adminForm.value.geno,
+		herd_id: adminForm.value.herd_id,
+		design_link: adminForm.value.design_link,
+	};
+
 	router.post(
 		route('admin.horses.contact', selectedSubmission.value.id),
-		{
-			notes: reviewNotes.value,
-		},
+		formData,
 		{
 			onSuccess: () => {
 				closeReviewModal();

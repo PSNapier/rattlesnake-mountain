@@ -10,8 +10,8 @@ import {
 import { useInitials } from '@/composables/useInitials';
 import { linkDict } from '@/composables/useLinkDictionary';
 import type { SharedData } from '@/types';
-import { Bars3Icon } from '@heroicons/vue/24/solid';
-import { usePage } from '@inertiajs/vue3';
+import { Bars3Icon, EnvelopeIcon } from '@heroicons/vue/24/solid';
+import { Link, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
 const navOpen = ref(false);
@@ -21,6 +21,11 @@ function toggleNavOpen() {
 
 const page = usePage<SharedData>();
 const auth = computed(() => page.props.auth);
+const unreadCount = computed(
+	() =>
+		(page.props as { unreadMessageCount?: number }).unreadMessageCount ??
+		0,
+);
 const { getInitials } = useInitials();
 
 const mainLinks = [
@@ -105,6 +110,23 @@ const subLinksWildlife = [
 
 			<!-- Authenticated user menu -->
 			<template v-else>
+				<!-- Inbox Icon -->
+				<Link
+					:href="route('inbox.index')"
+					class="focus-within:ring-primary relative mr-2">
+					<Button
+						variant="ghost"
+						size="icon"
+						class="focus-within:ring-primary relative size-10 rounded-full">
+						<EnvelopeIcon class="size-6" />
+						<span
+							v-if="unreadCount > 0"
+							class="bg-shakespeare-500 absolute right-1 bottom-1 flex size-3.5 items-center justify-center rounded-full text-[10px] font-bold text-white">
+							{{ unreadCount > 99 ? '99+' : unreadCount }}
+						</span>
+					</Button>
+				</Link>
+
 				<DropdownMenu>
 					<DropdownMenuTrigger as-child>
 						<Button
@@ -154,6 +176,23 @@ const subLinksWildlife = [
 
 			<!-- Authenticated user menu -->
 			<template v-else>
+				<!-- Inbox Icon -->
+				<Link
+					:href="route('inbox.index')"
+					class="focus-within:ring-primary relative mr-2">
+					<Button
+						variant="ghost"
+						size="icon"
+						class="focus-within:ring-primary relative size-9 rounded-full">
+						<EnvelopeIcon class="size-6" />
+						<span
+							v-if="unreadCount > 0"
+							class="absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+							{{ unreadCount > 99 ? '99+' : unreadCount }}
+						</span>
+					</Button>
+				</Link>
+
 				<DropdownMenu>
 					<DropdownMenuTrigger as-child>
 						<Button
