@@ -170,20 +170,59 @@ const uploadImage = async (): Promise<void> => {
 			formData.append(key, uploadForm[key]);
 		});
 
+		// Get CSRF token from meta tag
+		const csrfToken =
+			document
+				.querySelector('meta[name="csrf-token"]')
+				?.getAttribute('content') || '';
+
+		if (!csrfToken) {
+			throw new Error(
+				'CSRF token not found. Please refresh the page and try again.',
+			);
+		}
+
 		const response = await fetch(props.uploadUrl, {
 			method: 'POST',
 			body: formData,
+			credentials: 'same-origin', // Include cookies for session
 			headers: {
-				'X-CSRF-TOKEN':
-					document
-						.querySelector('meta[name="csrf-token"]')
-						?.getAttribute('content') || '',
+				'X-CSRF-TOKEN': csrfToken,
 				Accept: 'application/json',
+				'X-Requested-With': 'XMLHttpRequest',
 			},
 		});
 
 		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`);
+			// Handle specific error codes
+			if (response.status === 413) {
+				throw new Error(
+					'File is too large. The server has a smaller upload limit than expected. Please try a smaller image or contact support.',
+				);
+			}
+
+			if (response.status === 419) {
+				throw new Error(
+					'Session expired. Please refresh the page and try again.',
+				);
+			}
+
+			// Try to parse JSON error response
+			let errorMessage = `Upload failed (HTTP ${response.status})`;
+			try {
+				const errorData = await response.json();
+				errorMessage = errorData.message || errorMessage;
+			} catch {
+				// Response is not JSON, use status-based message
+				if (response.status === 413) {
+					errorMessage =
+						'File is too large. The server has a smaller upload limit than expected. Please try a smaller image or contact support.';
+				} else if (response.status === 419) {
+					errorMessage =
+						'Session expired. Please refresh the page and try again.';
+				}
+			}
+			throw new Error(errorMessage);
 		}
 
 		const result = await response.json();
@@ -199,7 +238,7 @@ const uploadImage = async (): Promise<void> => {
 		console.error('Upload error:', error);
 		const errorMessage =
 			error instanceof Error
-				? error
+				? error.message
 				: 'Upload failed. Please try again.';
 		emit('error', errorMessage);
 		alert(errorMessage);

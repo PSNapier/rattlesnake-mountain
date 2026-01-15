@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem } from '@/types';
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { type BreadcrumbItem, type SharedData } from '@/types';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 interface Herd {
 	id: number;
@@ -19,6 +20,15 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+const page = usePage<SharedData>();
+const isAdmin = computed(() => page.props.auth.user?.role === 'admin');
+const maxFileSize = computed(() => (isAdmin.value ? 10 : 2) * 1024 * 1024);
+const fileTypeHint = computed(() =>
+	isAdmin.value
+		? 'PNG, JPG, or JPEG files only, max 10MB'
+		: 'PNG, JPG, or JPEG files only, max 2MB',
+);
 
 const breadcrumbs: BreadcrumbItem[] = [
 	{
@@ -141,9 +151,9 @@ const handleImageUploadSuccess = (data: { url: string }) => {
 									<ImageUpload
 										:upload-url="route('horses.upload-image')"
 										accept="image/png,image/jpeg,image/jpg"
-										:max-size="2 * 1024 * 1024"
+										:max-size="maxFileSize"
 										drag-drop-text="Drop your horse design image here"
-										file-type-hint="PNG, JPG, or JPEG files only, max 2MB"
+										:file-type-hint="fileTypeHint"
 										@success="handleImageUploadSuccess" />
 									<div class="text-sm text-gray-500">
 										Or enter a URL manually:
