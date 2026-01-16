@@ -170,34 +170,38 @@ const uploadImage = async (): Promise<void> => {
 			formData.append(key, uploadForm[key]);
 		});
 
-		// Get CSRF token from meta tag
-		const csrfToken =
-			document
-				.querySelector('meta[name="csrf-token"]')
-				?.getAttribute('content') || '';
+		// Get CSRF token from meta tag right before request to ensure it's fresh
+		const metaTag = document.querySelector('meta[name="csrf-token"]');
+		const csrfToken = metaTag?.getAttribute('content') || '';
 
-		if (!csrfToken) {
-			throw new Error(
-				'CSRF token not found. Please refresh the page and try again.',
-			);
+		// Build headers
+		const headers: HeadersInit = {
+			Accept: 'application/json',
+			'X-Requested-With': 'XMLHttpRequest',
+		};
+
+		// Only add CSRF token if we have it
+		if (csrfToken) {
+			headers['X-CSRF-TOKEN'] = csrfToken;
 		}
 
 		const response = await fetch(props.uploadUrl, {
 			method: 'POST',
 			body: formData,
 			credentials: 'same-origin', // Include cookies for session
-			headers: {
-				'X-CSRF-TOKEN': csrfToken,
-				Accept: 'application/json',
-				'X-Requested-With': 'XMLHttpRequest',
-			},
+			headers,
 		});
 
 		if (!response.ok) {
+			// Get file size for better error messages
+			const fileSizeMB = selectedFile.value
+				? (selectedFile.value.size / (1024 * 1024)).toFixed(2)
+				: 'unknown';
+
 			// Handle specific error codes
 			if (response.status === 413) {
 				throw new Error(
-					'File is too large. The server has a smaller upload limit than expected. Please try a smaller image or contact support.',
+					`File (${fileSizeMB}MB) exceeds server upload limit. The server configuration limits uploads to less than your file size. Please contact support or try a smaller image.`,
 				);
 			}
 
@@ -215,8 +219,7 @@ const uploadImage = async (): Promise<void> => {
 			} catch {
 				// Response is not JSON, use status-based message
 				if (response.status === 413) {
-					errorMessage =
-						'File is too large. The server has a smaller upload limit than expected. Please try a smaller image or contact support.';
+					errorMessage = `File (${fileSizeMB}MB) exceeds server upload limit. The server configuration limits uploads to less than your file size. Please contact support or try a smaller image.`;
 				} else if (response.status === 419) {
 					errorMessage =
 						'Session expired. Please refresh the page and try again.';
