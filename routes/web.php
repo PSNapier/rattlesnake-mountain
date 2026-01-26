@@ -18,6 +18,16 @@ Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
     Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
     Route::post('/admin/horses/{horse}/archive', [AdminController::class, 'archive'])->name('admin.horses.archive');
     Route::post('/admin/horses/{horse}/contact', [AdminController::class, 'contact'])->name('admin.horses.contact');
+
+    // Item Management
+    Route::get('/admin/items', [AdminController::class, 'items'])->name('admin.items');
+    Route::post('/admin/items', [AdminController::class, 'storeItem'])->name('admin.items.store');
+    Route::put('/admin/items/{item}', [AdminController::class, 'updateItem'])->name('admin.items.update');
+    Route::delete('/admin/items/{item}', [AdminController::class, 'destroyItem'])->name('admin.items.destroy');
+
+    // User Item Management
+    Route::get('/admin/users/{user}/items', [AdminController::class, 'userItems'])->name('admin.users.items');
+    Route::put('/admin/users/{user}/items', [AdminController::class, 'updateUserItem'])->name('admin.users.items.update');
 });
 
 // Route to serve character images (must come before other character-image routes)

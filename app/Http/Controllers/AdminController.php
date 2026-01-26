@@ -4,9 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Enums\AdminAction;
 use App\Enums\HorseState;
+use App\Http\Requests\StoreItemRequest;
+use App\Http\Requests\UpdateItemRequest;
+use App\Http\Requests\UpdateUserItemRequest;
 use App\Models\AdminSubmissionLog;
 use App\Models\Horse;
+use App\Models\Item;
 use App\Models\Message;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -183,5 +188,86 @@ class AdminController extends Controller
 
         return redirect()->route('admin.index')
             ->with('success', 'Owner contacted and message sent successfully.');
+    }
+
+    public function items(): Response
+    {
+        if (! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+
+        $items = Item::orderBy('name')->get();
+
+        return Inertia::render('admin/Items', [
+            'items' => $items,
+        ]);
+    }
+
+    public function storeItem(StoreItemRequest $request): RedirectResponse
+    {
+        Item::create($request->validated());
+
+        return redirect()->route('admin.items')
+            ->with('success', 'Item created successfully.');
+    }
+
+    public function updateItem(UpdateItemRequest $request, Item $item): RedirectResponse
+    {
+        $item->update($request->validated());
+
+        return redirect()->route('admin.items')
+            ->with('success', 'Item updated successfully.');
+    }
+
+    public function destroyItem(Item $item): RedirectResponse
+    {
+        if (! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+
+        $item->delete();
+
+        return redirect()->route('admin.items')
+            ->with('success', 'Item deleted successfully.');
+    }
+
+    public function userItems(User $user): Response
+    {
+        if (! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+
+        $user->load('items');
+        $allItems = Item::where('is_active', true)->orderBy('name')->get();
+
+        $userItems = $user->items->mapWithKeys(function ($item) {
+            return [$item->id => $item->pivot->quantity];
+        });
+
+        return Inertia::render('admin/UserItems', [
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ],
+            'items' => $allItems,
+            'userItems' => $userItems,
+        ]);
+    }
+
+    public function updateUserItem(UpdateUserItemRequest $request, User $user): RedirectResponse
+    {
+        $validated = $request->validated();
+
+        if ($validated['quantity'] > 0) {
+            $user->items()->syncWithoutDetaching([
+                $validated['item_id'] => ['quantity' => $validated['quantity']],
+            ]);
+        } else {
+            $user->items()->detach($validated['item_id']);
+        }
+
+        return redirect()->route('admin.users.items', $user)
+            ->with('success', 'User inventory updated successfully.');
     }
 }
