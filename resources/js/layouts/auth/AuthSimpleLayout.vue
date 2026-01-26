@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Footer from '@/components/custom/Footer.vue';
+import HeaderNav from '@/components/custom/HeaderNav.vue';
 
 defineProps<{
 	title?: string;
@@ -8,6 +9,7 @@ defineProps<{
 </script>
 
 <template>
+	<HeaderNav />
 	<div
 		class="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
 		<div class="w-full max-w-sm">
