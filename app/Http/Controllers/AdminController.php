@@ -104,9 +104,12 @@ class AdminController extends Controller
             ->orderBy('name')
             ->get();
 
+        $items = Item::orderBy('name')->get();
+
         return Inertia::render('admin/Index', [
             'submissions' => $horses,
             'herds' => $herds,
+            'items' => $items,
         ]);
     }
 
@@ -215,7 +218,7 @@ class AdminController extends Controller
     {
         $item->update($request->validated());
 
-        return redirect()->route('admin.items')
+        return redirect()->route('admin.index')
             ->with('success', 'Item updated successfully.');
     }
 
