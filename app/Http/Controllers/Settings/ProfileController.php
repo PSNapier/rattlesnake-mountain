@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Settings\BioUpdateRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
@@ -38,6 +39,18 @@ class ProfileController extends Controller
         $request->user()->save();
 
         return to_route('profile.edit');
+    }
+
+    /**
+     * Update the user's bio.
+     */
+    public function updateBio(BioUpdateRequest $request): RedirectResponse
+    {
+        $request->user()->update([
+            'bio' => $request->validated()['bio'],
+        ]);
+
+        return back();
     }
 
     /**

@@ -11,7 +11,14 @@ use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('dashboard', [CharacterImageController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('dashboard', function () {
+    $user = auth()->user();
+    return Inertia::render('Users/Index', [
+        'user' => $user->only(['id', 'name', 'bio']),
+        'herdCount' => Herd::where('owner_id', $user->id)->count(),
+        'horseCount' => Horse::where('owner_id', $user->id)->count(),
+    ]);
+})->middleware(['auth', 'verified'])->name('dashboard');
 
 // Admin
 Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
@@ -78,7 +85,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/horses/{horse}/publish', [HorseController::class, 'publish'])->name('horses.publish');
     Route::post('/horses/upload-image', [HorseController::class, 'uploadImage'])->name('horses.upload-image')->middleware('rate.limit.uploads');
     Route::get('/users', function () {
-        return Inertia::render('Users/Index', [
+        return Inertia::render('Users/List', [
             'users' => User::select('id', 'name')
                 ->orderBy('name')
                 ->get(),
@@ -95,8 +102,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 // Public viewing routes for users' herds and horses
 Route::get('/u/{user}', function (User $user) {
-    return Inertia::render('Users/PublicProfile', [
-        'user' => $user,
+    return Inertia::render('Users/Index', [
+        'user' => $user->only(['id', 'name', 'bio']),
         'herdCount' => Herd::where('owner_id', $user->id)->count(),
         'horseCount' => Horse::where('owner_id', $user->id)->count(),
     ]);
