@@ -23,7 +23,10 @@ class AppearanceController extends Controller
 
             // Delete old avatar if exists
             if ($user->avatar) {
-                $oldPath = str_replace('/storage/', '', parse_url($user->avatar, PHP_URL_PATH));
+                $urlPath = parse_url($user->avatar, PHP_URL_PATH);
+                // Handle both old format (/storage/avatars/...) and new format (/avatars/...)
+                $oldPath = str_replace(['/storage/', '/avatars/'], '', $urlPath);
+                $oldPath = 'avatars/'.$oldPath;
                 if (Storage::disk('public')->exists($oldPath)) {
                     Storage::disk('public')->delete($oldPath);
                 }
@@ -48,8 +51,8 @@ class AppearanceController extends Controller
             $webpData = $image->toWebp(85);
             Storage::disk('public')->put('avatars/'.$filename, $webpData);
 
-            // Update user avatar URL
-            $avatarUrl = asset('storage/avatars/'.$filename);
+            // Update user avatar URL using the route
+            $avatarUrl = route('avatars.serve', $filename);
             $user->update(['avatar' => $avatarUrl]);
 
             return response()->json([
@@ -87,7 +90,10 @@ class AppearanceController extends Controller
             }
 
             // Delete file from storage
-            $path = str_replace('/storage/', '', parse_url($user->avatar, PHP_URL_PATH));
+            $urlPath = parse_url($user->avatar, PHP_URL_PATH);
+            // Handle both old format (/storage/avatars/...) and new format (/avatars/...)
+            $path = str_replace(['/storage/', '/avatars/'], '', $urlPath);
+            $path = 'avatars/'.$path;
             if (Storage::disk('public')->exists($path)) {
                 Storage::disk('public')->delete($path);
             }

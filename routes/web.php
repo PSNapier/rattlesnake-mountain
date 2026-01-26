@@ -43,6 +43,23 @@ Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
     Route::put('/admin/users/{user}/items', [AdminController::class, 'updateUserItem'])->name('admin.users.items.update');
 });
 
+// Route to serve avatars (must come before other avatar routes)
+Route::get('/avatars/{filename}', function ($filename) {
+    $path = storage_path('app/public/avatars/'.$filename);
+
+    if (! file_exists($path)) {
+        abort(404);
+    }
+
+    $file = file_get_contents($path);
+    $type = mime_content_type($path);
+
+    return response($file, 200, [
+        'Content-Type' => $type,
+        'Cache-Control' => 'public, max-age=31536000',
+    ]);
+})->name('avatars.serve');
+
 // Route to serve character images (must come before other character-image routes)
 Route::get('/character-images/{filename}', function ($filename) {
     $path = storage_path('app/public/character-images/'.$filename);
