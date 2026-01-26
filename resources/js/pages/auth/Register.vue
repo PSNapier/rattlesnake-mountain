@@ -2,10 +2,11 @@
 import InputError from '@/components/InputError.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthBase from '@/layouts/AuthLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
 
 const form = useForm({
@@ -13,6 +14,7 @@ const form = useForm({
 	email: '',
 	password: '',
 	password_confirmation: '',
+	rules_agreed: false,
 });
 
 const submit = () => {
@@ -88,6 +90,27 @@ const submit = () => {
 						:message="form.errors.password_confirmation" />
 				</div>
 
+				<div class="flex items-start gap-2">
+					<Checkbox
+						id="rules_agreed"
+						v-model:checked="form.rules_agreed"
+						required
+						:tabindex="5" />
+					<Label
+						for="rules_agreed"
+						class="block text-muted-foreground text-md font-normal cursor-pointer">
+						By registering, you agree to the site
+						<a
+							:href="route('rules')"
+							class="underline"
+							target="_blank"
+							rel="noopener noreferrer"
+							>rules</a
+						>.
+					</Label>
+				</div>
+				<InputError :message="form.errors.rules_agreed" />
+
 				<div class="text-muted-foreground text-xs">
 					By creating an account, you agree to us storing your
 					information to provide you with account functionality.
@@ -103,7 +126,7 @@ const submit = () => {
 				<Button
 					type="submit"
 					class="mt-2 w-full"
-					tabindex="5"
+					tabindex="6"
 					:disabled="form.processing">
 					<LoaderCircle
 						v-if="form.processing"
@@ -117,7 +140,7 @@ const submit = () => {
 				<TextLink
 					:href="route('login')"
 					class="underline underline-offset-4"
-					:tabindex="6"
+					:tabindex="7"
 					>Log in</TextLink
 				>
 			</div>
