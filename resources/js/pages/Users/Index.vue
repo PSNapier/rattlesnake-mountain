@@ -21,6 +21,7 @@ interface Props {
 	user: ProfileUser;
 	herdCount: number;
 	horseCount: number;
+	itemCount: number;
 }
 
 const props = defineProps<Props>();
@@ -99,7 +100,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 			</div>
 
 			<!-- Collection Stats -->
-			<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+			<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 				<Card>
 					<CardHeader>
 						<CardTitle
@@ -142,6 +143,34 @@ const breadcrumbs: BreadcrumbItem[] = [
 							:href="route('users.horses', props.user.id)"
 							class="block">
 							<Button class="w-full">View Horses</Button>
+						</Link>
+					</CardContent>
+				</Card>
+
+				<Card>
+					<CardHeader>
+						<CardTitle
+							class="flex items-center justify-between">
+							<span>Item Collection</span>
+							<span class="text-2xl font-bold">{{
+								props.itemCount || 0
+							}}</span>
+						</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<p class="mb-4 text-gray-600">
+							<span v-if="isOwnProfile">
+								View your inventory of collected items.
+							</span>
+							<span v-else>
+								View {{ props.user.name }}'s inventory of
+								collected items.
+							</span>
+						</p>
+						<Link
+							:href="isOwnProfile ? route('inventory.index') : route('users.inventory', props.user.id)"
+							class="block">
+							<Button class="w-full">View Inventory</Button>
 						</Link>
 					</CardContent>
 				</Card>

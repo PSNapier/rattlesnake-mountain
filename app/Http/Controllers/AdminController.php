@@ -234,6 +234,62 @@ class AdminController extends Controller
             ->with('success', 'Item deleted successfully.');
     }
 
+    public function searchUsers(Request $request): \Illuminate\Http\JsonResponse
+    {
+        if (! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+
+        $query = $request->input('q', '');
+        $limit = $request->input('limit', 10);
+
+        $users = User::where('name', 'like', "%{$query}%")
+            ->orderBy('name')
+            ->limit($limit)
+            ->get(['id', 'name']);
+
+        return response()->json($users);
+    }
+
+    public function getUserInventory(User $user): \Illuminate\Http\JsonResponse
+    {
+        if (! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+
+        // Get all active items
+        $allItems = Item::where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        // Get user's items with quantities
+        $userItems = $user->items()
+            ->where('is_active', true)
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item->id => $item->pivot->quantity];
+            });
+
+        // Build inventory with all items, showing 0 for items not owned
+        $inventory = $allItems->map(function ($item) use ($userItems) {
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+                'description' => $item->description,
+                'quantity' => $userItems->get($item->id, 0),
+                'max_count' => $item->max_count,
+            ];
+        });
+
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+            ],
+            'inventory' => $inventory,
+        ]);
+    }
+
     public function userItems(User $user): Response
     {
         if (! Auth::user()->isAdmin()) {
@@ -258,7 +314,7 @@ class AdminController extends Controller
         ]);
     }
 
-    public function updateUserItem(UpdateUserItemRequest $request, User $user): RedirectResponse
+    public function updateUserItem(UpdateUserItemRequest $request, User $user): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $validated = $request->validated();
 
@@ -268,6 +324,14 @@ class AdminController extends Controller
             ]);
         } else {
             $user->items()->detach($validated['item_id']);
+        }
+
+        // Return JSON for AJAX requests
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'User inventory updated successfully.',
+            ]);
         }
 
         return redirect()->route('admin.users.items', $user)

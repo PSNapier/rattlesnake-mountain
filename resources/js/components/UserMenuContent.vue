@@ -12,6 +12,7 @@ import {
 	Crown,
 	Home,
 	LogOut,
+	Package,
 	Settings,
 	Users,
 	UserSearch,
@@ -79,6 +80,16 @@ defineProps<Props>();
 				as="button">
 				<Zap class="mr-2 h-4 w-4" />
 				My Horses
+			</Link>
+		</DropdownMenuItem>
+		<DropdownMenuItem :as-child="true">
+			<Link
+				class="block w-full"
+				:href="route('inventory.index')"
+				prefetch
+				as="button">
+				<Package class="mr-2 h-4 w-4" />
+				My Inventory
 			</Link>
 		</DropdownMenuItem>
 		<DropdownMenuItem :as-child="true">

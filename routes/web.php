@@ -5,18 +5,22 @@ use App\Http\Controllers\CharacterImageController;
 use App\Http\Controllers\DevPasswordController;
 use App\Http\Controllers\HerdController;
 use App\Http\Controllers\HorseController;
+use App\Http\Controllers\InventoryController;
 use App\Models\Herd;
 use App\Models\Horse;
+use App\Models\Item;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('dashboard', function () {
     $user = auth()->user();
+
     return Inertia::render('Users/Index', [
         'user' => $user->only(['id', 'name', 'bio', 'avatar']),
         'herdCount' => Herd::where('owner_id', $user->id)->count(),
         'horseCount' => Horse::where('owner_id', $user->id)->count(),
+        'itemCount' => $user->items()->where('is_active', true)->count(),
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -33,6 +37,8 @@ Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
     Route::delete('/admin/items/{item}', [AdminController::class, 'destroyItem'])->name('admin.items.destroy');
 
     // User Item Management
+    Route::get('/admin/users/search', [AdminController::class, 'searchUsers'])->name('admin.users.search');
+    Route::get('/admin/users/{user}/inventory', [AdminController::class, 'getUserInventory'])->name('admin.users.inventory');
     Route::get('/admin/users/{user}/items', [AdminController::class, 'userItems'])->name('admin.users.items');
     Route::put('/admin/users/{user}/items', [AdminController::class, 'updateUserItem'])->name('admin.users.items.update');
 });
@@ -84,6 +90,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/horses/{horse}/approve', [HorseController::class, 'approve'])->name('horses.approve');
     Route::post('/horses/{horse}/publish', [HorseController::class, 'publish'])->name('horses.publish');
     Route::post('/horses/upload-image', [HorseController::class, 'uploadImage'])->name('horses.upload-image')->middleware('rate.limit.uploads');
+    Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
     Route::get('/users', function () {
         return Inertia::render('Users/List', [
             'users' => User::select('id', 'name', 'avatar')
@@ -106,11 +113,13 @@ Route::get('/u/{user}', function (User $user) {
         'user' => $user->only(['id', 'name', 'bio', 'avatar']),
         'herdCount' => Herd::where('owner_id', $user->id)->count(),
         'horseCount' => Horse::where('owner_id', $user->id)->count(),
+        'itemCount' => $user->items()->where('is_active', true)->count() ?: 0,
     ]);
 })->name('users.profile');
 Route::get('/u/{user}/herds', [HerdController::class, 'publicIndex'])->name('users.herds');
 Route::get('/u/{user}/horses', [HorseController::class, 'publicIndex'])->name('users.horses');
 Route::get('/u/{user}/horses/{horse}', [HorseController::class, 'publicShow'])->name('users.horses.show');
+Route::get('/u/{user}/inventory', [InventoryController::class, 'publicIndex'])->name('users.inventory');
 
 Route::get('/dev-password', [DevPasswordController::class, 'show'])->name('dev-password');
 Route::post('/dev-password', [DevPasswordController::class, 'authenticate'])->name('dev-password.authenticate');
