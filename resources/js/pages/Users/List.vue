@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useInitials } from '@/composables/useInitials';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
@@ -7,6 +9,7 @@ import { Head, Link } from '@inertiajs/vue3';
 interface User {
 	id: number;
 	name: string;
+	avatar?: string | null;
 }
 
 interface Props {
@@ -14,6 +17,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const { getInitials } = useInitials();
 
 const breadcrumbs: BreadcrumbItem[] = [
 	{
@@ -54,18 +58,16 @@ const breadcrumbs: BreadcrumbItem[] = [
 							v-for="user in props.users"
 							:key="user.id"
 							:href="`/u/${user.id}`"
-							class="border-cape-palliser-200 dark:border-cape-palliser-700 hover:bg-shakespeare-200 dark:hover:bg-shakespeare-200 flex items-center gap-3 rounded-lg border p-4 no-underline transition-colors">
-							<div
-								class="bg-shakespeare-200 dark:bg-shakespeare-800 flex h-10 w-10 items-center justify-center rounded-full">
-								<span
-									class="text-shakespeare-700 dark:text-shakespeare-200 text-sm font-semibold">
-									{{
-										user.name
-											.charAt(0)
-											.toUpperCase()
-									}}
-								</span>
-							</div>
+							class="border-cape-palliser-200 dark:border-cape-palliser-700 hover:bg-shakespeare-200 dark:hover:bg-shakespeare-200 flex items-center gap-3 border p-4 no-underline transition-colors">
+							<Avatar class="h-10 w-10 rounded-md">
+								<AvatarImage
+									v-if="user.avatar"
+									:src="user.avatar"
+									:alt="user.name" />
+								<AvatarFallback class="bg-shakespeare-200 text-shakespeare-700 dark:bg-shakespeare-800 dark:text-shakespeare-200">
+									{{ getInitials(user.name) }}
+								</AvatarFallback>
+							</Avatar>
 							<span
 								class="text-shakespeare-600 font-medium">
 								{{ user.name }}

@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useInitials } from '@/composables/useInitials';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem, type SharedData, type User } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
@@ -12,6 +14,7 @@ interface ProfileUser {
 	id: number;
 	name: string;
 	bio?: string | null;
+	avatar?: string | null;
 }
 
 interface Props {
@@ -25,6 +28,7 @@ const props = defineProps<Props>();
 const page = usePage<SharedData>();
 const currentUser = computed(() => page.props.auth.user as User | null);
 const isOwnProfile = computed(() => currentUser.value?.id === props.user.id);
+const { getInitials } = useInitials();
 
 const isEditing = ref(false);
 const md = markdownit();
@@ -79,12 +83,15 @@ const breadcrumbs: BreadcrumbItem[] = [
 		<div class="mx-auto max-w-4xl space-y-6">
 			<!-- User Header -->
 			<div class="text-center">
-				<div
-					class="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gray-200">
-					<span class="text-2xl font-bold text-gray-600">
-						{{ props.user.name.charAt(0).toUpperCase() }}
-					</span>
-				</div>
+				<Avatar class="mx-auto mb-4 h-24 w-24">
+					<AvatarImage
+						v-if="props.user.avatar"
+						:src="props.user.avatar"
+						:alt="props.user.name" />
+					<AvatarFallback class="bg-gray-200 text-gray-600 text-2xl font-bold">
+						{{ getInitials(props.user.name) }}
+					</AvatarFallback>
+				</Avatar>
 				<h1 class="text-3xl font-bold">{{ props.user.name }}</h1>
 				<p class="mt-2 text-gray-600">
 					Rattlesnake Mountain Player
