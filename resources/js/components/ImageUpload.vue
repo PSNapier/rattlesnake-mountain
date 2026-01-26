@@ -146,6 +146,83 @@ const handleDrop = (event: DragEvent): void => {
 	}
 };
 
+// Helper function to fetch a fresh CSRF token
+const fetchFreshCsrfToken = async (): Promise<string> => {
+	try {
+		// Make a lightweight GET request to refresh the session
+		// This will return the full page but ensures session is refreshed
+		const response = await fetch(window.location.href, {
+			method: 'GET',
+			credentials: 'same-origin',
+			headers: {
+				Accept: 'text/html',
+				'X-Requested-With': 'XMLHttpRequest',
+			},
+		});
+
+		if (!response.ok) {
+			throw new Error('Failed to refresh session');
+		}
+
+		// Parse the response HTML to extract the new CSRF token
+		const html = await response.text();
+		const parser = new DOMParser();
+		const doc = parser.parseFromString(html, 'text/html');
+		const metaTag = doc.querySelector('meta[name="csrf-token"]');
+		const newToken = metaTag?.getAttribute('content') || '';
+
+		// Update the meta tag in the current document
+		const currentMetaTag = document.querySelector('meta[name="csrf-token"]');
+		if (currentMetaTag && newToken) {
+			currentMetaTag.setAttribute('content', newToken);
+		}
+
+		return newToken;
+	} catch (error) {
+		console.warn('Failed to refresh CSRF token:', error);
+		// Fallback to current meta tag if refresh fails
+		const metaTag = document.querySelector('meta[name="csrf-token"]');
+		return metaTag?.getAttribute('content') || '';
+	}
+};
+
+// Helper function to perform the actual upload
+const performUpload = async (csrfToken: string, retry = false): Promise<Response> => {
+	const formData = new FormData();
+	formData.append('image', selectedFile.value!);
+
+	// Add form fields
+	Object.keys(uploadForm).forEach((key) => {
+		formData.append(key, uploadForm[key]);
+	});
+
+	// Build headers
+	const headers: HeadersInit = {
+		Accept: 'application/json',
+		'X-Requested-With': 'XMLHttpRequest',
+	};
+
+	// Only add CSRF token if we have it
+	if (csrfToken) {
+		headers['X-CSRF-TOKEN'] = csrfToken;
+	}
+
+	const response = await fetch(props.uploadUrl, {
+		method: 'POST',
+		body: formData,
+		credentials: 'same-origin', // Include cookies for session
+		headers,
+	});
+
+	// If we get a 419 and haven't retried yet, fetch fresh token and retry
+	if (response.status === 419 && !retry) {
+		const freshToken = await fetchFreshCsrfToken();
+		return performUpload(freshToken, true);
+	}
+
+	return response;
+};
+
 const uploadImage = async (): Promise<void> => {
 	if (!selectedFile.value) {
 		return;
@@ -162,35 +239,11 @@ const uploadImage = async (): Promise<void> => {
 	}, 100);
 
 	try {
-		const formData = new FormData();
-		formData.append('image', selectedFile.value);
-
-		// Add form fields
-		Object.keys(uploadForm).forEach((key) => {
-			formData.append(key, uploadForm[key]);
-		});
-
-		// Get CSRF token from meta tag right before request to ensure it's fresh
+		// Get CSRF token from meta tag right before request
 		const metaTag = document.querySelector('meta[name="csrf-token"]');
 		const csrfToken = metaTag?.getAttribute('content') || '';
 
-		// Build headers
-		const headers: HeadersInit = {
-			Accept: 'application/json',
-			'X-Requested-With': 'XMLHttpRequest',
-		};
-
-		// Only add CSRF token if we have it
-		if (csrfToken) {
-			headers['X-CSRF-TOKEN'] = csrfToken;
-		}
-
-		const response = await fetch(props.uploadUrl, {
-			method: 'POST',
-			body: formData,
-			credentials: 'same-origin', // Include cookies for session
-			headers,
-		});
+		const response = await performUpload(csrfToken);
 
 		if (!response.ok) {
 			// Get file size for better error messages
