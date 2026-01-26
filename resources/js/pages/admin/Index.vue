@@ -3,6 +3,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import ItemsTab from './ItemsTab.vue';
+import LifecycleTab from './LifecycleTab.vue';
 import SubmissionsTab from './SubmissionsTab.vue';
 
 interface Herd {
@@ -64,7 +65,7 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const activeTab = ref<'submissions' | 'items'>('submissions');
+const activeTab = ref<'submissions' | 'items' | 'lifecycle'>('submissions');
 </script>
 
 <template>
@@ -103,6 +104,16 @@ const activeTab = ref<'submissions' | 'items'>('submissions');
 					]">
 					<span class="text-base">Items</span>
 				</button>
+				<button
+					@click="activeTab = 'lifecycle'"
+					:class="[
+						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
+						activeTab === 'lifecycle'
+							? 'bg-shakespeare-500 text-white shadow-xs'
+							: 'border border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700',
+					]">
+					<span class="text-base">Lifecycle</span>
+				</button>
 			</div>
 
 			<SubmissionsTab
@@ -113,6 +124,8 @@ const activeTab = ref<'submissions' | 'items'>('submissions');
 			<ItemsTab
 				v-if="activeTab === 'items'"
 				:items="props.items" />
+
+			<LifecycleTab v-if="activeTab === 'lifecycle'" />
 		</div>
 	</AppLayout>
 </template>
