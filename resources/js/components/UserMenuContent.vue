@@ -34,7 +34,8 @@ defineProps<Props>();
 		<div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
 			<UserInfo
 				:user="user"
-				:show-email="true" />
+				:show-email="true"
+				:show-avatar="false" />
 		</div>
 	</DropdownMenuLabel>
 	<DropdownMenuSeparator />

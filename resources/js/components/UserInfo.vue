@@ -7,22 +7,26 @@ import { computed } from 'vue';
 interface Props {
 	user: User;
 	showEmail?: boolean;
+	showAvatar?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
 	showEmail: false,
+	showAvatar: true,
 });
 
 const { getInitials } = useInitials();
 
 // Compute whether we should show the avatar image
-const showAvatar = computed(() => props.user.avatar && props.user.avatar !== '');
+const hasAvatarImage = computed(() => props.user.avatar && props.user.avatar !== '');
 </script>
 
 <template>
-	<Avatar class="h-8 w-8 overflow-hidden rounded-lg">
+	<Avatar
+		v-if="showAvatar"
+		class="h-8 w-8 overflow-hidden rounded-lg">
 		<AvatarImage
-			v-if="showAvatar"
+			v-if="hasAvatarImage"
 			:src="user.avatar"
 			:alt="user.name"
 		/>
