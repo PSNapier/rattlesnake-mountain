@@ -12,7 +12,11 @@ class StaticPageController extends Controller
     public function show(Request $request): Response
     {
         $slug = $request->route('slug');
-        $page = CmsPage::query()->where('slug', $slug)->firstOrFail();
+        $page = CmsPage::query()->where('slug', $slug)->first();
+
+        if (! $page) {
+            return Inertia::render('NotFound');
+        }
 
         return Inertia::render('cms/Show', [
             'page' => [

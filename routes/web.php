@@ -44,6 +44,7 @@ Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
     Route::put('/admin/users/{user}/items', [AdminController::class, 'updateUserItem'])->name('admin.users.items.update');
 
     // CMS
+    Route::post('/admin/cms/pages', [AdminController::class, 'storeCmsPage'])->name('admin.cms.pages.store');
     Route::put('/admin/cms/pages/{page}', [AdminController::class, 'updateCmsPage'])->name('admin.cms.pages.update');
     Route::post('/admin/cms/pages/reorder', [AdminController::class, 'reorderCmsPages'])->name('admin.cms.pages.reorder');
     Route::post('/admin/cms/menu', [AdminController::class, 'storeMenuItem'])->name('admin.cms.menu.store');
@@ -216,9 +217,13 @@ Route::get('/privacy-policy', [StaticPageController::class, 'show'])
     ->defaults('slug', 'privacy-policy')
     ->name('privacy_policy');
 
+require __DIR__.'/settings.php';
+require __DIR__.'/auth.php';
+
+Route::get('/{slug}', [StaticPageController::class, 'show'])
+    ->where('slug', '[a-zA-Z0-9\-_]+')
+    ->name('cms.show');
+
 Route::fallback(function () {
     return Inertia::render('NotFound');
 })->name('not_found');
-
-require __DIR__.'/settings.php';
-require __DIR__.'/auth.php';

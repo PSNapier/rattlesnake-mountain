@@ -140,12 +140,21 @@ const menuItemForm = ref<{ id: number | null; label: string; path: string; paren
 });
 const isNewMenuItem = ref(true);
 
-const linkedPage = computed(() => {
-	const path = menuItemForm.value.path;
+function resolvePageForPath(path: string | null): CmsPage | null {
 	if (!path || path.startsWith('http')) return null;
 	const slug = path.replace(/^\//, '').trim();
-	return props.cmsPages.find((p) => p.slug === slug) ?? null;
-});
+	if (!slug) return null;
+	const exact = props.cmsPages.find((p) => p.slug === slug);
+	if (exact) return exact;
+	return props.cmsPages.find((p) => p.slug.startsWith(slug)) ?? null;
+}
+
+function isLocalPath(path: string): boolean {
+	const trimmed = (path ?? '').trim();
+	return trimmed !== '' && trimmed.startsWith('/') && !trimmed.startsWith('http');
+}
+
+const linkedPage = computed(() => resolvePageForPath(menuItemForm.value.path));
 
 const displayLinkedPage = ref<CmsPage | null>(null);
 watch(linkedPage, (page) => {
@@ -180,6 +189,19 @@ function openMenuEdit(item: { id: number; label: string; path: string | null }, 
 		path: item.path ?? '',
 		parent_id: parentId,
 	};
+	const page = resolvePageForPath(item.path ?? '');
+	if (page) {
+		displayLinkedPage.value = page;
+		pageForm.value = {
+			description: page.description ?? '',
+			hero_description: page.hero_description ?? '',
+			contentJson: JSON.stringify(page.content ?? {}, null, 2),
+			imagesJson: JSON.stringify(page.images ?? [], null, 2),
+		};
+	} else {
+		displayLinkedPage.value = null;
+		pageForm.value = { description: '', hero_description: '', contentJson: '{}', imagesJson: '[]' };
+	}
 	menuItemDialogOpen.value = true;
 }
 
@@ -218,8 +240,7 @@ function saveMenuItem() {
 	const doClose = () => closeMenuDialog();
 
 	const savePageThen = () => {
-		const page = linkedPage.value;
-		if (!page) {
+		if (!isLocalPath(menuItemForm.value.path)) {
 			doClose();
 			return;
 		}
@@ -237,14 +258,21 @@ function saveMenuItem() {
 			alert('Invalid JSON in page images.');
 			return;
 		}
-		router.put(route('admin.cms.pages.update', page.id), {
+		const payload = {
 			title: menuItemForm.value.label,
 			hero_title: menuItemForm.value.label,
 			description: pageForm.value.description || null,
 			hero_description: pageForm.value.hero_description || null,
 			content,
 			images,
-		}, { onSuccess: doClose });
+		};
+		const page = linkedPage.value;
+		if (page) {
+			router.put(route('admin.cms.pages.update', page.id), payload, { onSuccess: doClose });
+		} else {
+			const slug = menuItemForm.value.path.replace(/^\//, '').trim();
+			router.post(route('admin.cms.pages.store'), { ...payload, slug }, { onSuccess: doClose });
+		}
 	};
 
 	if (isNewMenuItem.value) {
@@ -360,7 +388,7 @@ function deleteMenuItem(id: number) {
 					</div>
 				</div>
 
-				<div v-if="displayLinkedPage" class="space-y-4 border-t border-gray-200 pt-6">
+				<div v-if="displayLinkedPage || isLocalPath(menuItemForm.path)" class="space-y-4 border-t border-gray-200 pt-6">
 					<div>
 						<Label for="hero_description">Hero description</Label>
 						<textarea

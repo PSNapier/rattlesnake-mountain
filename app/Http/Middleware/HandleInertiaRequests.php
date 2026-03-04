@@ -55,13 +55,13 @@ class HandleInertiaRequests extends Middleware
             ->map(function (MenuItem $item) {
                 return [
                     'id' => $item->id,
-                    'label' => $item->label,
-                    'path' => $item->path,
+                    'label' => (string) $item->label,
+                    'path' => $item->path !== null && $item->path !== '' ? $item->path : null,
                     'children' => $item->children->map(function (MenuItem $child) {
                         return [
                             'id' => $child->id,
-                            'label' => $child->label,
-                            'path' => $child->path,
+                            'label' => (string) $child->label,
+                            'path' => $child->path !== null && $child->path !== '' ? $child->path : null,
                         ];
                     })->values()->all(),
                 ];

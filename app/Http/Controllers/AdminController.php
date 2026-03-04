@@ -6,6 +6,7 @@ use App\Enums\AdminAction;
 use App\Enums\HorseState;
 use App\Http\Requests\ReorderCmsPagesRequest;
 use App\Http\Requests\ReorderMenuItemsRequest;
+use App\Http\Requests\StoreCmsPageRequest;
 use App\Http\Requests\StoreItemRequest;
 use App\Http\Requests\StoreMenuItemRequest;
 use App\Http\Requests\UpdateCmsPageRequest;
@@ -114,7 +115,19 @@ class AdminController extends Controller
         $items = Item::orderBy('name')->get();
 
         $cmsPages = CmsPage::orderBy('sort_order')->get(['id', 'slug', 'title', 'description', 'hero_title', 'hero_description', 'content', 'images', 'sort_order']);
-        $menuItems = MenuItem::with('children')->whereNull('parent_id')->orderBy('sort_order')->get();
+        $menuItems = MenuItem::with('children')->whereNull('parent_id')->orderBy('sort_order')->get()
+            ->map(fn (MenuItem $item) => [
+                'id' => $item->id,
+                'label' => $item->label,
+                'path' => $item->path,
+                'sort_order' => $item->sort_order,
+                'children' => $item->children->map(fn (MenuItem $child) => [
+                    'id' => $child->id,
+                    'label' => $child->label,
+                    'path' => $child->path,
+                    'sort_order' => $child->sort_order,
+                ])->values()->all(),
+            ])->values()->all();
 
         return Inertia::render('admin/Index', [
             'submissions' => $horses,
@@ -123,6 +136,14 @@ class AdminController extends Controller
             'cmsPages' => $cmsPages,
             'menuItems' => $menuItems,
         ]);
+    }
+
+    public function storeCmsPage(StoreCmsPageRequest $request): RedirectResponse
+    {
+        $maxSort = CmsPage::max('sort_order') ?? -1;
+        CmsPage::create(array_merge($request->validated(), ['sort_order' => $maxSort + 1]));
+
+        return redirect()->back()->with('success', 'Page created successfully.');
     }
 
     public function updateCmsPage(UpdateCmsPageRequest $request, CmsPage $page): RedirectResponse
