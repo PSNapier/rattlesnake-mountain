@@ -8,8 +8,7 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useInitials } from '@/composables/useInitials';
-import { linkDict } from '@/composables/useLinkDictionary';
-import type { SharedData } from '@/types';
+import type { NavMenuItem, SharedData } from '@/types';
 import { Bars3Icon, EnvelopeIcon } from '@heroicons/vue/24/solid';
 import { Link, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
@@ -28,28 +27,7 @@ const unreadCount = computed(
 );
 const { getInitials } = useInitials();
 
-const mainLinks = [
-	linkDict.HOME,
-	linkDict.GETTING_STARTED,
-	linkDict.WILDLIFE,
-	linkDict.CONTACT_US,
-];
-const subLinksGettingStarted = [
-	linkDict.RULES,
-	linkDict.LORE,
-	linkDict.CHARACTER_HANDBOOK,
-	linkDict.STATS_LEVELING,
-	linkDict.CHARACTER_UPLOAD,
-	linkDict.SHOP,
-];
-const subLinksWildlife = [
-	linkDict.LIFESPANS,
-	linkDict.STORY_PROGRESSION,
-	linkDict.CLAIMING_NPCS,
-	linkDict.HERD_UNITY,
-	linkDict.BREEDING_FOALING,
-	linkDict.PLAYER_VS_PLAYER,
-];
+const navMenu = computed<NavMenuItem[]>(() => page.props.navMenu ?? []);
 </script>
 
 <template>
@@ -57,35 +35,21 @@ const subLinksWildlife = [
 	<nav
 		class="font-amaranth bg-new-orleans-300 [&>ul]:hover:bg-shakespeare-100 [&>ul]:hover:text-shakespeare-400 border-new-orleans-400 hidden flex-row flex-wrap items-center justify-around border-b-4 text-2xl font-bold select-none lg:flex xl:justify-center [&>ul]:rounded-t-lg [&>ul]:p-2 xl:[&>ul]:mx-4">
 		<ul
-			v-for="link in mainLinks"
-			:key="link.label"
+			v-for="item in navMenu"
+			:key="item.id"
 			class="group relative">
-			<a :href="link.path">{{ link.label }}</a>
+			<a :href="item.path ?? '#'">{{ item.label }}</a>
 
 			<div
-				v-if="link === linkDict.GETTING_STARTED"
+				v-if="item.children && item.children.length"
 				class="bg-shakespeare-100 text-shakespeare-400 absolute left-1/2 z-10 hidden min-w-max -translate-x-1/2 rounded-t-lg rounded-b-lg p-2 font-sans text-lg font-normal group-hover:block">
 				<a
-					v-for="sub in subLinksGettingStarted"
-					:key="sub.label"
-					:href="sub.path">
+					v-for="child in item.children"
+					:key="child.id"
+					:href="child.path ?? '#'">
 					<li
 						class="hover:text-shakespeare-300 border-shakespeare-400 border-b-1 py-2">
-						{{ sub.label }}
-					</li>
-				</a>
-			</div>
-
-			<div
-				v-if="link === linkDict.WILDLIFE"
-				class="bg-shakespeare-100 text-shakespeare-400 absolute left-1/2 z-10 hidden min-w-max -translate-x-1/2 rounded-t-lg rounded-b-lg p-2 font-sans text-lg font-normal group-hover:block">
-				<a
-					v-for="sub in subLinksWildlife"
-					:key="sub.label"
-					:href="sub.path">
-					<li
-						class="hover:text-shakespeare-300 border-shakespeare-400 border-b-1 py-2">
-						{{ sub.label }}
+						{{ child.label }}
 					</li>
 				</a>
 			</div>
@@ -230,33 +194,18 @@ const subLinksWildlife = [
 			class="bg-new-orleans-400 text-new-orleans-100 absolute top-full right-0 z-50 w-full p-4 text-right leading-8"
 			v-if="navOpen">
 			<ul
-				v-for="link in mainLinks"
-				:key="link.label"
+				v-for="item in navMenu"
+				:key="item.id"
 				class="group relative mb-4">
-				<a :href="link.path">{{ link.label }}</a>
+				<a :href="item.path ?? '#'">{{ item.label }}</a>
 
-				<div
-					v-if="link === linkDict.GETTING_STARTED"
-					class="">
+				<div v-if="item.children && item.children.length">
 					<a
-						v-for="sub in subLinksGettingStarted"
-						:key="sub.label"
-						:href="sub.path">
+						v-for="child in item.children"
+						:key="child.id"
+						:href="child.path ?? '#'">
 						<li class="">
-							{{ sub.label }}
-						</li>
-					</a>
-				</div>
-
-				<div
-					v-if="link === linkDict.WILDLIFE"
-					class="">
-					<a
-						v-for="sub in subLinksWildlife"
-						:key="sub.label"
-						:href="sub.path">
-						<li class="">
-							{{ sub.label }}
+							{{ child.label }}
 						</li>
 					</a>
 				</div>

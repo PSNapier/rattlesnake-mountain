@@ -18,12 +18,25 @@ export interface NavItem {
 	isActive?: boolean;
 }
 
+export interface NavMenuItem {
+	id: number;
+	label: string;
+	path: string | null;
+	children: {
+		id: number;
+		label: string;
+		path: string | null;
+	}[];
+}
+
 export interface SharedData extends PageProps {
 	name: string;
 	quote: { message: string; author: string };
 	auth: Auth;
 	ziggy: Config & { location: string };
 	sidebarOpen: boolean;
+	navMenu: NavMenuItem[];
+	unreadMessageCount?: number;
 }
 
 export interface User {

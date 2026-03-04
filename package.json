@@ -37,6 +37,7 @@
 		"lucide-vue-next": "^0.468.0",
 		"markdown-it": "^14.1.0",
 		"reka-ui": "^2.2.0",
+		"sortablejs": "^1.15.7",
 		"tailwind-merge": "^3.2.0",
 		"tailwindcss": "^4.1.1",
 		"tw-animate-css": "^1.2.5",

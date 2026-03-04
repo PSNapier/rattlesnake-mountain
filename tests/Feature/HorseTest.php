@@ -15,7 +15,7 @@ it('can view horses index', function () {
     $response = $this->actingAs($this->user)->get(route('horses.index'));
 
     $response->assertSuccessful();
-    $response->assertInertia(fn ($page) => $page->component('Horses/Index'));
+    $response->assertInertia(fn ($page) => $page->component('horses/Index'));
 });
 
 it('can create a horse', function () {
@@ -52,7 +52,7 @@ it('can view a horse', function () {
     $response = $this->actingAs($this->user)->get(route('horses.show', $horse));
 
     $response->assertSuccessful();
-    $response->assertInertia(fn ($page) => $page->component('Horses/Show'));
+    $response->assertInertia(fn ($page) => $page->component('horses/Show'));
 });
 
 it('can update a horse', function () {
@@ -345,7 +345,7 @@ it('marks pending edit as archived and allows editing public horse', function ()
     // Should be able to edit the public horse (archived pending edit should be filtered out)
     $response = $this->actingAs($this->user)->get(route('horses.edit', $publicHorse));
     $response->assertSuccessful();
-    $response->assertInertia(fn ($page) => $page->component('Horses/Edit'));
+    $response->assertInertia(fn ($page) => $page->component('horses/Edit'));
 
     // Should be able to create a new pending edit
     $updateData = [

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\MenuItem;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -47,6 +48,25 @@ class HandleInertiaRequests extends Middleware
                 ->count();
         }
 
+        $navMenu = MenuItem::with('children')
+            ->whereNull('parent_id')
+            ->orderBy('sort_order')
+            ->get()
+            ->map(function (MenuItem $item) {
+                return [
+                    'id' => $item->id,
+                    'label' => $item->label,
+                    'path' => $item->path,
+                    'children' => $item->children->map(function (MenuItem $child) {
+                        return [
+                            'id' => $child->id,
+                            'label' => $child->label,
+                            'path' => $child->path,
+                        ];
+                    })->values()->all(),
+                ];
+            })->values()->all();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -55,6 +75,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user?->only(['id', 'name', 'email', 'avatar', 'email_verified_at', 'role']),
             ],
             'unreadMessageCount' => $unreadCount,
+            'navMenu' => $navMenu,
             'ziggy' => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),

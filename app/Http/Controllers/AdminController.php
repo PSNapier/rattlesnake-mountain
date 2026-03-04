@@ -4,12 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Enums\AdminAction;
 use App\Enums\HorseState;
+use App\Http\Requests\ReorderCmsPagesRequest;
+use App\Http\Requests\ReorderMenuItemsRequest;
 use App\Http\Requests\StoreItemRequest;
+use App\Http\Requests\StoreMenuItemRequest;
+use App\Http\Requests\UpdateCmsPageRequest;
 use App\Http\Requests\UpdateItemRequest;
+use App\Http\Requests\UpdateMenuItemRequest;
 use App\Http\Requests\UpdateUserItemRequest;
 use App\Models\AdminSubmissionLog;
+use App\Models\CmsPage;
 use App\Models\Horse;
 use App\Models\Item;
+use App\Models\MenuItem;
 use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -106,11 +113,87 @@ class AdminController extends Controller
 
         $items = Item::orderBy('name')->get();
 
+        $cmsPages = CmsPage::orderBy('sort_order')->get(['id', 'slug', 'title', 'description', 'hero_title', 'hero_description', 'content', 'images', 'sort_order']);
+        $menuItems = MenuItem::with('children')->whereNull('parent_id')->orderBy('sort_order')->get();
+
         return Inertia::render('admin/Index', [
             'submissions' => $horses,
             'herds' => $herds,
             'items' => $items,
+            'cmsPages' => $cmsPages,
+            'menuItems' => $menuItems,
         ]);
+    }
+
+    public function updateCmsPage(UpdateCmsPageRequest $request, CmsPage $page): RedirectResponse
+    {
+        $page->update($request->validated());
+
+        return redirect()->back()->with('success', 'Page updated successfully.');
+    }
+
+    public function storeMenuItem(StoreMenuItemRequest $request): RedirectResponse
+    {
+        $data = $request->validated();
+        if (! array_key_exists('sort_order', $data)) {
+            $max = MenuItem::query()
+                ->where('parent_id', $data['parent_id'] ?? null)
+                ->max('sort_order') ?? -1;
+            $data['sort_order'] = $max + 1;
+        }
+        MenuItem::create($data);
+
+        return redirect()->back()->with('success', 'Menu item created successfully.');
+    }
+
+    public function updateMenuItem(UpdateMenuItemRequest $request, MenuItem $menuItem): RedirectResponse
+    {
+        $data = collect($request->validated())->except('sort_order')->all();
+        $menuItem->update($data);
+
+        return redirect()->back()->with('success', 'Menu item updated successfully.');
+    }
+
+    public function destroyMenuItem(MenuItem $menuItem): RedirectResponse
+    {
+        if (! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+        $menuItem->children()->delete();
+        $menuItem->delete();
+
+        return redirect()->back()->with('success', 'Menu item deleted successfully.');
+    }
+
+    public function reorderCmsPages(ReorderCmsPagesRequest $request): RedirectResponse
+    {
+        foreach ($request->validated('order') as $index => $id) {
+            CmsPage::where('id', $id)->update(['sort_order' => $index]);
+        }
+
+        return redirect()->back()->with('success', 'Pages reordered.');
+    }
+
+    public function reorderMenuItems(ReorderMenuItemsRequest $request): RedirectResponse
+    {
+        $validated = $request->validated();
+        $order = $validated['order'];
+        $parentId = array_key_exists('parent_id', $validated) ? $validated['parent_id'] : null;
+        $settingParent = array_key_exists('parent_id', $validated);
+
+        foreach ($order as $index => $id) {
+            $updates = ['sort_order' => $index];
+            if ($settingParent) {
+                $updates['parent_id'] = $parentId;
+            }
+            $query = MenuItem::where('id', $id);
+            if (! $settingParent) {
+                $query->whereNull('parent_id');
+            }
+            $query->update($updates);
+        }
+
+        return redirect()->back()->with('success', 'Menu reordered.');
     }
 
     public function archive(Horse $horse, Request $request): RedirectResponse

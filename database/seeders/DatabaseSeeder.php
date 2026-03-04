@@ -37,6 +37,12 @@ class DatabaseSeeder extends Seeder
         // Seed default items
         $this->call(ItemSeeder::class);
 
+        // Seed CMS pages and navigation menu
+        $this->call([
+            CmsPageSeeder::class,
+            MenuItemSeeder::class,
+        ]);
+
         // Run local-only seeder if it exists (not present on server)
         if (class_exists('Database\Seeders\LocalOnly')) {
             $this->call('Database\Seeders\LocalOnly');

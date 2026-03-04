@@ -58,7 +58,7 @@ class HorseController extends Controller
             ->latest()
             ->get();
 
-        return Inertia::render('Horses/Index', [
+        return Inertia::render('horses/Index', [
             'horses' => $horses,
             'can' => [
                 'create' => Auth::user()->can('create', Horse::class),
@@ -75,7 +75,7 @@ class HorseController extends Controller
 
         $herds = Herd::where('owner_id', Auth::id())->get();
 
-        return Inertia::render('Horses/Create', [
+        return Inertia::render('horses/Create', [
             'herds' => $herds,
         ]);
     }
@@ -131,7 +131,7 @@ class HorseController extends Controller
                 ->first();
         }
 
-        return Inertia::render('Horses/Show', [
+        return Inertia::render('horses/Show', [
             'horse' => $horse,
             'pendingVersion' => $pendingVersion,
             'can' => [
@@ -200,7 +200,7 @@ class HorseController extends Controller
                 ->toArray();
         }
 
-        return Inertia::render('Horses/Edit', [
+        return Inertia::render('horses/Edit', [
             'horse' => $horse,
             'herds' => $herds,
             'isPendingEdit' => $isPendingEdit,
@@ -317,7 +317,7 @@ class HorseController extends Controller
             ->latest()
             ->get();
 
-        return Inertia::render('Horses/PublicIndex', [
+        return Inertia::render('horses/PublicIndex', [
             'user' => $user,
             'horses' => $horses,
         ]);
@@ -343,7 +343,7 @@ class HorseController extends Controller
             $pendingVersion = $horse->pendingVersions()->where('state', HorseState::Pending)->first();
         }
 
-        return Inertia::render('Horses/Show', [
+        return Inertia::render('horses/Show', [
             'horse' => $horse,
             'pendingVersion' => $pendingVersion,
             'can' => [

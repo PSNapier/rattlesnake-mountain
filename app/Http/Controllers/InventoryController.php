@@ -27,7 +27,7 @@ class InventoryController extends Controller
                 ];
             });
 
-        return Inertia::render('Inventory/Index', [
+        return Inertia::render('inventory/Index', [
             'items' => $items,
         ]);
     }
@@ -58,7 +58,7 @@ class InventoryController extends Controller
             ];
         });
 
-        return Inertia::render('Inventory/Index', [
+        return Inertia::render('inventory/Index', [
             'items' => $items,
             'user' => [
                 'id' => $user->id,

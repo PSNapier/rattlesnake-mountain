@@ -47,7 +47,7 @@ class InboxController extends Controller
                 ];
             });
 
-        return Inertia::render('Inbox/Index', [
+        return Inertia::render('inbox/Index', [
             'messages' => $messages,
         ]);
     }
@@ -68,7 +68,7 @@ class InboxController extends Controller
 
         $message->load(['horse', 'admin', 'comments.user']);
 
-        return Inertia::render('Inbox/Show', [
+        return Inertia::render('inbox/Show', [
             'message' => [
                 'id' => $message->id,
                 'subject' => $message->subject,
@@ -126,7 +126,7 @@ class InboxController extends Controller
         // If owner comments on a 'contacted' horse, reset it to 'pending' and update the date
         if ($message->user_id === Auth::id()) {
             $horse = $message->horse;
-            
+
             // Check if horse is in 'contacted' state (has contacted_at but not approved/archived)
             if ($horse->contacted_at && ! $horse->approved_at && ! $horse->archived_at) {
                 // Reset contacted_at to null (makes it 'pending' again)

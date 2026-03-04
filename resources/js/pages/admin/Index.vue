@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
+import CmsTab from './CmsTab.vue';
 import ItemsTab from './ItemsTab.vue';
 import LifecycleTab from './LifecycleTab.vue';
 import SubmissionsTab from './SubmissionsTab.vue';
@@ -61,11 +62,36 @@ interface Props {
 	submissions: Submission[];
 	herds?: Herd[];
 	items: Item[];
+	cmsPages: unknown[];
+	menuItems: unknown[];
 }
+
+type AdminTab = 'submissions' | 'items' | 'lifecycle' | 'cms';
 
 const props = defineProps<Props>();
 
-const activeTab = ref<'submissions' | 'items' | 'lifecycle'>('submissions');
+const activeTab = ref<AdminTab>('submissions');
+const activeTabStorageKey = 'admin.activeTab';
+
+onMounted(() => {
+	if (typeof window === 'undefined') {
+		return;
+	}
+
+	const storedTab = window.localStorage.getItem(activeTabStorageKey) as AdminTab | null;
+
+	if (storedTab === 'submissions' || storedTab === 'items' || storedTab === 'lifecycle' || storedTab === 'cms') {
+		activeTab.value = storedTab;
+	}
+
+	watch(
+		activeTab,
+		(value) => {
+			window.localStorage.setItem(activeTabStorageKey, value);
+		},
+		{ immediate: true },
+	);
+});
 </script>
 
 <template>
@@ -114,6 +140,16 @@ const activeTab = ref<'submissions' | 'items' | 'lifecycle'>('submissions');
 					]">
 					<span class="text-base">Lifecycle</span>
 				</button>
+				<button
+					@click="activeTab = 'cms'"
+					:class="[
+						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
+						activeTab === 'cms'
+							? 'bg-shakespeare-500 text-white shadow-xs'
+							: 'border border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700',
+					]">
+					<span class="text-base">CMS</span>
+				</button>
 			</div>
 
 			<SubmissionsTab
@@ -126,6 +162,11 @@ const activeTab = ref<'submissions' | 'items' | 'lifecycle'>('submissions');
 				:items="props.items" />
 
 			<LifecycleTab v-if="activeTab === 'lifecycle'" />
+
+			<CmsTab
+				v-if="activeTab === 'cms'"
+				:cms-pages="props.cmsPages"
+				:menu-items="props.menuItems" />
 		</div>
 	</AppLayout>
 </template>
