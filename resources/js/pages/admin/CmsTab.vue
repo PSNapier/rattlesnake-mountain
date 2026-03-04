@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
 	Dialog,
 	DialogContent,
@@ -43,7 +38,12 @@ interface MenuItemWithChildren {
 	label: string;
 	path: string | null;
 	sort_order: number;
-	children?: { id: number; label: string; path: string | null; sort_order: number }[];
+	children?: {
+		id: number;
+		label: string;
+		path: string | null;
+		sort_order: number;
+	}[];
 }
 
 interface Props {
@@ -68,8 +68,14 @@ function reorderAfterMove(evt: Sortable.SortableEvent) {
 	const fromEl = evt.from as HTMLElement;
 	const toParentId = getParentIdFromList(toEl);
 	const fromParentId = getParentIdFromList(fromEl);
-	const toOrder = Sortable.get(toEl)?.toArray().map((id) => Number(id)) ?? [];
-	const fromOrder = Sortable.get(fromEl)?.toArray().map((id) => Number(id)) ?? [];
+	const toOrder =
+		Sortable.get(toEl)
+			?.toArray()
+			.map((id) => Number(id)) ?? [];
+	const fromOrder =
+		Sortable.get(fromEl)
+			?.toArray()
+			.map((id) => Number(id)) ?? [];
 
 	const toBody = { order: toOrder, parent_id: toParentId };
 	const fromBody = { order: fromOrder, parent_id: fromParentId };
@@ -77,7 +83,9 @@ function reorderAfterMove(evt: Sortable.SortableEvent) {
 	router.post(route('admin.cms.menu.reorder'), toBody, {
 		preserveScroll: true,
 		onSuccess: () => {
-			router.post(route('admin.cms.menu.reorder'), fromBody, { preserveScroll: true });
+			router.post(route('admin.cms.menu.reorder'), fromBody, {
+				preserveScroll: true,
+			});
 		},
 	});
 }
@@ -93,9 +101,15 @@ onMounted(() => {
 				if (evt.to !== evt.from) {
 					reorderAfterMove(evt);
 				} else {
-					const order = sortableMenu?.toArray().map((id) => Number(id)) ?? [];
+					const order =
+						sortableMenu?.toArray().map((id) => Number(id)) ??
+						[];
 					if (order.length) {
-						router.post(route('admin.cms.menu.reorder'), { order }, { preserveScroll: true });
+						router.post(
+							route('admin.cms.menu.reorder'),
+							{ order },
+							{ preserveScroll: true },
+						);
 					}
 				}
 			},
@@ -110,29 +124,45 @@ function setChildListRef(parentId: number, el: HTMLElement | null) {
 	childSortables.get(parentId)?.destroy();
 	childSortables.delete(parentId);
 	if (!el) return;
-	childSortables.set(parentId, Sortable.create(el, {
-		handle: '.drag-handle',
-		animation: 150,
-		dataIdAttr: 'data-id',
-		group: 'menu',
-		onEnd(evt) {
-			if (evt.to !== evt.from) {
-				reorderAfterMove(evt);
-			} else {
-				const order = childSortables.get(parentId)?.toArray().map((id) => Number(id)) ?? [];
-				if (order.length) {
-					router.post(route('admin.cms.menu.reorder'), { order, parent_id: parentId }, { preserveScroll: true });
+	childSortables.set(
+		parentId,
+		Sortable.create(el, {
+			handle: '.drag-handle',
+			animation: 150,
+			dataIdAttr: 'data-id',
+			group: 'menu',
+			onEnd(evt) {
+				if (evt.to !== evt.from) {
+					reorderAfterMove(evt);
+				} else {
+					const order =
+						childSortables
+							.get(parentId)
+							?.toArray()
+							.map((id) => Number(id)) ?? [];
+					if (order.length) {
+						router.post(
+							route('admin.cms.menu.reorder'),
+							{ order, parent_id: parentId },
+							{ preserveScroll: true },
+						);
+					}
 				}
-			}
-		},
-		onAdd(evt) {
-			reorderAfterMove(evt);
-		},
-	}));
+			},
+			onAdd(evt) {
+				reorderAfterMove(evt);
+			},
+		}),
+	);
 }
 
 const menuItemDialogOpen = ref(false);
-const menuItemForm = ref<{ id: number | null; label: string; path: string; parent_id: number | null }>({
+const menuItemForm = ref<{
+	id: number | null;
+	label: string;
+	path: string;
+	parent_id: number | null;
+}>({
 	id: null,
 	label: '',
 	path: '',
@@ -151,7 +181,11 @@ function resolvePageForPath(path: string | null): CmsPage | null {
 
 function isLocalPath(path: string): boolean {
 	const trimmed = (path ?? '').trim();
-	return trimmed !== '' && trimmed.startsWith('/') && !trimmed.startsWith('http');
+	return (
+		trimmed !== '' &&
+		trimmed.startsWith('/') &&
+		!trimmed.startsWith('http')
+	);
 }
 
 const linkedPage = computed(() => resolvePageForPath(menuItemForm.value.path));
@@ -170,18 +204,25 @@ const pageForm = ref({
 	imagesJson: '[]',
 });
 
-watch(linkedPage, (page, prevPage) => {
-	if (page && !prevPage) {
-		pageForm.value = {
-			description: page.description ?? '',
-			hero_description: page.hero_description ?? '',
-			contentJson: JSON.stringify(page.content ?? {}, null, 2),
-			imagesJson: JSON.stringify(page.images ?? [], null, 2),
-		};
-	}
-}, { immediate: false });
+watch(
+	linkedPage,
+	(page, prevPage) => {
+		if (page && !prevPage) {
+			pageForm.value = {
+				description: page.description ?? '',
+				hero_description: page.hero_description ?? '',
+				contentJson: JSON.stringify(page.content ?? {}, null, 2),
+				imagesJson: JSON.stringify(page.images ?? [], null, 2),
+			};
+		}
+	},
+	{ immediate: false },
+);
 
-function openMenuEdit(item: { id: number; label: string; path: string | null }, parentId: number | null) {
+function openMenuEdit(
+	item: { id: number; label: string; path: string | null },
+	parentId: number | null,
+) {
 	isNewMenuItem.value = false;
 	menuItemForm.value = {
 		id: item.id,
@@ -200,7 +241,12 @@ function openMenuEdit(item: { id: number; label: string; path: string | null }, 
 		};
 	} else {
 		displayLinkedPage.value = null;
-		pageForm.value = { description: '', hero_description: '', contentJson: '{}', imagesJson: '[]' };
+		pageForm.value = {
+			description: '',
+			hero_description: '',
+			contentJson: '{}',
+			imagesJson: '[]',
+		};
 	}
 	menuItemDialogOpen.value = true;
 }
@@ -226,7 +272,12 @@ function closeMenuDialog() {
 	menuItemDialogOpen.value = false;
 	setTimeout(() => {
 		displayLinkedPage.value = null;
-		menuItemForm.value = { id: null, label: '', path: '', parent_id: null };
+		menuItemForm.value = {
+			id: null,
+			label: '',
+			path: '',
+			parent_id: null,
+		};
 		pageForm.value = {
 			description: '',
 			hero_description: '',
@@ -268,25 +319,39 @@ function saveMenuItem() {
 		};
 		const page = linkedPage.value;
 		if (page) {
-			router.put(route('admin.cms.pages.update', page.id), payload, { onSuccess: doClose });
+			router.put(route('admin.cms.pages.update', page.id), payload, {
+				onSuccess: doClose,
+			});
 		} else {
 			const slug = menuItemForm.value.path.replace(/^\//, '').trim();
-			router.post(route('admin.cms.pages.store'), { ...payload, slug }, { onSuccess: doClose });
+			router.post(
+				route('admin.cms.pages.store'),
+				{ ...payload, slug },
+				{ onSuccess: doClose },
+			);
 		}
 	};
 
 	if (isNewMenuItem.value) {
-		router.post(route('admin.cms.menu.store'), {
-			label: menuItemForm.value.label,
-			path: menuItemForm.value.path || null,
-			parent_id: menuItemForm.value.parent_id,
-		}, { onSuccess: savePageThen });
+		router.post(
+			route('admin.cms.menu.store'),
+			{
+				label: menuItemForm.value.label,
+				path: menuItemForm.value.path || null,
+				parent_id: menuItemForm.value.parent_id,
+			},
+			{ onSuccess: savePageThen },
+		);
 	} else if (menuItemForm.value.id) {
-		router.put(route('admin.cms.menu.update', menuItemForm.value.id), {
-			label: menuItemForm.value.label,
-			path: menuItemForm.value.path || null,
-			parent_id: menuItemForm.value.parent_id,
-		}, { onSuccess: savePageThen });
+		router.put(
+			route('admin.cms.menu.update', menuItemForm.value.id),
+			{
+				label: menuItemForm.value.label,
+				path: menuItemForm.value.path || null,
+				parent_id: menuItemForm.value.parent_id,
+			},
+			{ onSuccess: savePageThen },
+		);
 	}
 }
 
@@ -304,7 +369,11 @@ function deleteMenuItem(id: number) {
 		<CardContent>
 			<div class="space-y-2">
 				<div class="flex items-center justify-end">
-					<Button size="sm" @click="openMenuAdd(null)">Add top-level item</Button>
+					<Button
+						size="sm"
+						@click="openMenuAdd(null)"
+						>Add top-level item</Button
+					>
 				</div>
 				<ul
 					ref="menuListRef"
@@ -316,39 +385,88 @@ function deleteMenuItem(id: number) {
 						:data-id="item.id"
 						class="rounded border border-gray-200 p-3">
 						<div class="flex items-center gap-3">
-							<span class="drag-handle cursor-grab text-gray-400 active:cursor-grabbing">
+							<span
+								class="drag-handle cursor-grab text-gray-400 active:cursor-grabbing">
 								<GripVertical class="size-4" />
 							</span>
-							<span class="font-medium flex-1">{{ item.label }}</span>
-							<span class="text-cape-palliser-600 text-sm">{{ item.path ?? '—' }}</span>
+							<span class="flex-1 font-medium">{{
+								item.label
+							}}</span>
+							<span
+								class="text-cape-palliser-600 text-sm"
+								>{{ item.path ?? '—' }}</span
+							>
 							<div class="flex gap-2">
-								<Button variant="outline" size="sm" @click="openMenuEdit(item, null)">Edit</Button>
-								<Button variant="destructive" size="sm" @click="deleteMenuItem(item.id)">Delete</Button>
+								<Button
+									variant="outline"
+									size="sm"
+									@click="openMenuEdit(item, null)"
+									>Edit</Button
+								>
+								<Button
+									variant="destructive"
+									size="sm"
+									@click="deleteMenuItem(item.id)"
+									>Delete</Button
+								>
 							</div>
 						</div>
 						<ul
 							v-if="item.children?.length"
-							:ref="(el) => setChildListRef(item.id, el as HTMLElement | null)"
+							:ref="
+								(el) =>
+									setChildListRef(
+										item.id,
+										el as HTMLElement | null,
+									)
+							"
 							:data-parent-id="item.id"
-							class="ml-4 mt-2 space-y-1 border-l-2 border-gray-200 pl-4">
+							class="mt-2 ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
 							<li
 								v-for="child in item.children"
 								:key="child.id"
 								:data-id="child.id"
 								class="flex cursor-default items-center gap-3 py-1 hover:bg-gray-50">
-								<span class="drag-handle cursor-grab text-gray-400 active:cursor-grabbing">
+								<span
+									class="drag-handle cursor-grab text-gray-400 active:cursor-grabbing">
 									<GripVertical class="size-4" />
 								</span>
-								<span class="flex-1">{{ child.label }}</span>
-								<span class="text-cape-palliser-600 text-sm">{{ child.path ?? '—' }}</span>
+								<span class="flex-1">{{
+									child.label
+								}}</span>
+								<span
+									class="text-cape-palliser-600 text-sm"
+									>{{ child.path ?? '—' }}</span
+								>
 								<div class="flex gap-2">
-									<Button variant="outline" size="sm" @click="openMenuEdit(child, item.id)">Edit</Button>
-									<Button variant="destructive" size="sm" @click="deleteMenuItem(child.id)">Delete</Button>
+									<Button
+										variant="outline"
+										size="sm"
+										@click="
+											openMenuEdit(
+												child,
+												item.id,
+											)
+										"
+										>Edit</Button
+									>
+									<Button
+										variant="destructive"
+										size="sm"
+										@click="
+											deleteMenuItem(child.id)
+										"
+										>Delete</Button
+									>
 								</div>
 							</li>
 						</ul>
-						<div class="ml-4 mt-2 flex justify-end">
-							<Button size="sm" @click="openMenuAdd(item.id)">Add child</Button>
+						<div class="mt-2 ml-4 flex justify-end">
+							<Button
+								size="sm"
+								@click="openMenuAdd(item.id)"
+								>Add child</Button
+							>
 						</div>
 					</li>
 				</ul>
@@ -357,19 +475,31 @@ function deleteMenuItem(id: number) {
 	</Card>
 
 	<Dialog v-model:open="menuItemDialogOpen">
-		<DialogContent class="max-h-[90vh] overflow-y-auto max-w-2xl">
+		<DialogContent class="max-h-[90vh] max-w-2xl overflow-y-auto">
 			<DialogHeader>
-				<DialogTitle>{{ isNewMenuItem ? 'Add menu item' : 'Edit menu item' }}</DialogTitle>
+				<DialogTitle>{{
+					isNewMenuItem ? 'Add menu item' : 'Edit menu item'
+				}}</DialogTitle>
 			</DialogHeader>
 			<div class="space-y-6">
 				<div class="space-y-4">
 					<div>
 						<Label for="menu_label">Label / Title</Label>
-						<Input id="menu_label" v-model="menuItemForm.label" class="mt-1 w-full" placeholder="Menu label, page title, hero title" />
+						<Input
+							id="menu_label"
+							v-model="menuItemForm.label"
+							class="mt-1 w-full"
+							placeholder="Menu label, page title, hero title" />
 					</div>
 					<div>
-						<Label for="menu_path">Path (e.g. /contact-us or full URL)</Label>
-						<Input id="menu_path" v-model="menuItemForm.path" class="mt-1 w-full" placeholder="/path" />
+						<Label for="menu_path"
+							>Path (e.g. /contact-us or full URL)</Label
+						>
+						<Input
+							id="menu_path"
+							v-model="menuItemForm.path"
+							class="mt-1 w-full"
+							placeholder="/path" />
 					</div>
 					<div v-if="isNewMenuItem">
 						<Label for="menu_parent">Parent</Label>
@@ -388,9 +518,16 @@ function deleteMenuItem(id: number) {
 					</div>
 				</div>
 
-				<div v-if="displayLinkedPage || isLocalPath(menuItemForm.path)" class="space-y-4 border-t border-gray-200 pt-6">
+				<div
+					v-if="
+						displayLinkedPage ||
+						isLocalPath(menuItemForm.path)
+					"
+					class="space-y-4 border-t border-gray-200 pt-6">
 					<div>
-						<Label for="hero_description">Hero description</Label>
+						<Label for="hero_description"
+							>Hero description</Label
+						>
 						<textarea
 							id="hero_description"
 							v-model="pageForm.hero_description"
@@ -403,7 +540,7 @@ function deleteMenuItem(id: number) {
 							id="contentJson"
 							v-model="pageForm.contentJson"
 							rows="10"
-							class="border-input mt-1 w-full font-mono text-sm rounded-md border px-3 py-2" />
+							class="border-input mt-1 w-full rounded-md border px-3 py-2 font-mono text-sm" />
 					</div>
 					<div>
 						<Label for="imagesJson">Images (JSON)</Label>
@@ -411,12 +548,16 @@ function deleteMenuItem(id: number) {
 							id="imagesJson"
 							v-model="pageForm.imagesJson"
 							rows="4"
-							class="border-input mt-1 w-full font-mono text-sm rounded-md border px-3 py-2" />
+							class="border-input mt-1 w-full rounded-md border px-3 py-2 font-mono text-sm" />
 					</div>
 				</div>
 			</div>
 			<DialogFooter>
-				<Button variant="outline" @click="closeMenuDialog">Cancel</Button>
+				<Button
+					variant="outline"
+					@click="closeMenuDialog"
+					>Cancel</Button
+				>
 				<Button @click="saveMenuItem">Save</Button>
 			</DialogFooter>
 		</DialogContent>

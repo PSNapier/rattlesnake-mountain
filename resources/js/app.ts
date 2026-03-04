@@ -33,7 +33,7 @@ createInertiaApp({
 		return app;
 	},
 	progress: {
-		color: '#4B5563',
+		color: '#1f90bb', // shakespeare-500
 	},
 });
 
