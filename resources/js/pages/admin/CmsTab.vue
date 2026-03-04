@@ -161,20 +161,13 @@ const pageForm = ref({
 	imagesJson: '[]',
 });
 
-watch(linkedPage, (page) => {
-	if (page) {
+watch(linkedPage, (page, prevPage) => {
+	if (page && !prevPage) {
 		pageForm.value = {
 			description: page.description ?? '',
 			hero_description: page.hero_description ?? '',
 			contentJson: JSON.stringify(page.content ?? {}, null, 2),
 			imagesJson: JSON.stringify(page.images ?? [], null, 2),
-		};
-	} else {
-		pageForm.value = {
-			description: '',
-			hero_description: '',
-			contentJson: '{}',
-			imagesJson: '[]',
 		};
 	}
 }, { immediate: false });
@@ -209,8 +202,16 @@ function openMenuAdd(parentId: number | null) {
 
 function closeMenuDialog() {
 	menuItemDialogOpen.value = false;
-	displayLinkedPage.value = null;
-	menuItemForm.value = { id: null, label: '', path: '', parent_id: null };
+	setTimeout(() => {
+		displayLinkedPage.value = null;
+		menuItemForm.value = { id: null, label: '', path: '', parent_id: null };
+		pageForm.value = {
+			description: '',
+			hero_description: '',
+			contentJson: '{}',
+			imagesJson: '[]',
+		};
+	}, 250);
 }
 
 function saveMenuItem() {
