@@ -6,6 +6,7 @@ import CmsTab from './CmsTab.vue';
 import ItemsTab from './ItemsTab.vue';
 import LifecycleTab from './LifecycleTab.vue';
 import SubmissionsTab from './SubmissionsTab.vue';
+import UsersTab from './UsersTab.vue';
 
 interface Herd {
 	id: number;
@@ -58,6 +59,29 @@ interface Item {
 	is_active: boolean;
 }
 
+interface AdminUser {
+	id: number;
+	name: string;
+	role: string;
+	created_at: string;
+	last_login_at: string | null;
+	frozen_at: string | null;
+	banned_at: string | null;
+}
+
+interface PaginatedUsers {
+	data: AdminUser[];
+	links: { url: string | null; label: string; active: boolean }[];
+	meta: {
+		current_page: number;
+		last_page: number;
+		per_page: number;
+		total: number;
+		from: number | null;
+		to: number | null;
+	};
+}
+
 interface LifecycleSettings {
 	horse_auto_age_next_update: string;
 	horse_auto_age_frequency_unit: 'weeks' | 'months';
@@ -71,12 +95,14 @@ interface Props {
 	submissions: Submission[];
 	herds?: Herd[];
 	items: Item[];
+	users: PaginatedUsers;
+	userSearch: string;
 	cmsPages: unknown[];
 	menuItems: unknown[];
 	lifecycleSettings?: LifecycleSettings | null;
 }
 
-type AdminTab = 'submissions' | 'items' | 'lifecycle' | 'cms';
+type AdminTab = 'submissions' | 'users' | 'items' | 'lifecycle' | 'cms';
 
 const props = defineProps<Props>();
 const page = usePage();
@@ -91,7 +117,7 @@ onMounted(() => {
 
 	const storedTab = window.localStorage.getItem(activeTabStorageKey) as AdminTab | null;
 
-	if (storedTab === 'submissions' || storedTab === 'items' || storedTab === 'lifecycle' || storedTab === 'cms') {
+	if (storedTab === 'submissions' || storedTab === 'users' || storedTab === 'items' || storedTab === 'lifecycle' || storedTab === 'cms') {
 		activeTab.value = storedTab;
 	}
 
@@ -140,6 +166,16 @@ onMounted(() => {
 					<span class="text-base">Submissions</span>
 				</button>
 				<button
+					@click="activeTab = 'users'"
+					:class="[
+						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
+						activeTab === 'users'
+							? 'bg-shakespeare-500 text-white shadow-xs'
+							: 'border border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700',
+					]">
+					<span class="text-base">Users</span>
+				</button>
+				<button
 					@click="activeTab = 'items'"
 					:class="[
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
@@ -175,6 +211,11 @@ onMounted(() => {
 				v-if="activeTab === 'submissions'"
 				:submissions="props.submissions"
 				:herds="props.herds" />
+
+			<UsersTab
+				v-if="activeTab === 'users'"
+				:users="props.users"
+				:user-search="props.userSearch" />
 
 			<ItemsTab
 				v-if="activeTab === 'items'"

@@ -11,6 +11,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('settings/profile/unfreeze', [ProfileController::class, 'unfreeze'])->name('profile.unfreeze');
     Route::patch('settings/profile/bio', [ProfileController::class, 'updateBio'])->name('profile.bio.update');
     Route::delete('settings/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 

@@ -42,6 +42,20 @@ class ProfileController extends Controller
     }
 
     /**
+     * Unfreeze the current user's account (self-reversible).
+     */
+    public function unfreeze(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        if (! $user->isFrozen()) {
+            return back();
+        }
+        $user->update(['frozen_at' => null]);
+
+        return back()->with('status', 'Your account has been unfrozen.');
+    }
+
+    /**
      * Update the user's bio.
      */
     public function updateBio(BioUpdateRequest $request): RedirectResponse

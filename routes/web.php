@@ -40,6 +40,13 @@ Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
     Route::put('/admin/items/{item}', [AdminController::class, 'updateItem'])->name('admin.items.update');
     Route::delete('/admin/items/{item}', [AdminController::class, 'destroyItem'])->name('admin.items.destroy');
 
+    // User Management
+    Route::post('/admin/users/{user}/freeze', [AdminController::class, 'freezeUser'])->name('admin.users.freeze');
+    Route::post('/admin/users/{user}/ban', [AdminController::class, 'banUser'])->name('admin.users.ban');
+    Route::post('/admin/users/{user}/unban', [AdminController::class, 'unbanUser'])->name('admin.users.unban');
+    Route::put('/admin/users/{user}/role', [AdminController::class, 'updateUserRole'])->name('admin.users.role.update');
+    Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser'])->name('admin.users.destroy');
+
     // User Item Management
     Route::get('/admin/users/search', [AdminController::class, 'searchUsers'])->name('admin.users.search');
     Route::get('/admin/users/{user}/inventory', [AdminController::class, 'getUserInventory'])->name('admin.users.inventory');

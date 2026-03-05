@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -47,6 +48,24 @@ class LoginRequest extends FormRequest
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
             ]);
+        }
+
+        $user = Auth::user();
+        if ($user instanceof User) {
+            if ($user->isBanned()) {
+                Auth::logout();
+
+                throw ValidationException::withMessages([
+                    'email' => 'This account has been banned.',
+                ]);
+            }
+            if ($user->isSanctuary()) {
+                Auth::logout();
+
+                throw ValidationException::withMessages([
+                    'email' => 'This account cannot be used to log in.',
+                ]);
+            }
         }
 
         RateLimiter::clear($this->throttleKey());

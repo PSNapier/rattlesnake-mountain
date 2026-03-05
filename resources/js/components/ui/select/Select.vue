@@ -5,7 +5,7 @@
       type="button"
       :class="cn(buttonVariants({ variant, size }), className)"
       v-bind="$attrs"
-      @click="open = !open"
+      @click="toggleOpen"
     >
       <span v-if="placeholder && !modelValue" class="text-muted-foreground">
         {{ placeholder }}
@@ -16,11 +16,13 @@
       <ChevronDownIcon class="ml-2 h-4 w-4 opacity-50" />
     </button>
 
-    <div
-      v-if="open"
-      class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg"
-    >
-      <div class="py-1">
+    <Teleport to="body">
+      <div
+        v-if="open"
+        ref="dropdown"
+        class="fixed z-[100] min-w-[var(--select-width)] rounded-md border border-gray-200 bg-white py-1 shadow-lg"
+        :style="dropdownStyle"
+      >
         <button
           v-for="option in options"
           :key="option.value"
@@ -31,12 +33,12 @@
           {{ option.label }}
         </button>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { ChevronDownIcon } from '@heroicons/vue/24/outline'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
@@ -66,11 +68,42 @@ const emit = defineEmits<{
 }>()
 
 const trigger = ref<HTMLButtonElement>()
+const dropdown = ref<HTMLDivElement>()
 const open = ref(false)
+const dropdownStyle = ref({ top: '0px', left: '0px', '--select-width': '8rem' })
 
 const selectedOption = computed(() => {
   return props.options.find(option => option.value === props.modelValue)
 })
+
+const optionHeight = 40
+const dropdownPadding = 8
+
+function updatePosition() {
+  if (!trigger.value || !open.value) return
+
+  const rect = trigger.value.getBoundingClientRect()
+  const gap = 4
+  const estimatedHeight = props.options.length * optionHeight + dropdownPadding
+  const spaceBelow = window.innerHeight - rect.bottom - gap
+  const spaceAbove = rect.top - gap
+  const placeAbove = estimatedHeight > spaceBelow && spaceAbove > spaceBelow
+
+  dropdownStyle.value = {
+    left: `${rect.left}px`,
+    '--select-width': `${rect.width}px`,
+    top: placeAbove
+      ? `${rect.top - estimatedHeight - gap}px`
+      : `${rect.bottom + gap}px`,
+  }
+}
+
+function toggleOpen() {
+  open.value = !open.value
+  if (open.value) {
+    updatePosition()
+  }
+}
 
 const selectOption = (option: Option) => {
   emit('update:modelValue', option.value)
@@ -78,10 +111,28 @@ const selectOption = (option: Option) => {
 }
 
 const handleClickOutside = (event: Event) => {
-  if (trigger.value && !trigger.value.contains(event.target as Node)) {
+  const target = event.target as Node
+  if (
+    open.value &&
+    trigger.value &&
+    !trigger.value.contains(target) &&
+    dropdown.value &&
+    !dropdown.value.contains(target)
+  ) {
     open.value = false
   }
 }
+
+watch(open, (isOpen) => {
+  if (isOpen) {
+    requestAnimationFrame(updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    window.addEventListener('resize', updatePosition)
+  } else {
+    window.removeEventListener('scroll', updatePosition, true)
+    window.removeEventListener('resize', updatePosition)
+  }
+})
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
@@ -89,5 +140,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('scroll', updatePosition, true)
+  window.removeEventListener('resize', updatePosition)
 })
 </script>

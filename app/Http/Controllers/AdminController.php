@@ -14,6 +14,7 @@ use App\Http\Requests\UpdateItemRequest;
 use App\Http\Requests\UpdateLifecycleSettingsRequest;
 use App\Http\Requests\UpdateMenuItemRequest;
 use App\Http\Requests\UpdateUserItemRequest;
+use App\Http\Requests\UpdateUserRoleRequest;
 use App\Models\AdminSubmissionLog;
 use App\Models\CmsPage;
 use App\Models\Horse;
@@ -133,6 +134,26 @@ class AdminController extends Controller
 
         $lifecycleSettings = LifecycleSetting::first();
 
+        $usersQuery = User::query()
+            ->whereNull('deleted_at')
+            ->where('is_sanctuary', false)
+            ->select('id', 'name', 'role', 'created_at', 'last_login_at', 'frozen_at', 'banned_at');
+
+        $search = $request->query('user_search');
+        if (is_string($search) && $search !== '') {
+            $usersQuery->where('name', 'like', '%'.addcslashes($search, '%_\\').'%');
+        }
+
+        $users = $usersQuery->orderBy('name')->paginate(25)->through(fn (User $u) => [
+            'id' => $u->id,
+            'name' => $u->name,
+            'role' => $u->role->value,
+            'created_at' => $u->created_at->toIso8601String(),
+            'last_login_at' => $u->last_login_at?->toIso8601String(),
+            'frozen_at' => $u->frozen_at?->toIso8601String(),
+            'banned_at' => $u->banned_at?->toIso8601String(),
+        ]);
+
         return Inertia::render('admin/Index', [
             'submissions' => $horses,
             'herds' => $herds,
@@ -147,6 +168,8 @@ class AdminController extends Controller
                 'horse_auto_health_roll_min' => $lifecycleSettings->horse_auto_health_roll_min,
                 'horse_auto_health_roll_max' => $lifecycleSettings->horse_auto_health_roll_max,
             ] : null,
+            'users' => $users,
+            'userSearch' => $search ?? '',
         ]);
     }
 
@@ -396,7 +419,9 @@ class AdminController extends Controller
         $query = $request->input('q', '');
         $limit = $request->input('limit', 10);
 
-        $users = User::where('name', 'like', "%{$query}%")
+        $users = User::whereNull('deleted_at')
+            ->where('is_sanctuary', false)
+            ->where('name', 'like', '%'.addcslashes($query, '%_\\').'%')
             ->orderBy('name')
             ->limit($limit)
             ->get(['id', 'name']);
@@ -460,7 +485,6 @@ class AdminController extends Controller
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
-                'email' => $user->email,
             ],
             'items' => $allItems,
             'userItems' => $userItems,
@@ -489,5 +513,84 @@ class AdminController extends Controller
 
         return redirect()->route('admin.users.items', $user)
             ->with('success', 'User inventory updated successfully.');
+    }
+
+    public function freezeUser(User $user): RedirectResponse
+    {
+        if (! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+        if ($user->is_sanctuary || $user->deleted_at) {
+            abort(400, 'Cannot freeze this user.');
+        }
+        $user->update(['frozen_at' => now()]);
+
+        return redirect()->back()->with('success', "Frozen {$user->name}.");
+    }
+
+    public function banUser(User $user): RedirectResponse
+    {
+        if (! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+        if ($user->is_sanctuary || $user->deleted_at || $user->isAdmin()) {
+            abort(400, 'Cannot ban this user.');
+        }
+        $user->update(['banned_at' => now()]);
+
+        return redirect()->back()->with('success', "Banned {$user->name}.");
+    }
+
+    public function unbanUser(User $user): RedirectResponse
+    {
+        if (! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+        $user->update(['banned_at' => null]);
+
+        return redirect()->back()->with('success', "Unbanned {$user->name}.");
+    }
+
+    public function updateUserRole(UpdateUserRoleRequest $request, User $user): RedirectResponse
+    {
+        if ($user->is_sanctuary || $user->deleted_at) {
+            abort(400, 'Cannot change role for this user.');
+        }
+        $user->update(['role' => $request->validated('role')]);
+
+        return redirect()->back()->with('success', "Updated {$user->name}'s role.");
+    }
+
+    public function deleteUser(User $user): RedirectResponse
+    {
+        if (! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+        if ($user->is_sanctuary || $user->deleted_at || $user->isAdmin()) {
+            abort(400, 'Cannot delete this user.');
+        }
+
+        $sanctuary = User::sanctuary();
+
+        $user->herds()->update(['owner_id' => $sanctuary->id, 'created_by' => $sanctuary->id]);
+        $user->createdHerds()->update(['created_by' => $sanctuary->id]);
+        $user->horses()->update(['owner_id' => $sanctuary->id]);
+        $user->bredHorses()->update(['bred_by' => $sanctuary->id]);
+
+        $user->items()->detach();
+
+        $name = $user->name;
+        $user->forceFill([
+            'name' => 'Deleted User',
+            'email' => 'deleted_'.$user->id.'@deleted.local',
+            'password' => bcrypt(\Illuminate\Support\Str::random(64)),
+            'bio' => null,
+            'avatar' => null,
+            'referred_by_username' => null,
+        ])->save();
+
+        $user->delete();
+
+        return redirect()->back()->with('success', "Deleted {$name}.");
     }
 }

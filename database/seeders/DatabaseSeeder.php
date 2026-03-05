@@ -43,6 +43,8 @@ class DatabaseSeeder extends Seeder
             MenuItemSeeder::class,
         ]);
 
+        $this->call(SanctuarySeeder::class);
+
         // Run local-only seeder if it exists (not present on server)
         if (class_exists('Database\Seeders\LocalOnly')) {
             $this->call('Database\Seeders\LocalOnly');
