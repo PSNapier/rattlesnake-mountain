@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
+import { router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 interface LifecycleSettings {
@@ -41,16 +42,9 @@ const form = ref<LifecycleSettings>({
 });
 
 const handleSave = (): void => {
-	// TODO: Wire up to backend route when ready
-	// router.put(route('admin.lifecycle.update'), form.value, {
-	// 	onSuccess: () => {
-	// 		// Show success message
-	// 	},
-	// 	onError: () => {
-	// 		// Show error message
-	// 	},
-	// });
-	console.log('Lifecycle settings to save:', form.value);
+	router.put(route('admin.lifecycle.update'), form.value, {
+		preserveScroll: true,
+	});
 };
 </script>
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 import { onMounted, ref, watch } from 'vue';
 import CmsTab from './CmsTab.vue';
 import ItemsTab from './ItemsTab.vue';
@@ -58,17 +58,28 @@ interface Item {
 	is_active: boolean;
 }
 
+interface LifecycleSettings {
+	horse_auto_age_next_update: string;
+	horse_auto_age_frequency_unit: 'weeks' | 'months';
+	horse_auto_age_frequency_value: number;
+	horse_auto_age_game_years: number;
+	horse_auto_health_roll_min: number;
+	horse_auto_health_roll_max: number;
+}
+
 interface Props {
 	submissions: Submission[];
 	herds?: Herd[];
 	items: Item[];
 	cmsPages: unknown[];
 	menuItems: unknown[];
+	lifecycleSettings?: LifecycleSettings | null;
 }
 
 type AdminTab = 'submissions' | 'items' | 'lifecycle' | 'cms';
 
 const props = defineProps<Props>();
+const page = usePage();
 
 const activeTab = ref<AdminTab>('submissions');
 const activeTabStorageKey = 'admin.activeTab';
@@ -105,6 +116,14 @@ onMounted(() => {
 				</h1>
 				<p class="text-cape-palliser-700 mt-2">
 					Welcome to the admin area.
+				</p>
+			</div>
+
+			<div
+				v-if="(page.props.flash as any)?.success"
+				class="mb-4 rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
+				<p class="text-sm font-medium text-green-800 dark:text-green-200">
+					{{ (page.props.flash as any)?.success }}
 				</p>
 			</div>
 
@@ -161,7 +180,9 @@ onMounted(() => {
 				v-if="activeTab === 'items'"
 				:items="props.items" />
 
-			<LifecycleTab v-if="activeTab === 'lifecycle'" />
+			<LifecycleTab
+				v-if="activeTab === 'lifecycle'"
+				:settings="props.lifecycleSettings ?? undefined" />
 
 			<CmsTab
 				v-if="activeTab === 'cms'"
