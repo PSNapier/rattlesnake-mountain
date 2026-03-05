@@ -14,6 +14,7 @@ import {
 	LogOut,
 	Package,
 	Settings,
+	Trophy,
 	Users,
 	UserSearch,
 	Zap,
@@ -100,6 +101,16 @@ defineProps<Props>();
 				as="button">
 				<UserSearch class="mr-2 h-4 w-4" />
 				All Users
+			</Link>
+		</DropdownMenuItem>
+		<DropdownMenuItem :as-child="true">
+			<Link
+				class="block w-full"
+				:href="route('leaderboard.index')"
+				prefetch
+				as="button">
+				<Trophy class="mr-2 h-4 w-4" />
+				Leaderboard
 			</Link>
 		</DropdownMenuItem>
 		<DropdownMenuItem :as-child="true">

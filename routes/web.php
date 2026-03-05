@@ -6,6 +6,7 @@ use App\Http\Controllers\DevPasswordController;
 use App\Http\Controllers\HerdController;
 use App\Http\Controllers\HorseController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\StaticPageController;
 use App\Models\Herd;
 use App\Models\Horse;
@@ -137,6 +138,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // Public viewing routes for users' herds and horses
+Route::get('/leaderboard', [LeaderboardController::class, 'index'])->name('leaderboard.index');
+
 Route::get('/u/{user}', function (User $user) {
     return Inertia::render('users/Index', [
         'user' => $user->only(['id', 'name', 'bio', 'avatar']),
