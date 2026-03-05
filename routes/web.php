@@ -28,7 +28,9 @@ Route::get('dashboard', function () {
 // Admin
 Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
     Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
+    Route::put('/admin/lifecycle', [AdminController::class, 'updateLifecycle'])->name('admin.lifecycle.update');
     Route::post('/admin/horses/{horse}/archive', [AdminController::class, 'archive'])->name('admin.horses.archive');
+    Route::post('/admin/horses/{horse}/unarchive', [AdminController::class, 'unarchive'])->name('admin.horses.unarchive');
     Route::post('/admin/horses/{horse}/contact', [AdminController::class, 'contact'])->name('admin.horses.contact');
 
     // Item Management

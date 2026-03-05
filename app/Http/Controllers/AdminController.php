@@ -11,12 +11,14 @@ use App\Http\Requests\StoreItemRequest;
 use App\Http\Requests\StoreMenuItemRequest;
 use App\Http\Requests\UpdateCmsPageRequest;
 use App\Http\Requests\UpdateItemRequest;
+use App\Http\Requests\UpdateLifecycleSettingsRequest;
 use App\Http\Requests\UpdateMenuItemRequest;
 use App\Http\Requests\UpdateUserItemRequest;
 use App\Models\AdminSubmissionLog;
 use App\Models\CmsPage;
 use App\Models\Horse;
 use App\Models\Item;
+use App\Models\LifecycleSetting;
 use App\Models\MenuItem;
 use App\Models\Message;
 use App\Models\User;
@@ -129,13 +131,31 @@ class AdminController extends Controller
                 ])->values()->all(),
             ])->values()->all();
 
+        $lifecycleSettings = LifecycleSetting::first();
+
         return Inertia::render('admin/Index', [
             'submissions' => $horses,
             'herds' => $herds,
             'items' => $items,
             'cmsPages' => $cmsPages,
             'menuItems' => $menuItems,
+            'lifecycleSettings' => $lifecycleSettings ? [
+                'horse_auto_age_next_update' => $lifecycleSettings->horse_auto_age_next_update->format('Y-m-d'),
+                'horse_auto_age_frequency_unit' => $lifecycleSettings->horse_auto_age_frequency_unit,
+                'horse_auto_age_frequency_value' => $lifecycleSettings->horse_auto_age_frequency_value,
+                'horse_auto_age_game_years' => $lifecycleSettings->horse_auto_age_game_years,
+                'horse_auto_health_roll_min' => $lifecycleSettings->horse_auto_health_roll_min,
+                'horse_auto_health_roll_max' => $lifecycleSettings->horse_auto_health_roll_max,
+            ] : null,
         ]);
+    }
+
+    public function updateLifecycle(UpdateLifecycleSettingsRequest $request): RedirectResponse
+    {
+        $settings = LifecycleSetting::firstOrFail();
+        $settings->update($request->validated());
+
+        return redirect()->back()->with('success', 'Lifecycle settings saved.');
     }
 
     public function storeCmsPage(StoreCmsPageRequest $request): RedirectResponse
@@ -248,6 +268,35 @@ class AdminController extends Controller
 
         return redirect()->route('admin.index')
             ->with('success', 'Submission archived successfully.');
+    }
+
+    public function unarchive(Horse $horse): RedirectResponse
+    {
+        if (! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+
+        if (! $horse->archived_at) {
+            abort(400, 'Only archived horses can be unarchived.');
+        }
+
+        if ($horse->state !== HorseState::Pending || $horse->approved_at) {
+            abort(400, 'Only pending, unapproved horses can be unarchived.');
+        }
+
+        $horse->update([
+            'archived_at' => null,
+            'contacted_at' => null,
+        ]);
+
+        AdminSubmissionLog::create([
+            'horse_id' => $horse->id,
+            'admin_id' => Auth::id(),
+            'action' => AdminAction::Unarchived,
+        ]);
+
+        return redirect()->route('admin.index')
+            ->with('success', 'Submission unarchived and restored to pending.');
     }
 
     public function contact(Horse $horse, Request $request): RedirectResponse
