@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Link, router } from '@inertiajs/vue3';
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-vue-next';
+import { ArchiveRestore, ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 type Status = 'pending' | 'contacted' | 'approved' | 'archived';
@@ -255,6 +255,12 @@ const closeReviewModal = (): void => {
 	showReviewModal.value = false;
 	selectedSubmission.value = null;
 	reviewNotes.value = '';
+};
+
+const handleUnarchive = (submission: Submission): void => {
+	router.post(route('admin.horses.unarchive', submission.id), {}, {
+		onSuccess: () => router.reload(),
+	});
 };
 
 const handleArchive = (): void => {
@@ -531,16 +537,31 @@ const handleApprove = (): void => {
 							<td class="text-cape-palliser-700 px-4 py-3 text-sm">
 								{{ submission.last_admin_name || '—' }}
 							</td>
-							<td class="px-4 py-3 text-sm">
+							<td class="flex gap-2 px-4 py-3 text-sm">
 								<Button
-									v-if="submission.status !== 'approved'"
+									v-if="submission.status !== 'approved' && submission.status !== 'archived'"
+									variant="outline"
+									size="sm"
+									@click="openReviewModal(submission)">
+									Review
+								</Button>
+								<Button
+									v-if="submission.status === 'archived'"
+									variant="outline"
+									size="sm"
+									@click="handleUnarchive(submission)">
+									<ArchiveRestore class="mr-1 h-4 w-4" />
+									Unarchive
+								</Button>
+								<Button
+									v-if="submission.status === 'archived'"
 									variant="outline"
 									size="sm"
 									@click="openReviewModal(submission)">
 									Review
 								</Button>
 								<span
-									v-else
+									v-if="submission.status === 'approved'"
 									class="text-cape-palliser-500 text-sm">
 									Approved
 								</span>
