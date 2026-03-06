@@ -172,6 +172,8 @@ class InboxController extends Controller
                     $updateData[$field] = $value;
                 }
             }
+            $allowed = ['name', 'age', 'geno', 'herd_id', 'design_link'];
+            $updateData = array_intersect_key($updateData, array_flip($allowed));
             if (! empty($updateData)) {
                 $horse->update($updateData);
             }
