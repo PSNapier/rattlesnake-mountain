@@ -5,7 +5,6 @@ import { useInitials } from '@/composables/useInitials';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
-import { Trophy } from 'lucide-vue-next';
 
 interface User {
 	id: number;
@@ -45,7 +44,6 @@ const breadcrumbs: BreadcrumbItem[] = [
 			<div>
 				<h1
 					class="text-cape-palliser-950 dark:text-cape-palliser-50 flex items-center gap-2 text-3xl font-bold">
-					<Trophy class="size-8" />
 					Leaderboard
 				</h1>
 				<p
@@ -64,7 +62,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 							v-if="props.mostHorses.length > 0"
 							class="space-y-2">
 							<Link
-								v-for="(user, index) in props.mostHorses"
+								v-for="(
+									user, index
+								) in props.mostHorses"
 								:key="user.id"
 								:href="`/u/${user.id}`"
 								class="border-cape-palliser-200 dark:border-cape-palliser-700 hover:bg-shakespeare-200 dark:hover:bg-shakespeare-200 flex items-center gap-3 border p-4 no-underline transition-colors">
@@ -72,7 +72,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 									class="text-cape-palliser-500 shrink-0 text-sm font-medium">
 									#{{ index + 1 }}
 								</span>
-								<Avatar class="size-10 shrink-0 rounded-md">
+								<Avatar
+									class="size-10 shrink-0 rounded-md">
 									<AvatarImage
 										v-if="user.avatar"
 										:src="user.avatar"
@@ -109,7 +110,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 							v-if="props.largestHerds.length > 0"
 							class="space-y-2">
 							<div
-								v-for="(herd, index) in props.largestHerds"
+								v-for="(
+									herd, index
+								) in props.largestHerds"
 								:key="herd.id"
 								class="border-cape-palliser-200 dark:border-cape-palliser-700 flex items-center gap-3 border p-4">
 								<span
@@ -148,7 +151,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 							v-if="props.mostScorpions.length > 0"
 							class="space-y-2">
 							<Link
-								v-for="(user, index) in props.mostScorpions"
+								v-for="(
+									user, index
+								) in props.mostScorpions"
 								:key="user.id"
 								:href="`/u/${user.id}`"
 								class="border-cape-palliser-200 dark:border-cape-palliser-700 hover:bg-shakespeare-200 dark:hover:bg-shakespeare-200 flex items-center gap-3 border p-4 no-underline transition-colors">
@@ -156,7 +161,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 									class="text-cape-palliser-500 shrink-0 text-sm font-medium">
 									#{{ index + 1 }}
 								</span>
-								<Avatar class="size-10 shrink-0 rounded-md">
+								<Avatar
+									class="size-10 shrink-0 rounded-md">
 									<AvatarImage
 										v-if="user.avatar"
 										:src="user.avatar"
