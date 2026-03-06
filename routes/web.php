@@ -65,56 +65,37 @@ Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
     Route::delete('/admin/cms/menu/{menuItem}', [AdminController::class, 'destroyMenuItem'])->name('admin.cms.menu.destroy');
 });
 
-// Route to serve avatars (must come before other avatar routes)
-Route::get('/avatars/{filename}', function ($filename) {
-    $path = storage_path('app/public/avatars/'.$filename);
+$servePublicFile = function (string $subdir, string $filename) {
+    $filename = basename($filename);
+    $baseDir = realpath(storage_path('app/public/'.$subdir));
+    if ($baseDir === false) {
+        abort(404);
+    }
+    $path = $baseDir.DIRECTORY_SEPARATOR.$filename;
 
     if (! file_exists($path)) {
         abort(404);
     }
 
-    $file = file_get_contents($path);
-    $type = mime_content_type($path);
+    $resolved = realpath($path);
+    if ($resolved === false || ! str_starts_with($resolved, $baseDir)) {
+        abort(404);
+    }
 
-    return response($file, 200, [
-        'Content-Type' => $type,
+    return response(file_get_contents($resolved), 200, [
+        'Content-Type' => mime_content_type($resolved),
         'Cache-Control' => 'public, max-age=31536000',
     ]);
-})->name('avatars.serve');
+};
+
+// Route to serve avatars (must come before other avatar routes)
+Route::get('/avatars/{filename}', fn (string $filename) => $servePublicFile('avatars', $filename))->name('avatars.serve');
 
 // Route to serve character images (must come before other character-image routes)
-Route::get('/character-images/{filename}', function ($filename) {
-    $path = storage_path('app/public/character-images/'.$filename);
-
-    if (! file_exists($path)) {
-        abort(404);
-    }
-
-    $file = file_get_contents($path);
-    $type = mime_content_type($path);
-
-    return response($file, 200, [
-        'Content-Type' => $type,
-        'Cache-Control' => 'public, max-age=31536000',
-    ]);
-})->name('character-images.serve');
+Route::get('/character-images/{filename}', fn (string $filename) => $servePublicFile('character-images', $filename))->name('character-images.serve');
 
 // Route to serve horse images (must come before other horse-image routes)
-Route::get('/horse-images/{filename}', function ($filename) {
-    $path = storage_path('app/public/horse-images/'.$filename);
-
-    if (! file_exists($path)) {
-        abort(404);
-    }
-
-    $file = file_get_contents($path);
-    $type = mime_content_type($path);
-
-    return response($file, 200, [
-        'Content-Type' => $type,
-        'Cache-Control' => 'public, max-age=31536000',
-    ]);
-})->name('horse-images.serve');
+Route::get('/horse-images/{filename}', fn (string $filename) => $servePublicFile('horse-images', $filename))->name('horse-images.serve');
 
 // Character Image Routes
 Route::middleware(['auth', 'verified'])->group(function () {
