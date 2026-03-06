@@ -5,6 +5,7 @@ import { onMounted, ref, watch } from 'vue';
 import CmsTab from './CmsTab.vue';
 import ItemsTab from './ItemsTab.vue';
 import LifecycleTab from './LifecycleTab.vue';
+import RollersTab from './RollersTab.vue';
 import SubmissionsTab from './SubmissionsTab.vue';
 import UsersTab from './UsersTab.vue';
 
@@ -102,7 +103,7 @@ interface Props {
 	lifecycleSettings?: LifecycleSettings | null;
 }
 
-type AdminTab = 'submissions' | 'users' | 'items' | 'lifecycle' | 'cms';
+type AdminTab = 'submissions' | 'rollers' | 'users' | 'items' | 'lifecycle' | 'cms';
 
 const props = defineProps<Props>();
 const page = usePage();
@@ -117,7 +118,7 @@ onMounted(() => {
 
 	const storedTab = window.localStorage.getItem(activeTabStorageKey) as AdminTab | null;
 
-	if (storedTab === 'submissions' || storedTab === 'users' || storedTab === 'items' || storedTab === 'lifecycle' || storedTab === 'cms') {
+	if (storedTab === 'submissions' || storedTab === 'rollers' || storedTab === 'users' || storedTab === 'items' || storedTab === 'lifecycle' || storedTab === 'cms') {
 		activeTab.value = storedTab;
 	}
 
@@ -166,6 +167,16 @@ onMounted(() => {
 					<span class="text-base">Submissions</span>
 				</button>
 				<button
+					@click="activeTab = 'rollers'"
+					:class="[
+						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
+						activeTab === 'rollers'
+							? 'bg-shakespeare-500 text-white shadow-xs'
+							: 'border border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700',
+					]">
+					<span class="text-base">Rollers</span>
+				</button>
+				<button
 					@click="activeTab = 'users'"
 					:class="[
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
@@ -211,6 +222,9 @@ onMounted(() => {
 				v-if="activeTab === 'submissions'"
 				:submissions="props.submissions"
 				:herds="props.herds" />
+
+			<RollersTab
+				v-if="activeTab === 'rollers'" />
 
 			<UsersTab
 				v-if="activeTab === 'users'"
