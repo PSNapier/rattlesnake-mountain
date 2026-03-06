@@ -41,75 +41,83 @@ class AdminController extends Controller
                     ->orWhereNotNull('contacted_at');
             })
             ->latest()
-            ->get()
-            ->map(function ($horse) {
-                $latestLog = $horse->latestAdminLog;
+            ->get();
 
-                // Determine status based on timestamps and latest log
-                $status = 'pending';
-                if ($horse->approved_at) {
-                    $status = 'approved';
-                } elseif ($horse->archived_at) {
-                    $status = 'archived';
-                } elseif ($horse->contacted_at) {
-                    $status = 'contacted';
-                }
+        $horseIds = $horses->pluck('id');
+        $latestMessages = $horseIds->isEmpty()
+            ? collect()
+            : Message::with(['comments.user'])
+                ->whereIn('horse_id', $horseIds)
+                ->latest('created_at')
+                ->get()
+                ->unique('horse_id')
+                ->keyBy('horse_id');
 
-                // Get last interaction date (contact/approval/archival)
-                $lastInteractionDate = null;
-                if ($latestLog) {
-                    $lastInteractionDate = $latestLog->created_at->toIso8601String();
-                } elseif ($horse->approved_at) {
-                    $lastInteractionDate = $horse->approved_at->toIso8601String();
-                }
+        $horses = $horses->map(function ($horse) use ($latestMessages) {
+            $latestLog = $horse->latestAdminLog;
 
-                // Load message and comments for this horse
-                $message = Message::with(['comments.user'])
-                    ->where('horse_id', $horse->id)
-                    ->latest()
-                    ->first();
+            // Determine status based on timestamps and latest log
+            $status = 'pending';
+            if ($horse->approved_at) {
+                $status = 'approved';
+            } elseif ($horse->archived_at) {
+                $status = 'archived';
+            } elseif ($horse->contacted_at) {
+                $status = 'contacted';
+            }
 
-                $comments = [];
-                if ($message) {
-                    $comments = $message->comments->map(function ($comment) {
-                        return [
-                            'id' => $comment->id,
-                            'body' => $comment->body,
-                            'created_at' => $comment->created_at->toIso8601String(),
-                            'user' => [
-                                'id' => $comment->user->id,
-                                'name' => $comment->user->name,
-                                'is_admin' => $comment->user->isAdmin(),
-                            ],
-                        ];
-                    })->toArray();
-                }
+            // Get last interaction date (contact/approval/archival)
+            $lastInteractionDate = null;
+            if ($latestLog) {
+                $lastInteractionDate = $latestLog->created_at->toIso8601String();
+            } elseif ($horse->approved_at) {
+                $lastInteractionDate = $horse->approved_at->toIso8601String();
+            }
 
-                return [
-                    'id' => $horse->id,
-                    'user_id' => $horse->owner->id,
-                    'user_name' => $horse->owner->name,
-                    'name' => $horse->name,
-                    'name_type' => 'horse',
-                    'date_submitted' => $horse->created_at->toIso8601String(),
-                    'status' => $status,
-                    'last_contact_date' => $lastInteractionDate,
-                    'last_admin_name' => $latestLog?->admin?->name,
-                    'public_horse_id' => $horse->public_horse_id,
-                    'is_edit' => $horse->public_horse_id !== null,
-                    'design_link' => $horse->design_link,
-                    'age' => $horse->age,
-                    'geno' => $horse->geno,
-                    'herd_id' => $horse->herd_id,
-                    'message' => $message ? [
-                        'id' => $message->id,
-                        'subject' => $message->subject,
-                        'initial_message' => $message->initial_message,
-                        'admin_edits' => $message->admin_edits,
-                    ] : null,
-                    'comments' => $comments,
-                ];
-            });
+            // Load message and comments for this horse
+            $message = $latestMessages->get($horse->id);
+
+            $comments = [];
+            if ($message) {
+                $comments = $message->comments->map(function ($comment) {
+                    return [
+                        'id' => $comment->id,
+                        'body' => $comment->body,
+                        'created_at' => $comment->created_at->toIso8601String(),
+                        'user' => [
+                            'id' => $comment->user->id,
+                            'name' => $comment->user->name,
+                            'is_admin' => $comment->user->isAdmin(),
+                        ],
+                    ];
+                })->toArray();
+            }
+
+            return [
+                'id' => $horse->id,
+                'user_id' => $horse->owner->id,
+                'user_name' => $horse->owner->name,
+                'name' => $horse->name,
+                'name_type' => 'horse',
+                'date_submitted' => $horse->created_at->toIso8601String(),
+                'status' => $status,
+                'last_contact_date' => $lastInteractionDate,
+                'last_admin_name' => $latestLog?->admin?->name,
+                'public_horse_id' => $horse->public_horse_id,
+                'is_edit' => $horse->public_horse_id !== null,
+                'design_link' => $horse->design_link,
+                'age' => $horse->age,
+                'geno' => $horse->geno,
+                'herd_id' => $horse->herd_id,
+                'message' => $message ? [
+                    'id' => $message->id,
+                    'subject' => $message->subject,
+                    'initial_message' => $message->initial_message,
+                    'admin_edits' => $message->admin_edits,
+                ] : null,
+                'comments' => $comments,
+            ];
+        });
 
         $herds = \App\Models\Herd::select('id', 'name')
             ->orderBy('name')
