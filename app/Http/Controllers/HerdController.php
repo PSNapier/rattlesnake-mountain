@@ -29,7 +29,7 @@ class HerdController extends Controller
             ->latest()
             ->get();
 
-        return Inertia::render('herds/Index', [
+        return Inertia::render('Herds/Index', [
             'herds' => $herds,
             'can' => [
                 'create' => Auth::user()->can('create', Herd::class),
@@ -44,7 +44,7 @@ class HerdController extends Controller
     {
         $this->authorize('create', Herd::class);
 
-        return Inertia::render('herds/Create');
+        return Inertia::render('Herds/Create');
     }
 
     /**
@@ -77,7 +77,7 @@ class HerdController extends Controller
 
         $herd->load(['owner', 'createdBy', 'herdLeader', 'horses']);
 
-        return Inertia::render('herds/Show', [
+        return Inertia::render('Herds/Show', [
             'herd' => $herd,
             'can' => [
                 'update' => Auth::user()->can('update', $herd),
@@ -93,7 +93,7 @@ class HerdController extends Controller
     {
         $this->authorize('update', $herd);
 
-        return Inertia::render('herds/Edit', [
+        return Inertia::render('Herds/Edit', [
             'herd' => $herd,
             'can' => [
                 'update' => Auth::user()->can('update', $herd),
@@ -143,7 +143,7 @@ class HerdController extends Controller
             ->latest()
             ->get();
 
-        return Inertia::render('herds/PublicIndex', [
+        return Inertia::render('Herds/PublicIndex', [
             'user' => $user,
             'herds' => $herds,
         ]);

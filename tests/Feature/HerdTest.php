@@ -13,7 +13,7 @@ it('can view herds index', function () {
     $response = $this->actingAs($this->user)->get(route('herds.index'));
 
     $response->assertSuccessful();
-    $response->assertInertia(fn ($page) => $page->component('herds/Index'));
+    $response->assertInertia(fn ($page) => $page->component('Herds/Index'));
 });
 
 it('can create a herd', function () {
@@ -41,7 +41,7 @@ it('can view a herd', function () {
     $response = $this->actingAs($this->user)->get(route('herds.show', $herd));
 
     $response->assertSuccessful();
-    $response->assertInertia(fn ($page) => $page->component('herds/Show'));
+    $response->assertInertia(fn ($page) => $page->component('Herds/Show'));
 });
 
 it('can update a herd', function () {

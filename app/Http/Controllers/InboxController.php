@@ -47,7 +47,7 @@ class InboxController extends Controller
                 ];
             });
 
-        return Inertia::render('inbox/Index', [
+        return Inertia::render('Inbox/Index', [
             'messages' => $messages,
         ]);
     }
@@ -68,7 +68,7 @@ class InboxController extends Controller
 
         $message->load(['horse', 'admin', 'comments.user']);
 
-        return Inertia::render('inbox/Show', [
+        return Inertia::render('Inbox/Show', [
             'message' => [
                 'id' => $message->id,
                 'subject' => $message->subject,
