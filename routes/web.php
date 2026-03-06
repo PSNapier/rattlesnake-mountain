@@ -19,7 +19,7 @@ use Inertia\Inertia;
 Route::get('dashboard', function () {
     $user = auth()->user();
 
-    return Inertia::render('users/Index', [
+    return Inertia::render('Users/Index', [
         'user' => $user->only(['id', 'name', 'bio', 'avatar']),
         'herdCount' => Herd::where('owner_id', $user->id)->count(),
         'horseCount' => Horse::where('owner_id', $user->id)->count(),
@@ -112,7 +112,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/horses/upload-image', [HorseController::class, 'uploadImage'])->name('horses.upload-image')->middleware('rate.limit.uploads');
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
     Route::get('/users', function () {
-        return Inertia::render('users/List', [
+        return Inertia::render('Users/List', [
             'users' => User::select('id', 'name', 'avatar')
                 ->orderBy('name')
                 ->get(),
@@ -131,7 +131,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::get('/leaderboard', [LeaderboardController::class, 'index'])->name('leaderboard.index');
 
 Route::get('/u/{user}', function (User $user) {
-    return Inertia::render('users/Index', [
+    return Inertia::render('Users/Index', [
         'user' => $user->only(['id', 'name', 'bio', 'avatar']),
         'herdCount' => Herd::where('owner_id', $user->id)->count(),
         'horseCount' => Horse::where('owner_id', $user->id)->count(),
