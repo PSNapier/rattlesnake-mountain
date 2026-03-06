@@ -1,7 +1,6 @@
 import '../css/app.css';
 
 import { createInertiaApp } from '@inertiajs/vue3';
-import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
 import { ZiggyVue } from 'ziggy-js';
@@ -10,13 +9,24 @@ import { initializeTheme } from './composables/useAppearance';
 
 const appName = 'Rattlesnake Mountain';
 
+const pageModules = import.meta.glob<DefineComponent>('./pages/**/*.vue');
+
+/** Resolve page with case-insensitive fallback for Windows/Linux path mismatch. */
+function resolvePage(name: string) {
+	const exact = `./pages/${name}.vue`;
+	const loader = pageModules[exact];
+	if (loader) return loader();
+
+	// Fallback: find by case-insensitive path match
+	const lower = exact.toLowerCase();
+	const key = Object.keys(pageModules).find((k) => k.toLowerCase() === lower);
+	if (key) return (pageModules as Record<string, () => Promise<DefineComponent>>)[key]();
+	throw new Error(`Page not found: ${exact}`);
+}
+
 createInertiaApp({
 	title: (title) => `${title} - ${appName}`,
-	resolve: (name) =>
-		resolvePageComponent(
-			`./pages/${name}.vue`,
-			import.meta.glob<DefineComponent>('./pages/**/*.vue'),
-		),
+	resolve: (name) => resolvePage(name),
 	setup({ el, App, props, plugin }) {
 		const app = createApp({
 			render: () =>
