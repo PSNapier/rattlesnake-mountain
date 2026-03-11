@@ -536,6 +536,16 @@ class AdminController extends Controller
         return redirect()->back()->with('success', "Frozen {$user->name}.");
     }
 
+    public function unfreezeUser(User $user): RedirectResponse
+    {
+        if (! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+        $user->update(['frozen_at' => null]);
+
+        return redirect()->back()->with('success', "Unfroze {$user->name}.");
+    }
+
     public function banUser(User $user): RedirectResponse
     {
         if (! Auth::user()->isAdmin()) {

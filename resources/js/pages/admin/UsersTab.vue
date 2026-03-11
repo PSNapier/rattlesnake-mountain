@@ -11,7 +11,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Link, router } from '@inertiajs/vue3';
-import { Ban, Snowflake, Trash2, UserPlus } from 'lucide-vue-next';
+import { Ban, Snowflake, Sun, Trash2, UserPlus } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 const roleOptions = [
@@ -90,6 +90,10 @@ function goToPage(url: string | null) {
 
 function freezeUser(user: User) {
 	router.post(route('admin.users.freeze', user.id));
+}
+
+function unfreezeUser(user: User) {
+	router.post(route('admin.users.unfreeze', user.id));
 }
 
 function banUser(user: User) {
@@ -197,17 +201,17 @@ function confirmDelete() {
 								<div class="flex gap-1">
 									<span
 										v-if="user.banned_at"
-										class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/30 dark:text-red-300">
+										class="inline-flex items-center rounded-full border border-red-300 px-2.5 py-0.5 text-xs font-medium text-red-700 dark:border-red-700 dark:text-red-300">
 										Banned
 									</span>
 									<span
 										v-if="user.frozen_at"
-										class="inline-flex items-center rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-800 dark:bg-sky-900/30 dark:text-sky-300">
+										class="inline-flex items-center rounded-full border border-sky-300 px-2.5 py-0.5 text-xs font-medium text-sky-700 dark:border-sky-700 dark:text-sky-300">
 										Frozen
 									</span>
 									<span
 										v-if="!user.banned_at && !user.frozen_at"
-										class="text-cape-palliser-500 text-xs">
+										class="inline-flex items-center rounded-full border border-gray-200 px-2.5 py-0.5 text-xs text-cape-palliser-500 dark:border-gray-600">
 										—
 									</span>
 								</div>
@@ -220,6 +224,14 @@ function confirmDelete() {
 									@click="freezeUser(user)">
 									<Snowflake class="mr-1 h-4 w-4" />
 									Freeze
+								</Button>
+								<Button
+									v-if="user.frozen_at"
+									variant="outline"
+									size="sm"
+									@click="unfreezeUser(user)">
+									<Sun class="mr-1 h-4 w-4" />
+									Unfreeze
 								</Button>
 								<Button
 									v-if="!user.banned_at && user.role !== 'admin'"

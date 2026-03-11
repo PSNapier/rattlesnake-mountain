@@ -51,6 +51,16 @@ it('admin can freeze user', function () {
     expect($this->user->fresh()->frozen_at)->not->toBeNull();
 });
 
+it('admin can unfreeze user', function () {
+    $this->user->update(['frozen_at' => now()]);
+
+    $response = $this->actingAs($this->admin)->post(route('admin.users.unfreeze', $this->user));
+
+    $response->assertRedirect();
+    $response->assertSessionHas('success');
+    expect($this->user->fresh()->frozen_at)->toBeNull();
+});
+
 it('admin can ban user', function () {
     $response = $this->actingAs($this->admin)->post(route('admin.users.ban', $this->user));
 

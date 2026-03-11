@@ -44,6 +44,7 @@ Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
 
     // User Management
     Route::post('/admin/users/{user}/freeze', [AdminController::class, 'freezeUser'])->name('admin.users.freeze');
+    Route::post('/admin/users/{user}/unfreeze', [AdminController::class, 'unfreezeUser'])->name('admin.users.unfreeze');
     Route::post('/admin/users/{user}/ban', [AdminController::class, 'banUser'])->name('admin.users.ban');
     Route::post('/admin/users/{user}/unban', [AdminController::class, 'unbanUser'])->name('admin.users.unban');
     Route::put('/admin/users/{user}/role', [AdminController::class, 'updateUserRole'])->name('admin.users.role.update');
