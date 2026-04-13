@@ -14,6 +14,7 @@ class Item extends Model
     protected $fillable = [
         'name',
         'max_count',
+        'uses_per_unit',
         'description',
         'is_active',
     ];
@@ -22,6 +23,7 @@ class Item extends Model
     {
         return [
             'max_count' => 'integer',
+            'uses_per_unit' => 'integer',
             'is_active' => 'boolean',
         ];
     }

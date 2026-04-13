@@ -15,6 +15,7 @@ class ShopListing extends Model
         'visible_in_shop',
         'scorpion_price',
         'shop_description',
+        'shop_flavor_text',
         'image_path',
         'sort_order',
     ];

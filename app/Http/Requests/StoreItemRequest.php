@@ -16,6 +16,7 @@ class StoreItemRequest extends FormRequest
         return [
             'name' => 'required|string|max:255|unique:items,name',
             'max_count' => 'required|integer|min:1|max:999',
+            'uses_per_unit' => 'required|integer|min:1|max:999',
             'description' => 'nullable|string',
             'is_active' => 'boolean',
         ];
@@ -29,6 +30,9 @@ class StoreItemRequest extends FormRequest
             'max_count.required' => 'Max count is required.',
             'max_count.min' => 'Max count must be at least 1.',
             'max_count.max' => 'Max count cannot exceed 999.',
+            'uses_per_unit.required' => 'Uses per unit is required.',
+            'uses_per_unit.min' => 'Uses per unit must be at least 1.',
+            'uses_per_unit.max' => 'Uses per unit cannot exceed 999.',
         ];
     }
 }

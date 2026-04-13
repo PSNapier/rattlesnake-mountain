@@ -10,6 +10,7 @@ interface Item {
 	id: number;
 	name: string;
 	max_count: number;
+	uses_per_unit: number;
 	description: string | null;
 	is_active: boolean;
 }
@@ -22,9 +23,17 @@ interface ShopListing {
 	visible_in_shop: boolean;
 	scorpion_price: number;
 	shop_description: string | null;
+	shop_flavor_text: string | null;
 	image_path: string | null;
 	sort_order: number;
 }
+
+/** Editable row: nullable text fields coerced to string for form controls. */
+type ShopListingEditable = Omit<ShopListing, 'shop_flavor_text' | 'shop_description' | 'image_path'> & {
+	shop_flavor_text: string;
+	shop_description: string;
+	image_path: string;
+};
 
 const props = defineProps<{
 	items: Item[];
@@ -35,12 +44,13 @@ const createForm = reactive({
 	item_id: 0,
 	visible_in_shop: true,
 	scorpion_price: 0,
+	shop_flavor_text: '',
 	shop_description: '',
 	image_path: '',
 	sort_order: 0,
 });
 
-const editableRows = reactive<Record<number, ShopListing>>({});
+const editableRows = reactive<Record<number, ShopListingEditable>>({});
 
 const availableItems = computed(() => {
 	const assignedItemIds = new Set(props.shopListings.map((listing) => listing.item_id));
@@ -50,9 +60,14 @@ const availableItems = computed(() => {
 		.sort((a, b) => a.name.localeCompare(b.name));
 });
 
-const getRowState = (listing: ShopListing): ShopListing => {
+const getRowState = (listing: ShopListing): ShopListingEditable => {
 	if (!editableRows[listing.id]) {
-		editableRows[listing.id] = { ...listing };
+		editableRows[listing.id] = {
+			...listing,
+			shop_flavor_text: listing.shop_flavor_text ?? '',
+			shop_description: listing.shop_description ?? '',
+			image_path: listing.image_path ?? '',
+		};
 	}
 
 	return editableRows[listing.id];
@@ -61,6 +76,7 @@ const getRowState = (listing: ShopListing): ShopListing => {
 const createListing = (): void => {
 	router.post(route('admin.shop-listings.store'), {
 		...createForm,
+		shop_flavor_text: createForm.shop_flavor_text || null,
 		shop_description: createForm.shop_description || null,
 		image_path: createForm.image_path || null,
 	});
@@ -71,6 +87,7 @@ const updateListing = (listing: ShopListing): void => {
 	router.put(route('admin.shop-listings.update', listing.id), {
 		visible_in_shop: row.visible_in_shop,
 		scorpion_price: row.scorpion_price,
+		shop_flavor_text: row.shop_flavor_text || null,
 		shop_description: row.shop_description || null,
 		image_path: row.image_path || null,
 		sort_order: row.sort_order,
@@ -144,7 +161,16 @@ const removeListing = (listing: ShopListing): void => {
 			</div>
 
 			<div>
-				<Label for="create-description">Shop Description</Label>
+				<Label for="create-flavor">Shop flavor (optional)</Label>
+				<textarea
+					id="create-flavor"
+					v-model="createForm.shop_flavor_text"
+					rows="2"
+					class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 mt-1 flex w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm" />
+			</div>
+
+			<div>
+				<Label for="create-description">Shop description</Label>
 				<textarea
 					id="create-description"
 					v-model="createForm.shop_description"
@@ -174,6 +200,7 @@ const removeListing = (listing: ShopListing): void => {
 							<th class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">Order</th>
 							<th class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">Visible</th>
 							<th class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">Image</th>
+							<th class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">Flavor</th>
 							<th class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">Description</th>
 							<th class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">Actions</th>
 						</tr>
@@ -212,6 +239,12 @@ const removeListing = (listing: ShopListing): void => {
 							</td>
 							<td class="px-3 py-3">
 								<textarea
+									v-model="getRowState(listing).shop_flavor_text"
+									rows="2"
+									class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex w-56 min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm" />
+							</td>
+							<td class="px-3 py-3">
+								<textarea
 									v-model="getRowState(listing).shop_description"
 									rows="3"
 									class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex w-72 min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm" />
@@ -234,7 +267,7 @@ const removeListing = (listing: ShopListing): void => {
 						</tr>
 						<tr v-if="props.shopListings.length === 0">
 							<td
-								colspan="7"
+								colspan="8"
 								class="px-3 py-6 text-center text-sm text-cape-palliser-600">
 								No shop listings yet.
 							</td>

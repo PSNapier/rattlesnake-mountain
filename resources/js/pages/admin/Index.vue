@@ -57,6 +57,7 @@ interface Item {
 	id: number;
 	name: string;
 	max_count: number;
+	uses_per_unit: number;
 	description: string | null;
 	is_active: boolean;
 }
@@ -69,6 +70,7 @@ interface ShopListing {
 	visible_in_shop: boolean;
 	scorpion_price: number;
 	shop_description: string | null;
+	shop_flavor_text: string | null;
 	image_path: string | null;
 	sort_order: number;
 }

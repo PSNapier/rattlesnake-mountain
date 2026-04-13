@@ -16,12 +16,14 @@ class ItemSeeder extends Seeder
             [
                 'name' => 'Scorpion',
                 'max_count' => 999,
+                'uses_per_unit' => 1,
                 'description' => 'n/a',
                 'is_active' => true,
             ],
             [
                 'name' => 'White-Modifier Stone',
                 'max_count' => 999,
+                'uses_per_unit' => 1,
                 'description' => 'n/a',
                 'is_active' => true,
             ],

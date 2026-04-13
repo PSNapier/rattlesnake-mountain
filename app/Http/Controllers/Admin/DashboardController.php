@@ -120,6 +120,7 @@ class DashboardController extends Controller
                 'visible_in_shop' => $listing->visible_in_shop,
                 'scorpion_price' => $listing->scorpion_price,
                 'shop_description' => $listing->shop_description,
+                'shop_flavor_text' => $listing->shop_flavor_text,
                 'image_path' => $listing->image_path,
                 'sort_order' => $listing->sort_order,
             ])

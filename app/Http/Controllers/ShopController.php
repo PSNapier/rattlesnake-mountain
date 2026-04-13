@@ -3,19 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\PurchaseShopItemRequest;
+use App\Http\Requests\ShopIndexRequest;
 use App\Models\Item;
 use App\Models\ShopListing;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ShopController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(ShopIndexRequest $request): Response
     {
         $user = $request->user();
+        $validated = $request->validated();
+        $sort = $validated['sort'] ?? 'default';
+        $dir = $validated['dir'] ?? 'asc';
         $userItemQuantities = [];
 
         if ($user) {
@@ -26,28 +29,6 @@ class ShopController extends Controller
                 ->all();
         }
 
-        $listings = ShopListing::query()
-            ->with('item:id,name,max_count')
-            ->where('visible_in_shop', true)
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->paginate(24)
-            ->through(function (ShopListing $listing) use ($userItemQuantities) {
-                $ownedQuantity = $userItemQuantities[$listing->item_id] ?? 0;
-
-                return [
-                    'id' => $listing->id,
-                    'item_id' => $listing->item_id,
-                    'name' => $listing->item->name,
-                    'description' => $listing->shop_description,
-                    'image_path' => $listing->image_path,
-                    'scorpion_price' => $listing->scorpion_price,
-                    'owned_quantity' => $ownedQuantity,
-                    'max_count' => $listing->item->max_count,
-                    'can_buy_more' => $ownedQuantity < $listing->item->max_count,
-                ];
-            });
-
         $scorpionBalance = null;
         if ($user) {
             $scorpionItemId = Item::query()->where('name', 'Scorpion')->value('id');
@@ -55,6 +36,56 @@ class ShopController extends Controller
                 ? (int) ($userItemQuantities[$scorpionItemId] ?? 0)
                 : 0;
         }
+
+        $listingsQuery = ShopListing::query()
+            ->with('item:id,name,max_count,uses_per_unit')
+            ->where('visible_in_shop', true);
+
+        if ($sort === 'name') {
+            $listingsQuery
+                ->join('items', 'items.id', '=', 'shop_listings.item_id')
+                ->orderBy('items.name', $dir)
+                ->orderBy('shop_listings.id')
+                ->select('shop_listings.*');
+        } elseif ($sort === 'price') {
+            $listingsQuery
+                ->orderBy('shop_listings.scorpion_price', $dir)
+                ->orderBy('shop_listings.id');
+        } else {
+            $listingsQuery
+                ->orderBy('sort_order')
+                ->orderBy('id');
+        }
+
+        $listings = $listingsQuery->paginate(24);
+
+        if ($sort !== 'default') {
+            $listings->appends([
+                'sort' => $sort,
+                'dir' => $dir,
+            ]);
+        }
+
+        $listings->through(function (ShopListing $listing) use ($user, $userItemQuantities, $scorpionBalance) {
+            $ownedQuantity = $userItemQuantities[$listing->item_id] ?? 0;
+            $underInventoryCap = $ownedQuantity < $listing->item->max_count;
+            $canAffordOne = $user === null
+                || $scorpionBalance >= $listing->scorpion_price;
+
+            return [
+                'id' => $listing->id,
+                'item_id' => $listing->item_id,
+                'name' => $listing->item->name,
+                'flavor_text' => $listing->shop_flavor_text,
+                'description' => $listing->shop_description,
+                'image_path' => $listing->image_path,
+                'scorpion_price' => $listing->scorpion_price,
+                'owned_quantity' => $ownedQuantity,
+                'max_count' => $listing->item->max_count,
+                'uses_per_unit' => $listing->item->uses_per_unit,
+                'can_buy_more' => $underInventoryCap && $canAffordOne,
+            ];
+        });
 
         return Inertia::render('cms/Shop', [
             'hero' => [
@@ -64,6 +95,10 @@ class ShopController extends Controller
             'listings' => $listings,
             'scorpionBalance' => $scorpionBalance,
             'isAuthenticated' => $user !== null,
+            'shopSort' => [
+                'sort' => $sort,
+                'dir' => $dir,
+            ],
         ]);
     }
 

@@ -17,6 +17,7 @@ class UpdateShopListingRequest extends FormRequest
             'visible_in_shop' => ['sometimes', 'boolean'],
             'scorpion_price' => ['required', 'integer', 'min:0'],
             'shop_description' => ['nullable', 'string'],
+            'shop_flavor_text' => ['nullable', 'string'],
             'image_path' => ['nullable', 'string', 'max:255'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ];

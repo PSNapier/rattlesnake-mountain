@@ -37,6 +37,8 @@ class DatabaseSeeder extends Seeder
         // Seed default items
         $this->call(ItemSeeder::class);
 
+        $this->call(ShopCatalogSeeder::class);
+
         // Seed CMS pages and navigation menu
         $this->call([
             CmsPageSeeder::class,

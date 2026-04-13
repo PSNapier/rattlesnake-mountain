@@ -22,6 +22,7 @@ interface Item {
 	id: number;
 	name: string;
 	max_count: number;
+	uses_per_unit: number;
 	description: string | null;
 	is_active: boolean;
 }
@@ -408,6 +409,7 @@ const selectedItem = ref<Item | null>(null);
 const itemForm = ref({
 	name: '',
 	max_count: 1,
+	uses_per_unit: 1,
 	description: '',
 	is_active: true,
 });
@@ -417,6 +419,7 @@ const openEditItemModal = (item: Item): void => {
 	itemForm.value = {
 		name: item.name,
 		max_count: item.max_count,
+		uses_per_unit: item.uses_per_unit,
 		description: item.description || '',
 		is_active: item.is_active,
 	};
@@ -429,6 +432,7 @@ const closeEditItemModal = (): void => {
 	itemForm.value = {
 		name: '',
 		max_count: 1,
+		uses_per_unit: 1,
 		description: '',
 		is_active: true,
 	};
@@ -701,6 +705,9 @@ const handleUpdateItem = (): void => {
 								Max Count
 							</th>
 							<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+								Uses / unit
+							</th>
+							<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
 								Description
 							</th>
 							<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
@@ -714,7 +721,7 @@ const handleUpdateItem = (): void => {
 							v-if="props.items.length === 0"
 							class="border-b border-gray-200">
 							<td
-								colspan="5"
+								colspan="6"
 								class="text-cape-palliser-600 px-4 py-8 text-center">
 								No items found
 							</td>
@@ -728,6 +735,9 @@ const handleUpdateItem = (): void => {
 							</td>
 							<td class="text-cape-palliser-700 px-4 py-3 text-sm">
 								{{ item.max_count }}
+							</td>
+							<td class="text-cape-palliser-700 px-4 py-3 text-sm">
+								{{ item.uses_per_unit }}
 							</td>
 							<td class="text-cape-palliser-700 px-4 py-3 text-sm">
 								{{ item.description || '—' }}
@@ -787,6 +797,17 @@ const handleUpdateItem = (): void => {
 					<Input
 						id="item-max-count"
 						v-model.number="itemForm.max_count"
+						type="number"
+						min="1"
+						max="999"
+						class="mt-1 w-full" />
+				</div>
+
+				<div>
+					<Label for="item-uses-per-unit">Uses / unit</Label>
+					<Input
+						id="item-uses-per-unit"
+						v-model.number="itemForm.uses_per_unit"
 						type="number"
 						min="1"
 						max="999"
