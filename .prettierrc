@@ -15,5 +15,6 @@
 	"singleAttributePerLine": true,
 	"htmlWhitespaceSensitivity": "css",
 	"multilineArraysWrapThreshold": 4,
-	"bracketSameLine": true
+	"bracketSameLine": true,
+	"terminal.integrated.defaultLocation": "editor"
 }
