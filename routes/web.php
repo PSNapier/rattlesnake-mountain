@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CmsController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ItemController;
 use App\Http\Controllers\Admin\LifecycleController;
+use App\Http\Controllers\Admin\ShopListingController;
 use App\Http\Controllers\Admin\SubmissionController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AdminRollerController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\HerdController;
 use App\Http\Controllers\HorseController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LeaderboardController;
+use App\Http\Controllers\ShopController;
 use App\Http\Controllers\StaticPageController;
 use App\Models\Herd;
 use App\Models\Horse;
@@ -46,6 +48,11 @@ Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
     Route::post('/admin/items', [ItemController::class, 'storeItem'])->name('admin.items.store');
     Route::put('/admin/items/{item}', [ItemController::class, 'updateItem'])->name('admin.items.update');
     Route::delete('/admin/items/{item}', [ItemController::class, 'destroyItem'])->name('admin.items.destroy');
+
+    // Shop Listing Management
+    Route::post('/admin/shop-listings', [ShopListingController::class, 'store'])->name('admin.shop-listings.store');
+    Route::put('/admin/shop-listings/{shopListing}', [ShopListingController::class, 'update'])->name('admin.shop-listings.update');
+    Route::delete('/admin/shop-listings/{shopListing}', [ShopListingController::class, 'destroy'])->name('admin.shop-listings.destroy');
 
     // User Management
     Route::post('/admin/users/{user}/freeze', [UserController::class, 'freezeUser'])->name('admin.users.freeze');
@@ -178,9 +185,11 @@ Route::get('/character-upload', [StaticPageController::class, 'show'])
     ->defaults('slug', 'character-upload')
     ->name('character_upload');
 
-Route::get('/shop', [StaticPageController::class, 'show'])
-    ->defaults('slug', 'shop')
-    ->name('shop');
+Route::get('/shop', [ShopController::class, 'index'])->name('shop');
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::post('/shop/{shopListing}/purchase', [ShopController::class, 'purchase'])->name('shop.purchase');
+});
 
 Route::get('/wildlife', [StaticPageController::class, 'show'])
     ->defaults('slug', 'wildlife')

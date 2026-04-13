@@ -10,6 +10,7 @@ use App\Models\Item;
 use App\Models\LifecycleSetting;
 use App\Models\MenuItem;
 use App\Models\Message;
+use App\Models\ShopListing;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -107,6 +108,22 @@ class DashboardController extends Controller
             ->get();
 
         $items = Item::orderBy('name')->get();
+        $shopListings = ShopListing::with('item:id,name,max_count')
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (ShopListing $listing) => [
+                'id' => $listing->id,
+                'item_id' => $listing->item_id,
+                'item_name' => $listing->item->name,
+                'item_max_count' => $listing->item->max_count,
+                'visible_in_shop' => $listing->visible_in_shop,
+                'scorpion_price' => $listing->scorpion_price,
+                'shop_description' => $listing->shop_description,
+                'image_path' => $listing->image_path,
+                'sort_order' => $listing->sort_order,
+            ])
+            ->values();
 
         $cmsPages = CmsPage::orderBy('sort_order')->get(['id', 'slug', 'title', 'description', 'hero_title', 'hero_description', 'content', 'images', 'sort_order']);
         $menuItems = MenuItem::with('children')->whereNull('parent_id')->orderBy('sort_order')->get()
@@ -149,6 +166,7 @@ class DashboardController extends Controller
             'submissions' => $horses,
             'herds' => $herds,
             'items' => $items,
+            'shopListings' => $shopListings,
             'cmsPages' => $cmsPages,
             'menuItems' => $menuItems,
             'lifecycleSettings' => $lifecycleSettings ? [

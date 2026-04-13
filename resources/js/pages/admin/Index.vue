@@ -6,6 +6,7 @@ import CmsTab from './CmsTab.vue';
 import ItemsTab from './ItemsTab.vue';
 import LifecycleTab from './LifecycleTab.vue';
 import RollersTab from './RollersTab.vue';
+import ShopTab from './ShopTab.vue';
 import SubmissionsTab from './SubmissionsTab.vue';
 import UsersTab from './UsersTab.vue';
 
@@ -60,6 +61,18 @@ interface Item {
 	is_active: boolean;
 }
 
+interface ShopListing {
+	id: number;
+	item_id: number;
+	item_name: string;
+	item_max_count: number;
+	visible_in_shop: boolean;
+	scorpion_price: number;
+	shop_description: string | null;
+	image_path: string | null;
+	sort_order: number;
+}
+
 interface AdminUser {
 	id: number;
 	name: string;
@@ -96,6 +109,7 @@ interface Props {
 	submissions: Submission[];
 	herds?: Herd[];
 	items: Item[];
+	shopListings: ShopListing[];
 	users: PaginatedUsers;
 	userSearch: string;
 	cmsPages: unknown[];
@@ -103,7 +117,7 @@ interface Props {
 	lifecycleSettings?: LifecycleSettings | null;
 }
 
-type AdminTab = 'submissions' | 'rollers' | 'users' | 'items' | 'lifecycle' | 'cms';
+type AdminTab = 'submissions' | 'rollers' | 'users' | 'items' | 'shop' | 'lifecycle' | 'cms';
 
 const props = defineProps<Props>();
 const page = usePage();
@@ -118,7 +132,7 @@ onMounted(() => {
 
 	const storedTab = window.localStorage.getItem(activeTabStorageKey) as AdminTab | null;
 
-	if (storedTab === 'submissions' || storedTab === 'rollers' || storedTab === 'users' || storedTab === 'items' || storedTab === 'lifecycle' || storedTab === 'cms') {
+	if (storedTab === 'submissions' || storedTab === 'rollers' || storedTab === 'users' || storedTab === 'items' || storedTab === 'shop' || storedTab === 'lifecycle' || storedTab === 'cms') {
 		activeTab.value = storedTab;
 	}
 
@@ -197,6 +211,16 @@ onMounted(() => {
 					<span class="text-base">Items</span>
 				</button>
 				<button
+					@click="activeTab = 'shop'"
+					:class="[
+						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
+						activeTab === 'shop'
+							? 'bg-shakespeare-500 text-white shadow-xs'
+							: 'border border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700',
+					]">
+					<span class="text-base">Shop</span>
+				</button>
+				<button
 					@click="activeTab = 'lifecycle'"
 					:class="[
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
@@ -238,6 +262,11 @@ onMounted(() => {
 			<LifecycleTab
 				v-if="activeTab === 'lifecycle'"
 				:settings="props.lifecycleSettings ?? undefined" />
+
+			<ShopTab
+				v-if="activeTab === 'shop'"
+				:items="props.items"
+				:shop-listings="props.shopListings" />
 
 			<CmsTab
 				v-if="activeTab === 'cms'"
