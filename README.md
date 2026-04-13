@@ -11,15 +11,6 @@ A custom HARPG utility and site for **Siat-s**, built to support worldbuilding, 
 - **Inertia.js** – Bridges Laravel and Vue, allowing server-side routing with modern front-end interactions.
 - **Vite** – Front-end build tool for fast development and asset bundling.
 
-## ✅ Planned Features
-
-- Static informational pages (Home, About, Getting Started, etc.)
-- Interactive roller utilities for breeding and training
-- CMS for dynamic page content
-- User authentication: register, login, profile management
-- Admin dashboard for managing site data and user permissions
-- Responsive layout suitable for desktop and mobile
-
 ## 📂 File Structure Overview
 
 ```plaintext
@@ -36,14 +27,5 @@ resources/
 routes/
 ├── web.php                 # Route definitions
 ```
-
-## 🦗 Bugs
-
-- [ ] Some herd/horse pages are fully public, only static/login/register pages should be visible to visitors who are not logged in
-- [ ] Misc. wonky colours
-- [ ] Local vs. CI test wonkiness re.
-- [ ] Default shadcn dropdown creates scrollbar wonkiness
-- [x] Admin/herd/horse pages loading info funky, not displaying updated info automatically as they should (working on reload)
-- [x] Footer is missing from some pages
 
 ## 📄 Notes
