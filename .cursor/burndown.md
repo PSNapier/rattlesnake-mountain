@@ -23,11 +23,11 @@ Product and engineering backlog for this repo. Use it to prioritize work and giv
 - [ ] **Implement market/shop ("Trash and Trinkets")**: Add admin-manageable item cards (title, price, subtitle, description, usage count).
 - [ ] **Implement player trading**: Allow item transfers between users.
 - [ ] **Implement PvP system (opt-in)**: Add player-vs-player gameplay after core systems are in place.
-- [ ] **Refactor CMS page content input to rich text**: Replace current multi-box page input flow with a simpler rich text editing experience.
-- [ ] **Refactor site styling for long-term maintainability**: Tighten visual consistency and simplify future style updates.
 - [ ] **Evaluate/implement on-page WYSIWYG editing mode**: Consider page-level edit mode with in-context editing as a future CMS enhancement.
 - [ ] **Fix local vs CI test discrepancies**: Tests currently behave differently between local and CI environments.
 
 ## Blocked
 
+- [ ] **Refactor CMS page content input to rich text**: Replace current multi-box page input flow with a simpler rich text editing experience. _Blocked until I decide if I want to implement the in place WYSIWYG._
 - [ ] **CMS Home page editability**: Home page is not editable in CMS while other pages are. _Blocked until I decide if I want to implement the in place WYSIWYG._
+- [ ] **Refactor site styling for long-term maintainability**: Tighten visual consistency and simplify future style updates. _Blocked until MVP is more fully finalized._
