@@ -1,6 +1,11 @@
 <?php
 
-use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Admin\CmsController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ItemController;
+use App\Http\Controllers\Admin\LifecycleController;
+use App\Http\Controllers\Admin\SubmissionController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AdminRollerController;
 use App\Http\Controllers\CharacterImageController;
 use App\Http\Controllers\DevPasswordController;
@@ -29,41 +34,41 @@ Route::get('dashboard', function () {
 
 // Admin
 Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
-    Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
-    Route::put('/admin/lifecycle', [AdminController::class, 'updateLifecycle'])->name('admin.lifecycle.update');
+    Route::get('/admin', [DashboardController::class, 'index'])->name('admin.index');
+    Route::put('/admin/lifecycle', [LifecycleController::class, 'updateLifecycle'])->name('admin.lifecycle.update');
     Route::post('/admin/rollers/horse-randomizer/roll', [AdminRollerController::class, 'rollHorse'])->name('admin.rollers.horse-randomizer.roll');
-    Route::post('/admin/horses/{horse}/archive', [AdminController::class, 'archive'])->name('admin.horses.archive');
-    Route::post('/admin/horses/{horse}/unarchive', [AdminController::class, 'unarchive'])->name('admin.horses.unarchive');
-    Route::post('/admin/horses/{horse}/contact', [AdminController::class, 'contact'])->name('admin.horses.contact');
+    Route::post('/admin/horses/{horse}/archive', [SubmissionController::class, 'archive'])->name('admin.horses.archive');
+    Route::post('/admin/horses/{horse}/unarchive', [SubmissionController::class, 'unarchive'])->name('admin.horses.unarchive');
+    Route::post('/admin/horses/{horse}/contact', [SubmissionController::class, 'contact'])->name('admin.horses.contact');
 
     // Item Management
-    Route::get('/admin/items', [AdminController::class, 'items'])->name('admin.items');
-    Route::post('/admin/items', [AdminController::class, 'storeItem'])->name('admin.items.store');
-    Route::put('/admin/items/{item}', [AdminController::class, 'updateItem'])->name('admin.items.update');
-    Route::delete('/admin/items/{item}', [AdminController::class, 'destroyItem'])->name('admin.items.destroy');
+    Route::get('/admin/items', [ItemController::class, 'items'])->name('admin.items');
+    Route::post('/admin/items', [ItemController::class, 'storeItem'])->name('admin.items.store');
+    Route::put('/admin/items/{item}', [ItemController::class, 'updateItem'])->name('admin.items.update');
+    Route::delete('/admin/items/{item}', [ItemController::class, 'destroyItem'])->name('admin.items.destroy');
 
     // User Management
-    Route::post('/admin/users/{user}/freeze', [AdminController::class, 'freezeUser'])->name('admin.users.freeze');
-    Route::post('/admin/users/{user}/unfreeze', [AdminController::class, 'unfreezeUser'])->name('admin.users.unfreeze');
-    Route::post('/admin/users/{user}/ban', [AdminController::class, 'banUser'])->name('admin.users.ban');
-    Route::post('/admin/users/{user}/unban', [AdminController::class, 'unbanUser'])->name('admin.users.unban');
-    Route::put('/admin/users/{user}/role', [AdminController::class, 'updateUserRole'])->name('admin.users.role.update');
-    Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser'])->name('admin.users.destroy');
+    Route::post('/admin/users/{user}/freeze', [UserController::class, 'freezeUser'])->name('admin.users.freeze');
+    Route::post('/admin/users/{user}/unfreeze', [UserController::class, 'unfreezeUser'])->name('admin.users.unfreeze');
+    Route::post('/admin/users/{user}/ban', [UserController::class, 'banUser'])->name('admin.users.ban');
+    Route::post('/admin/users/{user}/unban', [UserController::class, 'unbanUser'])->name('admin.users.unban');
+    Route::put('/admin/users/{user}/role', [UserController::class, 'updateUserRole'])->name('admin.users.role.update');
+    Route::delete('/admin/users/{user}', [UserController::class, 'deleteUser'])->name('admin.users.destroy');
 
     // User Item Management
-    Route::get('/admin/users/search', [AdminController::class, 'searchUsers'])->name('admin.users.search');
-    Route::get('/admin/users/{user}/inventory', [AdminController::class, 'getUserInventory'])->name('admin.users.inventory');
-    Route::get('/admin/users/{user}/items', [AdminController::class, 'userItems'])->name('admin.users.items');
-    Route::put('/admin/users/{user}/items', [AdminController::class, 'updateUserItem'])->name('admin.users.items.update');
+    Route::get('/admin/users/search', [UserController::class, 'searchUsers'])->name('admin.users.search');
+    Route::get('/admin/users/{user}/inventory', [UserController::class, 'getUserInventory'])->name('admin.users.inventory');
+    Route::get('/admin/users/{user}/items', [UserController::class, 'userItems'])->name('admin.users.items');
+    Route::put('/admin/users/{user}/items', [UserController::class, 'updateUserItem'])->name('admin.users.items.update');
 
     // CMS
-    Route::post('/admin/cms/pages', [AdminController::class, 'storeCmsPage'])->name('admin.cms.pages.store');
-    Route::put('/admin/cms/pages/{page}', [AdminController::class, 'updateCmsPage'])->name('admin.cms.pages.update');
-    Route::post('/admin/cms/pages/reorder', [AdminController::class, 'reorderCmsPages'])->name('admin.cms.pages.reorder');
-    Route::post('/admin/cms/menu', [AdminController::class, 'storeMenuItem'])->name('admin.cms.menu.store');
-    Route::post('/admin/cms/menu/reorder', [AdminController::class, 'reorderMenuItems'])->name('admin.cms.menu.reorder');
-    Route::put('/admin/cms/menu/{menuItem}', [AdminController::class, 'updateMenuItem'])->name('admin.cms.menu.update');
-    Route::delete('/admin/cms/menu/{menuItem}', [AdminController::class, 'destroyMenuItem'])->name('admin.cms.menu.destroy');
+    Route::post('/admin/cms/pages', [CmsController::class, 'storeCmsPage'])->name('admin.cms.pages.store');
+    Route::put('/admin/cms/pages/{page}', [CmsController::class, 'updateCmsPage'])->name('admin.cms.pages.update');
+    Route::post('/admin/cms/pages/reorder', [CmsController::class, 'reorderCmsPages'])->name('admin.cms.pages.reorder');
+    Route::post('/admin/cms/menu', [CmsController::class, 'storeMenuItem'])->name('admin.cms.menu.store');
+    Route::post('/admin/cms/menu/reorder', [CmsController::class, 'reorderMenuItems'])->name('admin.cms.menu.reorder');
+    Route::put('/admin/cms/menu/{menuItem}', [CmsController::class, 'updateMenuItem'])->name('admin.cms.menu.update');
+    Route::delete('/admin/cms/menu/{menuItem}', [CmsController::class, 'destroyMenuItem'])->name('admin.cms.menu.destroy');
 });
 
 $servePublicFile = function (string $subdir, string $filename) {
