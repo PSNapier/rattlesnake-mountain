@@ -222,8 +222,9 @@ const purchase = (listingId: number): void => {
 							? 'border-shakespeare-500 bg-shakespeare-500 text-white'
 							: 'border-shakespeare-300 text-shakespeare-700',
 						!link.url ? 'pointer-events-none opacity-50' : '',
-					]"
-					v-html="link.label" />
+					]">
+					<span v-html="link.label" />
+				</Link>
 			</div>
 		</section>
 	</AppLayout>

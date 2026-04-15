@@ -8,11 +8,11 @@ Product and engineering backlog for this repo. Use it to prioritize work and giv
 
 ## Low-Hanging Fruit
 
+- [ ] **Implement welcome package rewards**: On new player creation, grant 500 Scorpions, 1 White-Modifier Stone, 1 Cream/Pearl Stone, 2 Randomized Stones, 2 Random Herbs, and 2 Random Feathers.
 - [ ] **Enable non-admin staff roles in authorization**: Add gates/policies for `Designer`, `StoryAdmin`, and `GameMaster` roles so they can access intended admin features.
 
 ## Planables
 
-- [ ] **Implement market/shop ("Trash and Trinkets")**: Add admin-manageable item cards (title, price, subtitle, description, usage count).
 - [ ] **Implement recruit-a-friend rewards**: Add referral reward logic using `referred_by_username` so recruiter and recruit both receive configured bonuses.
 - [ ] **Implement lifespan/auto-aging automation**: Use `lifecycle_settings` to schedule horse aging every 4 IRL months, apply health changes, and run death rolls for old NPC horses.
 - [ ] **Implement automatic inactive-account freeze**: Freeze accounts after 4 months without art/lit submissions and block aging/events/PvP while frozen.
@@ -27,7 +27,6 @@ Product and engineering backlog for this repo. Use it to prioritize work and giv
 
 ## Blocked
 
-- [ ] **Implement welcome package rewards**: On new player creation, grant 500 Scorpions, 1 White-Modifier Stone, 1 Cream/Pearl Stone, 2 Randomized Stones, 2 Random Herbs, and 2 Random Feathers. _Blocked until shop is implemented._
 - [ ] **Refactor CMS page content input to rich text**: Replace current multi-box page input flow with a simpler rich text editing experience. _Blocked until I decide if I want to implement the in place WYSIWYG._
 - [ ] **CMS Home page editability**: Home page is not editable in CMS while other pages are. _Blocked until I decide if I want to implement the in place WYSIWYG._
 - [ ] **Refactor site styling for long-term maintainability**: Tighten visual consistency and simplify future style updates. _Blocked until MVP is more fully finalized._
