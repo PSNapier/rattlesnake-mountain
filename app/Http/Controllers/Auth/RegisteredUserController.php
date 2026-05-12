@@ -67,8 +67,14 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
+        if (config('app.skip_email_verification')) {
+            $user->markEmailAsVerified();
+        }
+
         Auth::login($user);
 
-        return to_route('verification.notice');
+        return config('app.skip_email_verification')
+            ? to_route('dashboard')
+            : to_route('verification.notice');
     }
 }

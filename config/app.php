@@ -135,4 +135,6 @@ return [
 
     'dev_password' => env('DEV_PASSWORD', null),
 
+    'skip_email_verification' => env('SKIP_EMAIL_VERIFICATION', false),
+
 ];
