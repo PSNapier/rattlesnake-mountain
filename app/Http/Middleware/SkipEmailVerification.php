@@ -10,6 +10,12 @@ class SkipEmailVerification
 {
     public function handle(Request $request, Closure $next): Response
     {
+        $user = $request->user();
+
+        if ($user && ! $user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+        }
+
         return $next($request);
     }
 }
