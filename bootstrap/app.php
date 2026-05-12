@@ -22,6 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'rate.limit.uploads' => RateLimitUploads::class,
         ]);
 
+        if (config('app.skip_email_verification')) {
+            $middleware->alias(['verified' => \App\Http\Middleware\SkipEmailVerification::class]);
+        }
+
         $middleware->web(append: [
             DevPasswordProtection::class,
             HandleAppearance::class,
