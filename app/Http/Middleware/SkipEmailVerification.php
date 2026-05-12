@@ -4,23 +4,22 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
-use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 class SkipEmailVerification extends EnsureEmailIsVerified
 {
-    public function handle(Request $request, Closure $next, ...$guards): Response
+    public function handle($request, Closure $next, $redirectToRoute = null)
     {
         if (config('app.skip_email_verification')) {
             $user = $request->user();
 
-            if ($user && ! $user->hasVerifiedEmail()) {
+            if ($user instanceof MustVerifyEmail && ! $user->hasVerifiedEmail()) {
                 $user->markEmailAsVerified();
             }
 
             return $next($request);
         }
 
-        return parent::handle($request, $next, ...$guards);
+        return parent::handle($request, $next, $redirectToRoute);
     }
 }
