@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Head, useForm } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 
 interface Item {
 	id: number;
@@ -21,9 +22,28 @@ interface Props {
 	};
 }
 
+const VOUCHER_NAME = 'Cream/Pearl Stone Voucher';
+
 const props = defineProps<Props>();
 
 const isPublicView = computed(() => !!props.user);
+
+const voucherItem = computed(() =>
+	props.items.find((item) => item.name === VOUCHER_NAME && item.quantity > 0),
+);
+
+const redeemChoice = ref<'cream' | 'pearl'>('cream');
+
+const redeemForm = useForm({
+	choice: 'cream' as 'cream' | 'pearl',
+});
+
+function redeemVoucher() {
+	redeemForm.choice = redeemChoice.value;
+	redeemForm.post(route('inventory.redeem-cream-pearl-voucher'), {
+		preserveScroll: true,
+	});
+}
 
 const breadcrumbs: BreadcrumbItem[] = props.user
 	? [
@@ -62,6 +82,38 @@ const breadcrumbs: BreadcrumbItem[] = props.user
 				<h1 class="text-3xl font-bold">
 					{{ isPublicView ? `${props.user?.name}'s Inventory` : 'My Inventory' }}
 				</h1>
+			</div>
+
+			<div
+				v-if="!isPublicView && voucherItem"
+				class="rounded-lg border border-cape-palliser-200 bg-cape-palliser-50 p-4">
+				<p class="text-cape-palliser-950 mb-3 text-sm font-medium">
+					You have {{ voucherItem.quantity }} Cream/Pearl Stone Voucher{{
+						voucherItem.quantity === 1 ? '' : 's'
+					}}. Redeem for a Cream Stone or Pearl Stone.
+				</p>
+				<div class="flex flex-wrap items-end gap-4">
+					<label class="flex flex-col gap-1 text-sm">
+						<span class="text-cape-palliser-700">Choice</span>
+						<select
+							v-model="redeemChoice"
+							class="rounded-md border border-gray-300 px-3 py-2 text-sm">
+							<option value="cream">Cream Stone</option>
+							<option value="pearl">Pearl Stone</option>
+						</select>
+					</label>
+					<Button
+						type="button"
+						:disabled="redeemForm.processing"
+						@click="redeemVoucher">
+						Redeem voucher
+					</Button>
+				</div>
+				<p
+					v-if="redeemForm.errors.choice"
+					class="mt-2 text-sm text-red-600">
+					{{ redeemForm.errors.choice }}
+				</p>
 			</div>
 
 			<div

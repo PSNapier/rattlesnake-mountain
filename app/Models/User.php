@@ -58,6 +58,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'frozen_at' => 'datetime',
             'banned_at' => 'datetime',
             'last_login_at' => 'datetime',
+            'welcome_package_granted_at' => 'datetime',
             'is_sanctuary' => 'boolean',
         ];
     }
