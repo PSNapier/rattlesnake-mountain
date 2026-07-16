@@ -15,6 +15,7 @@ use App\Http\Controllers\HorseController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\RedeemCreamPearlVoucherController;
+use App\Http\Controllers\RedeemVoucherController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\StaticPageController;
 use App\Models\Herd;
@@ -141,6 +142,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/horses/{horse}/publish', [HorseController::class, 'publish'])->name('horses.publish');
     Route::post('/horses/upload-image', [HorseController::class, 'uploadImage'])->name('horses.upload-image')->middleware('rate.limit.uploads');
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
+    Route::post('/inventory/redeem-voucher', RedeemVoucherController::class)
+        ->name('inventory.redeem-voucher');
     Route::post('/inventory/redeem-cream-pearl-voucher', RedeemCreamPearlVoucherController::class)
         ->name('inventory.redeem-cream-pearl-voucher');
     Route::get('/users', function () {

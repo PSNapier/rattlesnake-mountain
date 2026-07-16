@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 interface Item {
 	id: number;
@@ -14,33 +14,78 @@ interface Item {
 	max_count: number;
 }
 
+interface VoucherChoice {
+	value: string;
+	label: string;
+}
+
+interface VoucherOption {
+	name: string;
+	choices: VoucherChoice[];
+}
+
 interface Props {
 	items: Item[];
+	vouchers?: VoucherOption[];
 	user?: {
 		id: number;
 		name: string;
 	};
 }
 
-const VOUCHER_NAME = 'Cream/Pearl Stone Voucher';
-
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+	vouchers: () => [],
+});
 
 const isPublicView = computed(() => !!props.user);
 
-const voucherItem = computed(() =>
-	props.items.find((item) => item.name === VOUCHER_NAME && item.quantity > 0),
+const redeemableVouchers = computed(() =>
+	props.vouchers.filter((voucher) => {
+		const item = props.items.find((entry) => entry.name === voucher.name);
+		return item && item.quantity > 0;
+	}),
 );
 
-const redeemChoice = ref<'cream' | 'pearl'>('cream');
+const selectedVoucherName = ref(redeemableVouchers.value[0]?.name ?? '');
+const selectedChoice = ref(redeemableVouchers.value[0]?.choices[0]?.value ?? '');
+
+watch(
+	redeemableVouchers,
+	(vouchers) => {
+		if (!vouchers.find((voucher) => voucher.name === selectedVoucherName.value)) {
+			selectedVoucherName.value = vouchers[0]?.name ?? '';
+		}
+
+		const current = vouchers.find((voucher) => voucher.name === selectedVoucherName.value);
+		if (!current?.choices.find((choice) => choice.value === selectedChoice.value)) {
+			selectedChoice.value = current?.choices[0]?.value ?? '';
+		}
+	},
+	{ immediate: true },
+);
+
+const activeVoucher = computed(() =>
+	redeemableVouchers.value.find((voucher) => voucher.name === selectedVoucherName.value),
+);
+
+const activeQuantity = computed(() => {
+	const item = props.items.find((entry) => entry.name === selectedVoucherName.value);
+	return item?.quantity ?? 0;
+});
 
 const redeemForm = useForm({
-	choice: 'cream' as 'cream' | 'pearl',
+	voucher: '',
+	choice: '',
 });
 
 function redeemVoucher() {
-	redeemForm.choice = redeemChoice.value;
-	redeemForm.post(route('inventory.redeem-cream-pearl-voucher'), {
+	if (!selectedVoucherName.value || !selectedChoice.value) {
+		return;
+	}
+
+	redeemForm.voucher = selectedVoucherName.value;
+	redeemForm.choice = selectedChoice.value;
+	redeemForm.post(route('inventory.redeem-voucher'), {
 		preserveScroll: true,
 	});
 }
@@ -85,34 +130,52 @@ const breadcrumbs: BreadcrumbItem[] = props.user
 			</div>
 
 			<div
-				v-if="!isPublicView && voucherItem"
+				v-if="!isPublicView && redeemableVouchers.length > 0"
 				class="rounded-lg border border-cape-palliser-200 bg-cape-palliser-50 p-4">
 				<p class="text-cape-palliser-950 mb-3 text-sm font-medium">
-					You have {{ voucherItem.quantity }} Cream/Pearl Stone Voucher{{
-						voucherItem.quantity === 1 ? '' : 's'
-					}}. Redeem for a Cream Stone or Pearl Stone.
+					You have redeemable vouchers. Choose a voucher and item to redeem.
 				</p>
 				<div class="flex flex-wrap items-end gap-4">
 					<label class="flex flex-col gap-1 text-sm">
+						<span class="text-cape-palliser-700">Voucher</span>
+						<select
+							v-model="selectedVoucherName"
+							class="rounded-md border border-gray-300 px-3 py-2 text-sm">
+							<option
+								v-for="voucher in redeemableVouchers"
+								:key="voucher.name"
+								:value="voucher.name">
+								{{ voucher.name }} ({{
+									props.items.find((item) => item.name === voucher.name)
+										?.quantity ?? 0
+								}})
+							</option>
+						</select>
+					</label>
+					<label class="flex flex-col gap-1 text-sm">
 						<span class="text-cape-palliser-700">Choice</span>
 						<select
-							v-model="redeemChoice"
+							v-model="selectedChoice"
 							class="rounded-md border border-gray-300 px-3 py-2 text-sm">
-							<option value="cream">Cream Stone</option>
-							<option value="pearl">Pearl Stone</option>
+							<option
+								v-for="choice in activeVoucher?.choices ?? []"
+								:key="choice.value"
+								:value="choice.value">
+								{{ choice.label }}
+							</option>
 						</select>
 					</label>
 					<Button
 						type="button"
-						:disabled="redeemForm.processing"
+						:disabled="redeemForm.processing || activeQuantity < 1"
 						@click="redeemVoucher">
 						Redeem voucher
 					</Button>
 				</div>
 				<p
-					v-if="redeemForm.errors.choice"
+					v-if="redeemForm.errors.choice || redeemForm.errors.voucher"
 					class="mt-2 text-sm text-red-600">
-					{{ redeemForm.errors.choice }}
+					{{ redeemForm.errors.choice || redeemForm.errors.voucher }}
 				</p>
 			</div>
 

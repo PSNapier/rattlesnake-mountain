@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Referral;
 use App\Models\User;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
@@ -48,11 +49,11 @@ test('registration fails when rules_agreed is missing', function () {
     $this->assertGuest();
 });
 
-test('new users can register with referred_by_username', function () {
+test('new users can register with referrer_id', function () {
     $referrer = User::factory()->create(['name' => 'Referrer User']);
 
     $response = $this->post('/register', [
-        'referred_by_username' => 'Referrer User',
+        'referrer_id' => $referrer->id,
         'name' => 'Test User',
         'email' => 'test@example.com',
         'password' => 'password',
@@ -65,11 +66,12 @@ test('new users can register with referred_by_username', function () {
 
     $user = User::where('email', 'test@example.com')->first();
     expect($user->referred_by_username)->toBe('Referrer User');
+    expect(Referral::query()->where('recruit_id', $user->id)->where('referrer_id', $referrer->id)->exists())->toBeTrue();
 });
 
-test('registration fails when referred_by_username does not exist', function () {
+test('registration fails when referrer_id does not exist', function () {
     $response = $this->post('/register', [
-        'referred_by_username' => 'NonExistentUser',
+        'referrer_id' => 999999,
         'name' => 'Test User',
         'email' => 'test@example.com',
         'password' => 'password',
@@ -77,11 +79,11 @@ test('registration fails when referred_by_username does not exist', function () 
         'rules_agreed' => true,
     ]);
 
-    $response->assertSessionHasErrors('referred_by_username');
+    $response->assertSessionHasErrors('referrer_id');
     $this->assertGuest();
 });
 
-test('registration works without referred_by_username', function () {
+test('registration works without referrer_id', function () {
     $response = $this->post('/register', [
         'name' => 'Test User',
         'email' => 'test@example.com',
@@ -95,4 +97,5 @@ test('registration works without referred_by_username', function () {
 
     $user = User::where('email', 'test@example.com')->first();
     expect($user->referred_by_username)->toBeNull();
+    expect(Referral::query()->where('recruit_id', $user->id)->exists())->toBeFalse();
 });

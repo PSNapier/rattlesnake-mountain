@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 
@@ -14,7 +15,9 @@ class SkipEmailVerification extends EnsureEmailIsVerified
             $user = $request->user();
 
             if ($user instanceof MustVerifyEmail && ! $user->hasVerifiedEmail()) {
-                $user->markEmailAsVerified();
+                if ($user->markEmailAsVerified()) {
+                    event(new Verified($user));
+                }
             }
 
             return $next($request);

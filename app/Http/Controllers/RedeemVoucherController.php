@@ -2,21 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\RedeemCreamPearlVoucherRequest;
+use App\Http\Requests\RedeemVoucherRequest;
 use App\Services\WelcomePackageService;
 use Illuminate\Http\RedirectResponse;
 use RuntimeException;
 
-class RedeemCreamPearlVoucherController extends Controller
+class RedeemVoucherController extends Controller
 {
     public function __invoke(
-        RedeemCreamPearlVoucherRequest $request,
+        RedeemVoucherRequest $request,
         WelcomePackageService $welcomePackageService
     ): RedirectResponse {
         try {
             $welcomePackageService->redeemVoucher(
                 $request->user(),
-                'Cream/Pearl Stone Voucher',
+                $request->validated('voucher'),
                 $request->validated('choice')
             );
         } catch (RuntimeException $exception) {

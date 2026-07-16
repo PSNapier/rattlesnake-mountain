@@ -37,6 +37,27 @@ class ItemSeeder extends Seeder
                 'is_active' => true,
             ],
             [
+                'name' => 'Stone Voucher',
+                'max_count' => 999,
+                'uses_per_unit' => 1,
+                'description' => 'Redeem for 1 stone of your choice.',
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Herb Voucher',
+                'max_count' => 999,
+                'uses_per_unit' => 1,
+                'description' => 'Redeem for 1 herb of your choice.',
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Feather Voucher',
+                'max_count' => 999,
+                'uses_per_unit' => 1,
+                'description' => 'Redeem for 1 feather of your choice.',
+                'is_active' => true,
+            ],
+            [
                 'name' => 'Cream Stone',
                 'max_count' => 999,
                 'uses_per_unit' => 1,

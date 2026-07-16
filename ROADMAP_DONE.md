@@ -1,5 +1,41 @@
 # Roadmap Done
 
+## [003] Recruit-a-Friend Rewards
+
+**Status:** `done`
+**Priority:** high
+**Depends On:** [001]
+
+### Goal
+
+When a new player registers with a valid referrer, both recruiter and recruit receive the documented referral bonuses on top of the welcome package.
+
+### Scope
+
+-   Reward both parties using existing `referred_by_username` field
+-   Validate referrer exists and is eligible (not self-referral)
+-   **Spec-flagged:** confirm exact bonus amounts with client (CMS documents +100 Scorpions, stones/herbs/feathers choices, and submission bonuses for 3 months — submission bonuses may need placeholder until activities exist)
+-   NOT in scope: ongoing +10 Scorpions per submission until activities system ([015])
+
+### Technical Notes
+
+-   Referral link: `referrals` table (`recruit_id`, `referrer_id`, `granted_at`, `revoked_at`); registration stores `referrer_id` via searchable picker; `users.referred_by_username` kept for display
+-   Grant trigger: `ReferralRewardService` on `Verified` (`GrantReferralRewards` listener); `skip_email_verification` fires `Verified` after `markEmailAsVerified()`
+-   Config: [`config/referral-rewards.php`](config/referral-rewards.php) (`each` bundle); voucher pools in [`config/vouchers.php`](config/vouchers.php)
+-   Registration search: `GET /register/referrer-search` (guest, throttled, min 2 chars, limit 10); [`Register.vue`](resources/js/pages/auth/Register.vue)
+-   Voucher redeem: generalized in `WelcomePackageService::redeemVoucher` + [`Inventory/Index.vue`](resources/js/pages/Inventory/Index.vue)
+-   Tests: [`tests/Feature/ReferralRewardTest.php`](tests/Feature/ReferralRewardTest.php), [`ReferrerSearchTest.php`](tests/Feature/ReferrerSearchTest.php), [`RedeemVoucherTest.php`](tests/Feature/RedeemVoucherTest.php)
+-   **Pending client sign-off:** voucher pool contents (stones/herbs/feathers). **Deferred to [015]:** +10 Scorpions / +1 stat per submission for 3 months (`referrals.granted_at` is window start)
+
+### Acceptance Criteria
+
+-   [x] Valid referral grants configured bonuses to both users
+-   [x] Invalid / self / missing username does not grant bonuses (and does not block registration if field optional)
+-   [x] Pest tests cover happy path and abuse cases (self-referral)
+-   [x] Open amount questions documented in Technical Notes if still pending at build time
+
+---
+
 ## [002] Staff Role Gates
 
 **Status:** `done`

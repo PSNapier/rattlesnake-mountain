@@ -30,9 +30,7 @@ class WelcomePackageService
                 return ['granted' => false, 'items' => []];
             }
 
-            foreach ($grants as $itemName => $quantity) {
-                $this->incrementItemQuantity($lockedUser, $itemName, $quantity);
-            }
+            $this->applyGrants($lockedUser, $grants);
 
             $lockedUser->forceFill(['welcome_package_granted_at' => now()])->save();
 
@@ -46,39 +44,106 @@ class WelcomePackageService
     }
 
     /**
-     * Redeem a Cream/Pearl Stone Voucher for the chosen stone.
+     * Apply item quantity deltas to a user (caller must hold a transaction/lock if needed).
      *
-     * @param  'cream'|'pearl'  $choice
+     * @param  array<string, int>  $grants
      */
-    public function redeemVoucher(User $user, string $choice): void
+    public function applyGrants(User $user, array $grants): void
     {
-        $voucherName = config('welcome-package.voucher.item');
-        $choices = config('welcome-package.voucher.choices');
-
-        if (! array_key_exists($choice, $choices)) {
-            throw new RuntimeException("Invalid voucher choice: {$choice}");
+        foreach ($grants as $itemName => $quantity) {
+            $this->incrementItemQuantity($user, $itemName, $quantity);
         }
+    }
 
-        $stoneName = $choices[$choice];
+    /**
+     * Redeem a voucher for the chosen item.
+     *
+     * @param  string  $voucherName  Catalog voucher item name
+     * @param  string  $choice  Choice slug or item name depending on voucher config
+     */
+    public function redeemVoucher(User $user, string $voucherName, string $choice): void
+    {
+        $itemName = $this->resolveVoucherChoice($voucherName, $choice);
 
-        DB::transaction(function () use ($user, $voucherName, $stoneName) {
+        DB::transaction(function () use ($user, $voucherName, $itemName) {
             $lockedUser = User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
 
             $voucherQuantity = $this->currentQuantity($lockedUser, $voucherName);
 
             if ($voucherQuantity < 1) {
-                throw new RuntimeException('User does not own a Cream/Pearl Stone Voucher.');
+                throw new RuntimeException("User does not own a {$voucherName}.");
             }
 
             $this->incrementItemQuantity($lockedUser, $voucherName, -1);
-            $this->incrementItemQuantity($lockedUser, $stoneName, 1);
+            $this->incrementItemQuantity($lockedUser, $itemName, 1);
 
-            Log::info('Cream/Pearl Stone Voucher redeemed', [
+            Log::info('Voucher redeemed', [
                 'user_id' => $lockedUser->id,
                 'voucher' => $voucherName,
-                'stone' => $stoneName,
+                'item' => $itemName,
             ]);
         });
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function voucherChoiceLabels(string $voucherName): array
+    {
+        $config = config("vouchers.{$voucherName}");
+
+        if (! is_array($config)) {
+            return [];
+        }
+
+        if (isset($config['choices']) && is_array($config['choices'])) {
+            return array_values($config['choices']);
+        }
+
+        return $this->resolveVoucherPoolItems($config);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function voucherChoiceKeys(string $voucherName): array
+    {
+        $config = config("vouchers.{$voucherName}");
+
+        if (! is_array($config)) {
+            return [];
+        }
+
+        if (isset($config['choices']) && is_array($config['choices'])) {
+            return array_keys($config['choices']);
+        }
+
+        return $this->resolveVoucherPoolItems($config);
+    }
+
+    public function resolveVoucherChoice(string $voucherName, string $choice): string
+    {
+        $config = config("vouchers.{$voucherName}");
+
+        if (! is_array($config)) {
+            throw new RuntimeException("Unknown voucher: {$voucherName}");
+        }
+
+        if (isset($config['choices']) && is_array($config['choices'])) {
+            if (! array_key_exists($choice, $config['choices'])) {
+                throw new RuntimeException("Invalid voucher choice: {$choice}");
+            }
+
+            return $config['choices'][$choice];
+        }
+
+        $pool = $this->resolveVoucherPoolItems($config);
+
+        if (! in_array($choice, $pool, true)) {
+            throw new RuntimeException("Invalid voucher choice: {$choice}");
+        }
+
+        return $choice;
     }
 
     /**
@@ -103,10 +168,19 @@ class WelcomePackageService
     }
 
     /**
-     * @param  array{count: int, items?: list<string>, source?: string}  $pool
+     * @param  array{count?: int, items?: list<string>, source?: string}  $pool
      * @return list<string>
      */
     private function resolvePoolItems(array $pool): array
+    {
+        return $this->resolveVoucherPoolItems($pool);
+    }
+
+    /**
+     * @param  array{items?: list<string>, source?: string, choices?: array<string, string>}  $pool
+     * @return list<string>
+     */
+    private function resolveVoucherPoolItems(array $pool): array
     {
         if (($pool['source'] ?? null) === 'shop_catalog') {
             return $this->herbNamesFromShopCatalog();
@@ -115,7 +189,7 @@ class WelcomePackageService
         $items = $pool['items'] ?? [];
 
         if ($items === []) {
-            throw new RuntimeException('Welcome package random pool has no items configured.');
+            throw new RuntimeException('Voucher or random pool has no items configured.');
         }
 
         return $items;

@@ -2,38 +2,6 @@
 
 <!-- Next task number: [022] -->
 
-## [003] Recruit-a-Friend Rewards
-
-**Status:** `next`
-**Priority:** high
-**Depends On:** [001]
-
-### Goal
-
-When a new player registers with a valid `referred_by_username`, both recruiter and recruit receive the documented referral bonuses on top of the welcome package.
-
-### Scope
-
--   Reward both parties using existing `referred_by_username` field
--   Validate referrer exists and is eligible (not self-referral)
--   **Spec-flagged:** confirm exact bonus amounts with client (CMS documents +100 Scorpions, stones/herbs/feathers choices, and submission bonuses for 3 months — submission bonuses may need placeholder until activities exist)
--   NOT in scope: ongoing +10 Scorpions per submission until activities system ([015])
-
-### Technical Notes
-
--   Column: `users.referred_by_username` ([migration](database/migrations/2026_01_26_134807_add_referred_by_username_to_users_table.php))
--   CMS copy in Getting Started recruit-a-friend section
--   Prefer config-driven reward table so amounts can change without code edits
-
-### Acceptance Criteria
-
--   [ ] Valid referral grants configured bonuses to both users
--   [ ] Invalid / self / missing username does not grant bonuses (and does not block registration if field optional)
--   [ ] Pest tests cover happy path and abuse cases (self-referral)
--   [ ] Open amount questions documented in Technical Notes if still pending at build time
-
----
-
 ## [004] Lifecycle Automation
 
 **Status:** `next`

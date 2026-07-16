@@ -45,6 +45,10 @@ return [
         ],
     ],
 
+    /*
+     * Cream/Pearl voucher choices live in config/vouchers.php.
+     * Kept for backward-compatible config key lookups in older code paths.
+     */
     'voucher' => [
         'item' => 'Cream/Pearl Stone Voucher',
         'choices' => [

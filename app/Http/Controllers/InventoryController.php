@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Item;
 use App\Models\User;
+use App\Services\WelcomePackageService;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class InventoryController extends Controller
 {
+    public function __construct(private WelcomePackageService $welcomePackageService) {}
+
     public function index(): Response
     {
         $user = Auth::user();
@@ -29,6 +32,7 @@ class InventoryController extends Controller
 
         return Inertia::render('Inventory/Index', [
             'items' => $items,
+            'vouchers' => $this->voucherOptionsFor($items->pluck('name')->all()),
         ]);
     }
 
@@ -64,6 +68,42 @@ class InventoryController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
             ],
+            'vouchers' => [],
         ]);
+    }
+
+    /**
+     * @param  list<string>  $ownedItemNames
+     * @return list<array{name: string, quantity: int, choices: list<array{value: string, label: string}>}>
+     */
+    private function voucherOptionsFor(array $ownedItemNames): array
+    {
+        $vouchers = [];
+
+        foreach (array_keys(config('vouchers', [])) as $voucherName) {
+            $owned = collect($ownedItemNames)->contains($voucherName);
+            // Quantity comes from items list in the Vue page; choices always useful when owned.
+            if (! $owned) {
+                continue;
+            }
+
+            $keys = $this->welcomePackageService->voucherChoiceKeys($voucherName);
+            $labels = $this->welcomePackageService->voucherChoiceLabels($voucherName);
+
+            $choices = [];
+            foreach ($keys as $index => $key) {
+                $choices[] = [
+                    'value' => $key,
+                    'label' => $labels[$index] ?? $key,
+                ];
+            }
+
+            $vouchers[] = [
+                'name' => $voucherName,
+                'choices' => $choices,
+            ];
+        }
+
+        return $vouchers;
     }
 }

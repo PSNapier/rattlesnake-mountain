@@ -17,8 +17,10 @@ class RedeemCreamPearlVoucherRequest extends FormRequest
      */
     public function rules(): array
     {
+        $choiceKeys = array_keys(config('vouchers.Cream/Pearl Stone Voucher.choices', config('welcome-package.voucher.choices', [])));
+
         return [
-            'choice' => ['required', 'string', Rule::in(array_keys(config('welcome-package.voucher.choices')))],
+            'choice' => ['required', 'string', Rule::in($choiceKeys)],
         ];
     }
 
