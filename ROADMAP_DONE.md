@@ -1,5 +1,42 @@
 # Roadmap Done
 
+## [021] Admin-Managed User Role Matrix
+
+**Status:** `done`
+**Priority:** high
+**Depends On:** none
+
+### Goal
+
+Admins can view and edit the role → capability matrix (which admin areas each role can access) from the admin panel, instead of capabilities being hardcoded in the `Role` enum.
+
+### Scope
+
+-   Admin UI (Users tab or new section) showing roles × capability areas as an editable matrix
+-   Persist matrix in DB (e.g. `role_capabilities` table or config-backed settings model); `Role::capabilities()` reads from it with sensible defaults
+-   Only Admin role can edit the matrix; Admin's own `users` capability cannot be removed (no lockout)
+-   Seeder/migration establishing current defaults from existing enum matrix
+-   NOT in scope: creating/deleting roles (enum stays fixed); per-user capability overrides; full permissions package (spatie) unless approved
+
+### Technical Notes
+
+-   Current matrix hardcoded: [`app/Models/Role.php`](app/Models/Role.php) `capabilities()`
+-   Capability checks: `User::hasCapability()` used by admin middleware/controllers ([`app/Http/Controllers/Admin/DashboardController.php`](app/Http/Controllers/Admin/DashboardController.php))
+-   Role assignment UI already exists in Admin Users tab (`UpdateUserRoleRequest`); this manages what roles *can do*, not who has them
+-   Cache matrix lookups; invalidate on save
+-   Security: guard against self-lockout and privilege escalation by non-admin staff
+
+### Acceptance Criteria
+
+-   [x] Admin can toggle capability areas per role in admin UI; changes persist
+-   [x] Capability checks throughout app respect the stored matrix
+-   [x] Non-admin staff cannot access or edit the matrix
+-   [x] Admin role cannot lose `users` capability (lockout guard tested)
+-   [x] Migration/seeder installs defaults matching current enum behavior
+-   [x] Pest tests cover toggle persistence, enforcement, and authorization
+
+---
+
 ## [003] Recruit-a-Friend Rewards
 
 **Status:** `done`

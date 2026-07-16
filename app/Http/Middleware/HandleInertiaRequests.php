@@ -75,7 +75,10 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => $user ? array_merge($user->only(['id', 'name', 'email', 'avatar', 'email_verified_at', 'role']), ['is_frozen' => $user->isFrozen()]) : null,
+                'user' => $user ? array_merge($user->only(['id', 'name', 'email', 'avatar', 'email_verified_at', 'role']), [
+                    'is_frozen' => $user->isFrozen(),
+                    'is_admin' => $user->isAdmin(),
+                ]) : null,
             ],
             'unreadMessageCount' => $unreadCount,
             'navMenu' => $navMenu,

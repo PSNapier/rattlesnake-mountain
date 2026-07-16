@@ -32,12 +32,6 @@ class DashboardController extends Controller
             'capabilityAreas' => [],
         ];
 
-        if ($user->isAdmin()) {
-            $props['canManageRoleMatrix'] = true;
-            $props['roleCapabilityMatrix'] = $roleCapabilities->matrix();
-            $props['capabilityAreas'] = Role::areas();
-        }
-
         if ($user->can('admin.submissions')) {
             $props['submissions'] = $this->submissions();
             $props['herds'] = \App\Models\Herd::select('id', 'name')
@@ -99,6 +93,12 @@ class DashboardController extends Controller
         }
 
         if ($user->can('admin.users')) {
+            if ($user->isAdmin()) {
+                $props['canManageRoleMatrix'] = true;
+                $props['roleCapabilityMatrix'] = $roleCapabilities->matrix();
+                $props['capabilityAreas'] = Role::areas();
+            }
+
             $usersQuery = User::query()
                 ->whereNull('deleted_at')
                 ->where('is_sanctuary', false)

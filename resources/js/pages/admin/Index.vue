@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, usePage } from '@inertiajs/vue3';
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import CmsTab from './CmsTab.vue';
 import ItemsTab from './ItemsTab.vue';
 import LifecycleTab from './LifecycleTab.vue';
+import RoleCapabilityMatrix from './RoleCapabilityMatrix.vue';
 import RollersTab from './RollersTab.vue';
 import ShopTab from './ShopTab.vue';
 import SubmissionsTab from './SubmissionsTab.vue';
@@ -141,6 +142,15 @@ const props = withDefaults(defineProps<Props>(), {
 	capabilityAreas: () => [],
 });
 const page = usePage();
+
+const canManageRoleMatrix = computed(() => {
+	const props = page.props as {
+		canManageRoleMatrix?: boolean;
+		auth?: { user?: { is_admin?: boolean; role?: string } };
+	};
+
+	return Boolean(props.canManageRoleMatrix || props.auth?.user?.is_admin);
+});
 
 const canAccess = (tab: AdminTab): boolean => props.adminCapabilities.includes(tab);
 
@@ -283,13 +293,16 @@ onMounted(() => {
 			<RollersTab
 				v-if="activeTab === 'rollers' && canAccess('rollers')" />
 
-			<UsersTab
-				v-if="activeTab === 'users' && canAccess('users') && props.users"
-				:users="props.users"
-				:user-search="props.userSearch"
-				:can-manage-role-matrix="props.canManageRoleMatrix"
-				:role-capability-matrix="props.roleCapabilityMatrix"
-				:capability-areas="props.capabilityAreas" />
+			<div
+				v-if="activeTab === 'users' && canAccess('users')"
+				class="space-y-6">
+				<RoleCapabilityMatrix v-if="canManageRoleMatrix" />
+
+				<UsersTab
+					v-if="props.users"
+					:users="props.users"
+					:user-search="props.userSearch" />
+			</div>
 
 			<ItemsTab
 				v-if="activeTab === 'items' && canAccess('items')"
