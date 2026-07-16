@@ -34,7 +34,7 @@ interface Admin {
 interface User {
 	id: number;
 	name: string;
-	is_admin: boolean;
+	is_staff: boolean;
 }
 
 interface Comment {
@@ -354,7 +354,7 @@ const getFieldValue = (field: string): string => {
 								:key="comment.id"
 								:class="[
 									'rounded-md border p-4',
-									comment.user.is_admin
+									comment.user.is_staff
 										? 'border-blue-200 bg-blue-50'
 										: 'border-gray-200 bg-gray-50',
 								]">
@@ -363,9 +363,9 @@ const getFieldValue = (field: string): string => {
 										<p class="text-sm font-medium">
 											{{ comment.user.name }}
 											<span
-												v-if="comment.user.is_admin"
+												v-if="comment.user.is_staff"
 												class="text-blue-600 text-xs">
-												(Admin)
+												(Staff)
 											</span>
 										</p>
 										<p class="mt-1 text-sm text-gray-700">

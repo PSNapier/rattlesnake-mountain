@@ -8,7 +8,7 @@ class StoreShopListingRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->isAdmin() ?? false;
+        return $this->user()?->can('admin.shop') ?? false;
     }
 
     public function rules(): array

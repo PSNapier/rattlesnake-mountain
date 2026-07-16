@@ -24,5 +24,19 @@ it('allows admins', function () {
 
     actingAs($admin)->get(route('admin.index'))
         ->assertSuccessful()
-        ->assertInertia(fn ($page) => $page->component('admin/Index'));
+        ->assertInertia(fn ($page) => $page
+            ->component('admin/Index')
+            ->has('adminCapabilities')
+        );
+});
+
+it('allows designers', function () {
+    $designer = User::factory()->create(['role' => 'designer']);
+
+    actingAs($designer)->get(route('admin.index'))
+        ->assertSuccessful()
+        ->assertInertia(fn ($page) => $page
+            ->component('admin/Index')
+            ->where('adminCapabilities', ['submissions'])
+        );
 });

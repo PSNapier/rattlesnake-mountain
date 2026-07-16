@@ -26,8 +26,22 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::define('access-admin', function (User $user): bool {
-            return $user->isAdmin();
+            return $user->isStaff();
         });
+
+        foreach ([
+            'submissions',
+            'rollers',
+            'lifecycle',
+            'users',
+            'items',
+            'shop',
+            'cms',
+        ] as $area) {
+            Gate::define("admin.{$area}", function (User $user) use ($area): bool {
+                return $user->hasCapability($area);
+            });
+        }
 
         Event::listen(Login::class, RecordLastLogin::class);
         Event::listen(Login::class, SyncAdminRoleFromEmailList::class);

@@ -15,7 +15,7 @@ class ItemController extends Controller
 {
     public function items(): Response
     {
-        if (! Auth::user()->isAdmin()) {
+        if (! Auth::user()->can('admin.items')) {
             abort(403);
         }
 
@@ -44,7 +44,7 @@ class ItemController extends Controller
 
     public function destroyItem(Item $item): RedirectResponse
     {
-        if (! Auth::user()->isAdmin()) {
+        if (! Auth::user()->can('admin.items')) {
             abort(403);
         }
 

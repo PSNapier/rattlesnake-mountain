@@ -55,7 +55,7 @@ class CmsController extends Controller
 
     public function destroyMenuItem(MenuItem $menuItem): RedirectResponse
     {
-        if (! Auth::user()->isAdmin()) {
+        if (! Auth::user()->can('admin.cms')) {
             abort(403);
         }
         $menuItem->children()->delete();

@@ -19,7 +19,7 @@ class UserController extends Controller
 {
     public function searchUsers(Request $request): JsonResponse
     {
-        if (! Auth::user()->isAdmin()) {
+        if (! Auth::user()->can('admin.users')) {
             abort(403);
         }
 
@@ -38,7 +38,7 @@ class UserController extends Controller
 
     public function getUserInventory(User $user): JsonResponse
     {
-        if (! Auth::user()->isAdmin()) {
+        if (! Auth::user()->can('admin.users')) {
             abort(403);
         }
 
@@ -74,7 +74,7 @@ class UserController extends Controller
 
     public function userItems(User $user): Response
     {
-        if (! Auth::user()->isAdmin()) {
+        if (! Auth::user()->can('admin.users')) {
             abort(403);
         }
 
@@ -120,7 +120,7 @@ class UserController extends Controller
 
     public function freezeUser(User $user): RedirectResponse
     {
-        if (! Auth::user()->isAdmin()) {
+        if (! Auth::user()->can('admin.users')) {
             abort(403);
         }
         if ($user->is_sanctuary || $user->deleted_at) {
@@ -133,7 +133,7 @@ class UserController extends Controller
 
     public function unfreezeUser(User $user): RedirectResponse
     {
-        if (! Auth::user()->isAdmin()) {
+        if (! Auth::user()->can('admin.users')) {
             abort(403);
         }
         $user->update(['frozen_at' => null]);
@@ -143,10 +143,10 @@ class UserController extends Controller
 
     public function banUser(User $user): RedirectResponse
     {
-        if (! Auth::user()->isAdmin()) {
+        if (! Auth::user()->can('admin.users')) {
             abort(403);
         }
-        if ($user->is_sanctuary || $user->deleted_at || $user->isAdmin()) {
+        if ($user->is_sanctuary || $user->deleted_at || $user->isStaff()) {
             abort(400, 'Cannot ban this user.');
         }
         $user->update(['banned_at' => now()]);
@@ -156,7 +156,7 @@ class UserController extends Controller
 
     public function unbanUser(User $user): RedirectResponse
     {
-        if (! Auth::user()->isAdmin()) {
+        if (! Auth::user()->can('admin.users')) {
             abort(403);
         }
         $user->update(['banned_at' => null]);
@@ -176,10 +176,10 @@ class UserController extends Controller
 
     public function deleteUser(User $user): RedirectResponse
     {
-        if (! Auth::user()->isAdmin()) {
+        if (! Auth::user()->can('admin.users')) {
             abort(403);
         }
-        if ($user->is_sanctuary || $user->deleted_at || $user->isAdmin()) {
+        if ($user->is_sanctuary || $user->deleted_at || $user->isStaff()) {
             abort(400, 'Cannot delete this user.');
         }
 

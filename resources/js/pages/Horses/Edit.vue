@@ -47,10 +47,13 @@ interface Props {
 const props = defineProps<Props>();
 
 const page = usePage<SharedData>();
-const isAdmin = computed(() => page.props.auth.user?.role === 'admin');
-const maxFileSize = computed(() => (isAdmin.value ? 10 : 2) * 1024 * 1024);
+const isStaff = computed(() => {
+	const role = page.props.auth.user?.role;
+	return !!role && role !== 'user';
+});
+const maxFileSize = computed(() => (isStaff.value ? 10 : 2) * 1024 * 1024);
 const fileTypeHint = computed(() =>
-	isAdmin.value
+	isStaff.value
 		? 'PNG, JPG, or JPEG files only, max 10MB'
 		: 'PNG, JPG, or JPEG files only, max 2MB',
 );

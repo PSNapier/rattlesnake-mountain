@@ -54,7 +54,7 @@ class InboxController extends Controller
 
     public function show(Message $message): Response
     {
-        if ($message->user_id !== Auth::id() && ! Auth::user()->isAdmin()) {
+        if ($message->user_id !== Auth::id() && ! Auth::user()->can('admin.submissions')) {
             abort(403);
         }
 
@@ -99,7 +99,7 @@ class InboxController extends Controller
                         'user' => [
                             'id' => $comment->user->id,
                             'name' => $comment->user->name,
-                            'is_admin' => $comment->user->isAdmin(),
+                            'is_staff' => $comment->user->isStaff(),
                         ],
                     ];
                 }),
@@ -109,7 +109,7 @@ class InboxController extends Controller
 
     public function storeComment(Message $message, Request $request): RedirectResponse
     {
-        if ($message->user_id !== Auth::id() && ! Auth::user()->isAdmin()) {
+        if ($message->user_id !== Auth::id() && ! Auth::user()->can('admin.submissions')) {
             abort(403);
         }
 

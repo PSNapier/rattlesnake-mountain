@@ -110,8 +110,8 @@ class Horse extends Model
             if ($user) {
                 $q->orWhere(function (Builder $subQ) use ($user) {
                     $subQ->where('state', HorseState::Pending);
-                    if ($user->isAdmin()) {
-                        // Admins can see all pending horses
+                    if ($user->hasCapability('submissions')) {
+                        // Staff with submissions access can see all pending horses
                         return;
                     }
                     // Non-admins can only see their own pending horses

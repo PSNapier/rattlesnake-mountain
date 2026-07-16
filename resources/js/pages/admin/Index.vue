@@ -22,7 +22,7 @@ interface Comment {
 	user: {
 		id: number;
 		name: string;
-		is_admin: boolean;
+		is_staff: boolean;
 	};
 }
 
@@ -107,24 +107,40 @@ interface LifecycleSettings {
 	horse_auto_health_roll_max: number;
 }
 
+type AdminTab = 'submissions' | 'rollers' | 'users' | 'items' | 'shop' | 'lifecycle' | 'cms';
+
 interface Props {
-	submissions: Submission[];
+	adminCapabilities: AdminTab[];
+	submissions?: Submission[];
 	herds?: Herd[];
-	items: Item[];
-	shopListings: ShopListing[];
-	users: PaginatedUsers;
-	userSearch: string;
-	cmsPages: unknown[];
-	menuItems: unknown[];
+	items?: Item[];
+	shopListings?: ShopListing[];
+	users?: PaginatedUsers;
+	userSearch?: string;
+	cmsPages?: unknown[];
+	menuItems?: unknown[];
 	lifecycleSettings?: LifecycleSettings | null;
 }
 
-type AdminTab = 'submissions' | 'rollers' | 'users' | 'items' | 'shop' | 'lifecycle' | 'cms';
+const ALL_TABS: AdminTab[] = ['submissions', 'rollers', 'users', 'items', 'shop', 'lifecycle', 'cms'];
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+	adminCapabilities: () => [],
+	submissions: () => [],
+	herds: () => [],
+	items: () => [],
+	shopListings: () => [],
+	cmsPages: () => [],
+	menuItems: () => [],
+	userSearch: '',
+});
 const page = usePage();
 
-const activeTab = ref<AdminTab>('submissions');
+const canAccess = (tab: AdminTab): boolean => props.adminCapabilities.includes(tab);
+
+const firstAllowedTab = (): AdminTab => props.adminCapabilities.find((tab) => ALL_TABS.includes(tab)) ?? 'submissions';
+
+const activeTab = ref<AdminTab>(firstAllowedTab());
 const activeTabStorageKey = 'admin.activeTab';
 
 onMounted(() => {
@@ -134,8 +150,10 @@ onMounted(() => {
 
 	const storedTab = window.localStorage.getItem(activeTabStorageKey) as AdminTab | null;
 
-	if (storedTab === 'submissions' || storedTab === 'rollers' || storedTab === 'users' || storedTab === 'items' || storedTab === 'shop' || storedTab === 'lifecycle' || storedTab === 'cms') {
+	if (storedTab && ALL_TABS.includes(storedTab) && canAccess(storedTab)) {
 		activeTab.value = storedTab;
+	} else {
+		activeTab.value = firstAllowedTab();
 	}
 
 	watch(
@@ -173,6 +191,7 @@ onMounted(() => {
 			<!-- Tab Navigation -->
 			<div class="inline-flex gap-1 rounded-lg font-semibold">
 				<button
+					v-if="canAccess('submissions')"
 					@click="activeTab = 'submissions'"
 					:class="[
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
@@ -183,6 +202,7 @@ onMounted(() => {
 					<span class="text-base">Submissions</span>
 				</button>
 				<button
+					v-if="canAccess('rollers')"
 					@click="activeTab = 'rollers'"
 					:class="[
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
@@ -193,6 +213,7 @@ onMounted(() => {
 					<span class="text-base">Rollers</span>
 				</button>
 				<button
+					v-if="canAccess('users')"
 					@click="activeTab = 'users'"
 					:class="[
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
@@ -203,6 +224,7 @@ onMounted(() => {
 					<span class="text-base">Users</span>
 				</button>
 				<button
+					v-if="canAccess('items')"
 					@click="activeTab = 'items'"
 					:class="[
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
@@ -213,6 +235,7 @@ onMounted(() => {
 					<span class="text-base">Items</span>
 				</button>
 				<button
+					v-if="canAccess('shop')"
 					@click="activeTab = 'shop'"
 					:class="[
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
@@ -223,6 +246,7 @@ onMounted(() => {
 					<span class="text-base">Shop</span>
 				</button>
 				<button
+					v-if="canAccess('lifecycle')"
 					@click="activeTab = 'lifecycle'"
 					:class="[
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
@@ -233,6 +257,7 @@ onMounted(() => {
 					<span class="text-base">Lifecycle</span>
 				</button>
 				<button
+					v-if="canAccess('cms')"
 					@click="activeTab = 'cms'"
 					:class="[
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
@@ -245,33 +270,33 @@ onMounted(() => {
 			</div>
 
 			<SubmissionsTab
-				v-if="activeTab === 'submissions'"
+				v-if="activeTab === 'submissions' && canAccess('submissions')"
 				:submissions="props.submissions"
 				:herds="props.herds" />
 
 			<RollersTab
-				v-if="activeTab === 'rollers'" />
+				v-if="activeTab === 'rollers' && canAccess('rollers')" />
 
 			<UsersTab
-				v-if="activeTab === 'users'"
+				v-if="activeTab === 'users' && canAccess('users') && props.users"
 				:users="props.users"
 				:user-search="props.userSearch" />
 
 			<ItemsTab
-				v-if="activeTab === 'items'"
+				v-if="activeTab === 'items' && canAccess('items')"
 				:items="props.items" />
 
 			<LifecycleTab
-				v-if="activeTab === 'lifecycle'"
+				v-if="activeTab === 'lifecycle' && canAccess('lifecycle')"
 				:settings="props.lifecycleSettings ?? undefined" />
 
 			<ShopTab
-				v-if="activeTab === 'shop'"
+				v-if="activeTab === 'shop' && canAccess('shop')"
 				:items="props.items"
 				:shop-listings="props.shopListings" />
 
 			<CmsTab
-				v-if="activeTab === 'cms'"
+				v-if="activeTab === 'cms' && canAccess('cms')"
 				:cms-pages="props.cmsPages"
 				:menu-items="props.menuItems" />
 		</div>

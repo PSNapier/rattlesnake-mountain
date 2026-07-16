@@ -43,7 +43,7 @@ defineProps<Props>();
 	<DropdownMenuSeparator />
 	<DropdownMenuGroup>
 		<DropdownMenuItem
-			v-if="user.role === 'admin'"
+			v-if="user.role !== 'user'"
 			:as-child="true">
 			<Link
 				class="block w-full"

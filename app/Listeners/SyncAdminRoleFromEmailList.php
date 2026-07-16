@@ -19,6 +19,12 @@ class SyncAdminRoleFromEmailList
             return;
         }
 
+        // Only promote/demote between Admin and User. Designer / StoryAdmin / GameMaster
+        // are assigned via admin UI and must not be overwritten by the email list.
+        if (! in_array($user->role, [Role::Admin, Role::User], true)) {
+            return;
+        }
+
         $shouldBeAdmin = $this->shouldUserBeAdmin($user->email);
         $targetRole = $shouldBeAdmin ? Role::Admin : Role::User;
 

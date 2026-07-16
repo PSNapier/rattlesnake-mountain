@@ -20,6 +20,104 @@ class DashboardController extends Controller
 {
     public function index(Request $request): Response
     {
+        $user = $request->user();
+        $capabilities = $user->adminCapabilities();
+
+        $props = [
+            'adminCapabilities' => $capabilities,
+        ];
+
+        if ($user->can('admin.submissions')) {
+            $props['submissions'] = $this->submissions();
+            $props['herds'] = \App\Models\Herd::select('id', 'name')
+                ->orderBy('name')
+                ->get();
+        }
+
+        if ($user->can('admin.items')) {
+            $props['items'] = Item::orderBy('name')->get();
+        }
+
+        if ($user->can('admin.shop')) {
+            $props['shopListings'] = ShopListing::with('item:id,name,max_count')
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->get()
+                ->map(fn (ShopListing $listing) => [
+                    'id' => $listing->id,
+                    'item_id' => $listing->item_id,
+                    'item_name' => $listing->item->name,
+                    'item_max_count' => $listing->item->max_count,
+                    'visible_in_shop' => $listing->visible_in_shop,
+                    'scorpion_price' => $listing->scorpion_price,
+                    'shop_description' => $listing->shop_description,
+                    'shop_flavor_text' => $listing->shop_flavor_text,
+                    'image_path' => $listing->image_path,
+                    'sort_order' => $listing->sort_order,
+                ])
+                ->values();
+        }
+
+        if ($user->can('admin.cms')) {
+            $props['cmsPages'] = CmsPage::orderBy('sort_order')->get(['id', 'slug', 'title', 'description', 'hero_title', 'hero_description', 'content', 'images', 'sort_order']);
+            $props['menuItems'] = MenuItem::with('children')->whereNull('parent_id')->orderBy('sort_order')->get()
+                ->map(fn (MenuItem $item) => [
+                    'id' => $item->id,
+                    'label' => $item->label,
+                    'path' => $item->path,
+                    'sort_order' => $item->sort_order,
+                    'children' => $item->children->map(fn (MenuItem $child) => [
+                        'id' => $child->id,
+                        'label' => $child->label,
+                        'path' => $child->path,
+                        'sort_order' => $child->sort_order,
+                    ])->values()->all(),
+                ])->values()->all();
+        }
+
+        if ($user->can('admin.lifecycle')) {
+            $lifecycleSettings = LifecycleSetting::first();
+            $props['lifecycleSettings'] = $lifecycleSettings ? [
+                'horse_auto_age_next_update' => $lifecycleSettings->horse_auto_age_next_update->format('Y-m-d'),
+                'horse_auto_age_frequency_unit' => $lifecycleSettings->horse_auto_age_frequency_unit,
+                'horse_auto_age_frequency_value' => $lifecycleSettings->horse_auto_age_frequency_value,
+                'horse_auto_age_game_years' => $lifecycleSettings->horse_auto_age_game_years,
+                'horse_auto_health_roll_min' => $lifecycleSettings->horse_auto_health_roll_min,
+                'horse_auto_health_roll_max' => $lifecycleSettings->horse_auto_health_roll_max,
+            ] : null;
+        }
+
+        if ($user->can('admin.users')) {
+            $usersQuery = User::query()
+                ->whereNull('deleted_at')
+                ->where('is_sanctuary', false)
+                ->select('id', 'name', 'role', 'created_at', 'last_login_at', 'frozen_at', 'banned_at');
+
+            $search = $request->query('user_search');
+            if (is_string($search) && $search !== '') {
+                $usersQuery->where('name', 'like', '%'.addcslashes($search, '%_\\').'%');
+            }
+
+            $props['users'] = $usersQuery->orderBy('name')->paginate(25)->through(fn (User $u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'role' => $u->role->value,
+                'created_at' => $u->created_at->toIso8601String(),
+                'last_login_at' => $u->last_login_at?->toIso8601String(),
+                'frozen_at' => $u->frozen_at?->toIso8601String(),
+                'banned_at' => $u->banned_at?->toIso8601String(),
+            ]);
+            $props['userSearch'] = $search ?? '';
+        }
+
+        return Inertia::render('admin/Index', $props);
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, array<string, mixed>>
+     */
+    private function submissions()
+    {
         $horses = Horse::with(['owner', 'publicHorse', 'latestAdminLog.admin'])
             ->where(function ($query) {
                 $query->where('state', HorseState::Pending)
@@ -40,7 +138,7 @@ class DashboardController extends Controller
                 ->unique('horse_id')
                 ->keyBy('horse_id');
 
-        $horses = $horses->map(function ($horse) use ($latestMessages) {
+        return $horses->map(function ($horse) use ($latestMessages) {
             $latestLog = $horse->latestAdminLog;
 
             $status = 'pending';
@@ -71,7 +169,7 @@ class DashboardController extends Controller
                         'user' => [
                             'id' => $comment->user->id,
                             'name' => $comment->user->name,
-                            'is_admin' => $comment->user->isAdmin(),
+                            'is_staff' => $comment->user->isStaff(),
                         ],
                     ];
                 })->toArray();
@@ -102,84 +200,5 @@ class DashboardController extends Controller
                 'comments' => $comments,
             ];
         });
-
-        $herds = \App\Models\Herd::select('id', 'name')
-            ->orderBy('name')
-            ->get();
-
-        $items = Item::orderBy('name')->get();
-        $shopListings = ShopListing::with('item:id,name,max_count')
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->get()
-            ->map(fn (ShopListing $listing) => [
-                'id' => $listing->id,
-                'item_id' => $listing->item_id,
-                'item_name' => $listing->item->name,
-                'item_max_count' => $listing->item->max_count,
-                'visible_in_shop' => $listing->visible_in_shop,
-                'scorpion_price' => $listing->scorpion_price,
-                'shop_description' => $listing->shop_description,
-                'shop_flavor_text' => $listing->shop_flavor_text,
-                'image_path' => $listing->image_path,
-                'sort_order' => $listing->sort_order,
-            ])
-            ->values();
-
-        $cmsPages = CmsPage::orderBy('sort_order')->get(['id', 'slug', 'title', 'description', 'hero_title', 'hero_description', 'content', 'images', 'sort_order']);
-        $menuItems = MenuItem::with('children')->whereNull('parent_id')->orderBy('sort_order')->get()
-            ->map(fn (MenuItem $item) => [
-                'id' => $item->id,
-                'label' => $item->label,
-                'path' => $item->path,
-                'sort_order' => $item->sort_order,
-                'children' => $item->children->map(fn (MenuItem $child) => [
-                    'id' => $child->id,
-                    'label' => $child->label,
-                    'path' => $child->path,
-                    'sort_order' => $child->sort_order,
-                ])->values()->all(),
-            ])->values()->all();
-
-        $lifecycleSettings = LifecycleSetting::first();
-
-        $usersQuery = User::query()
-            ->whereNull('deleted_at')
-            ->where('is_sanctuary', false)
-            ->select('id', 'name', 'role', 'created_at', 'last_login_at', 'frozen_at', 'banned_at');
-
-        $search = $request->query('user_search');
-        if (is_string($search) && $search !== '') {
-            $usersQuery->where('name', 'like', '%'.addcslashes($search, '%_\\').'%');
-        }
-
-        $users = $usersQuery->orderBy('name')->paginate(25)->through(fn (User $u) => [
-            'id' => $u->id,
-            'name' => $u->name,
-            'role' => $u->role->value,
-            'created_at' => $u->created_at->toIso8601String(),
-            'last_login_at' => $u->last_login_at?->toIso8601String(),
-            'frozen_at' => $u->frozen_at?->toIso8601String(),
-            'banned_at' => $u->banned_at?->toIso8601String(),
-        ]);
-
-        return Inertia::render('admin/Index', [
-            'submissions' => $horses,
-            'herds' => $herds,
-            'items' => $items,
-            'shopListings' => $shopListings,
-            'cmsPages' => $cmsPages,
-            'menuItems' => $menuItems,
-            'lifecycleSettings' => $lifecycleSettings ? [
-                'horse_auto_age_next_update' => $lifecycleSettings->horse_auto_age_next_update->format('Y-m-d'),
-                'horse_auto_age_frequency_unit' => $lifecycleSettings->horse_auto_age_frequency_unit,
-                'horse_auto_age_frequency_value' => $lifecycleSettings->horse_auto_age_frequency_value,
-                'horse_auto_age_game_years' => $lifecycleSettings->horse_auto_age_game_years,
-                'horse_auto_health_roll_min' => $lifecycleSettings->horse_auto_health_roll_min,
-                'horse_auto_health_roll_max' => $lifecycleSettings->horse_auto_health_roll_max,
-            ] : null,
-            'users' => $users,
-            'userSearch' => $search ?? '',
-        ]);
     }
 }

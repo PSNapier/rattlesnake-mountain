@@ -234,7 +234,7 @@ function confirmDelete() {
 									Unfreeze
 								</Button>
 								<Button
-									v-if="!user.banned_at && user.role !== 'admin'"
+									v-if="!user.banned_at && user.role === 'user'"
 									variant="outline"
 									size="sm"
 									@click="banUser(user)">
@@ -250,7 +250,7 @@ function confirmDelete() {
 									Unban
 								</Button>
 								<Button
-									v-if="user.role !== 'admin'"
+									v-if="user.role === 'user'"
 									variant="outline"
 									size="sm"
 									class="text-red-600 hover:bg-red-50 hover:text-red-700"

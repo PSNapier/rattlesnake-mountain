@@ -8,7 +8,7 @@ class StoreItemRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->isAdmin() ?? false;
+        return $this->user()?->can('admin.items') ?? false;
     }
 
     public function rules(): array

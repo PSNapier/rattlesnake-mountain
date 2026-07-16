@@ -16,7 +16,7 @@ class SubmissionController extends Controller
 {
     public function archive(Horse $horse, Request $request): RedirectResponse
     {
-        if (! Auth::user()->isAdmin()) {
+        if (! Auth::user()->can('admin.submissions')) {
             abort(403);
         }
 
@@ -49,7 +49,7 @@ class SubmissionController extends Controller
 
     public function unarchive(Horse $horse): RedirectResponse
     {
-        if (! Auth::user()->isAdmin()) {
+        if (! Auth::user()->can('admin.submissions')) {
             abort(403);
         }
 
@@ -78,7 +78,7 @@ class SubmissionController extends Controller
 
     public function contact(Horse $horse, Request $request): RedirectResponse
     {
-        if (! Auth::user()->isAdmin()) {
+        if (! Auth::user()->can('admin.submissions')) {
             abort(403);
         }
 

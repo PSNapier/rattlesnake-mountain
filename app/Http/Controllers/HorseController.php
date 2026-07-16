@@ -358,7 +358,7 @@ class HorseController extends Controller
      */
     public function approve(Horse $horse, Request $request): RedirectResponse
     {
-        if (! Auth::user()->isAdmin()) {
+        if (! Auth::user()->can('admin.submissions')) {
             abort(403);
         }
 
@@ -413,7 +413,7 @@ class HorseController extends Controller
      */
     public function publish(Horse $horse, Request $request): RedirectResponse
     {
-        if (! Auth::user()->isAdmin()) {
+        if (! Auth::user()->can('admin.submissions')) {
             abort(403);
         }
 
