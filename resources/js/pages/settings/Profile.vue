@@ -46,6 +46,26 @@ const submit = () => {
 
 		<SettingsLayout>
 			<div class="flex flex-col space-y-6">
+				<div
+					v-if="user.is_frozen"
+					class="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
+					<p class="mb-2 text-sm text-amber-800 dark:text-amber-200">
+						Your account is frozen. You can unfreeze it at any time to resume participation.
+					</p>
+					<Link
+						:href="route('profile.unfreeze')"
+						method="post"
+						as="button"
+						class="inline-flex items-center rounded-md bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-500">
+						Unfreeze account
+					</Link>
+					<p
+						v-if="status === 'Your account has been unfrozen.'"
+						class="mt-2 text-sm font-medium text-green-600">
+						{{ status }}
+					</p>
+				</div>
+
 				<HeadingSmall
 					title="Profile information"
 					description="Update your name and email address"

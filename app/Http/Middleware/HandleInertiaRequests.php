@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\MenuItem;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -39,13 +40,45 @@ class HandleInertiaRequests extends Middleware
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
+        $user = $request->user();
+        $unreadCount = 0;
+        if ($user) {
+            $unreadCount = \App\Models\Message::where('user_id', $user->id)
+                ->where('is_read', false)
+                ->count();
+        }
+
+        $navMenu = MenuItem::with('children')
+            ->whereNull('parent_id')
+            ->orderBy('sort_order')
+            ->get()
+            ->map(function (MenuItem $item) {
+                return [
+                    'id' => $item->id,
+                    'label' => (string) $item->label,
+                    'path' => $item->path !== null && $item->path !== '' ? $item->path : null,
+                    'children' => $item->children->map(function (MenuItem $child) {
+                        return [
+                            'id' => $child->id,
+                            'label' => (string) $child->label,
+                            'path' => $child->path !== null && $child->path !== '' ? $child->path : null,
+                        ];
+                    })->values()->all(),
+                ];
+            })->values()->all();
+
         return [
             ...parent::share($request),
+            'flash' => [
+                'rollResult' => fn () => session('rollResult'),
+            ],
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => $request->user()?->only(['id', 'name', 'email', 'avatar', 'email_verified_at', 'role']),
+                'user' => $user ? array_merge($user->only(['id', 'name', 'email', 'avatar', 'email_verified_at', 'role']), ['is_frozen' => $user->isFrozen()]) : null,
             ],
+            'unreadMessageCount' => $unreadCount,
+            'navMenu' => $navMenu,
             'ziggy' => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),

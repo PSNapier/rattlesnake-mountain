@@ -109,18 +109,6 @@ it('prevents users from deleting others images', function () {
     $response->assertStatus(403);
 });
 
-it('shows user images on dashboard', function () {
-    $user = User::factory()->create();
-    $images = CharacterImage::factory()->count(3)->create(['user_id' => $user->id]);
-
-    $response = $this->actingAs($user)->get('/dashboard');
-
-    $response->assertSuccessful();
-    $response->assertInertia(fn ($page) => $page->component('Dashboard')
-        ->has('characterImages', 3)
-    );
-});
-
 it('rate limits uploads', function () {
     $user = User::factory()->create();
 

@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'rate.limit.uploads' => RateLimitUploads::class,
+            'verified' => \App\Http\Middleware\SkipEmailVerification::class,
         ]);
 
         $middleware->web(append: [

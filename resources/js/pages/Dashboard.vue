@@ -1,18 +1,10 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import ImageUpload from '@/components/ImageUpload.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { onMounted, reactive, ref } from 'vue';
 
 interface CharacterImage {
 	id: number;
@@ -42,151 +34,15 @@ const breadcrumbs: BreadcrumbItem[] = [
 	},
 ];
 
-// Upload state
-const isUploading = ref(false);
-const uploadProgress = ref(0);
-const selectedFile = ref<File | null>(null);
-const previewUrl = ref<string>('');
-const showPreviewDialog = ref(false);
-const uploadForm = reactive({
-	alt_text: '',
-	description: '',
-});
-
-// File input ref
-const fileInput = ref<HTMLInputElement>();
-
-// Handle file selection
-const handleFileSelect = (event: Event) => {
-	const target = event.target as HTMLInputElement;
-	if (target.files && target.files[0]) {
-		const file = target.files[0];
-
-		// Validate file type
-		if (file.type !== 'image/png') {
-			alert('Please select a PNG image file.');
-			return;
-		}
-
-		// Validate file size (2MB)
-		if (file.size > 2 * 1024 * 1024) {
-			alert('File size must be less than 2MB.');
-			return;
-		}
-
-		selectedFile.value = file;
-		previewUrl.value = URL.createObjectURL(file);
-		showPreviewDialog.value = true;
-	}
-};
-
-// Handle drag and drop
-const handleDragOver = (event: DragEvent) => {
-	event.preventDefault();
-	(event.currentTarget as HTMLElement)?.classList.add(
-		'border-blue-500',
-		'bg-blue-50',
-	);
-};
-
-const handleDragLeave = (event: DragEvent) => {
-	(event.currentTarget as HTMLElement)?.classList.remove(
-		'border-blue-500',
-		'bg-blue-50',
-	);
-};
-
-const handleDrop = (event: DragEvent) => {
-	event.preventDefault();
-	(event.currentTarget as HTMLElement)?.classList.remove(
-		'border-blue-500',
-		'bg-blue-50',
-	);
-
-	if (event.dataTransfer?.files && event.dataTransfer.files[0]) {
-		const file = event.dataTransfer.files[0];
-
-		if (file.type !== 'image/png') {
-			alert('Please select a PNG image file.');
-			return;
-		}
-
-		if (file.size > 2 * 1024 * 1024) {
-			alert('File size must be less than 2MB.');
-			return;
-		}
-
-		selectedFile.value = file;
-		previewUrl.value = URL.createObjectURL(file);
-		showPreviewDialog.value = true;
-	}
-};
-
-// Upload image
-const uploadImage = async () => {
-	if (!selectedFile.value) return;
-
-	isUploading.value = true;
-	uploadProgress.value = 0;
-
-	// Simulate progress
-	const progressInterval = setInterval(() => {
-		if (uploadProgress.value < 90) {
-			uploadProgress.value += 10;
-		}
-	}, 100);
-
-	try {
-		const formData = new FormData();
-		formData.append('image', selectedFile.value);
-		formData.append('alt_text', uploadForm.alt_text);
-		formData.append('description', uploadForm.description);
-
-		const response = await fetch('/character-images', {
-			method: 'POST',
-			body: formData,
-			headers: {
-				'X-CSRF-TOKEN':
-					document
-						.querySelector('meta[name="csrf-token"]')
-						?.getAttribute('content') || '',
-				Accept: 'application/json',
-			},
-		});
-
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`);
-		}
-
-		const result = await response.json();
-
-		if (result.success) {
-			// Refresh the page to show new image
-			router.reload();
-		} else {
-			alert(result.message || 'Upload failed. Please try again.');
-		}
-	} catch (error) {
-		console.error('Upload error:', error);
-		alert('Upload failed. Please try again.');
-	} finally {
-		clearInterval(progressInterval);
-		uploadProgress.value = 100;
-		setTimeout(() => {
-			isUploading.value = false;
-			uploadProgress.value = 0;
-			showPreviewDialog.value = false;
-			selectedFile.value = null;
-			previewUrl.value = '';
-			uploadForm.alt_text = '';
-			uploadForm.description = '';
-		}, 500);
-	}
+const handleUploadSuccess = () => {
+	router.reload();
 };
 
 // Delete image
 const deleteImage = async (imageId: number) => {
-	if (!confirm('Are you sure you want to delete this image?')) return;
+	if (!confirm('Are you sure you want to delete this image?')) {
+		return;
+	}
 
 	try {
 		const response = await fetch(`/character-images/${imageId}`, {
@@ -216,20 +72,6 @@ const deleteImage = async (imageId: number) => {
 		alert('Delete failed. Please try again.');
 	}
 };
-
-// Trigger file input
-const triggerFileInput = () => {
-	fileInput.value?.click();
-};
-
-// Cleanup preview URL on unmount
-onMounted(() => {
-	return () => {
-		if (previewUrl.value) {
-			URL.revokeObjectURL(previewUrl.value);
-		}
-	};
-});
 </script>
 
 <template>
@@ -305,55 +147,29 @@ onMounted(() => {
 					<CardTitle>Upload New Image</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<!-- Drag & Drop Zone -->
-					<div
-						@dragover="handleDragOver"
-						@dragleave="handleDragLeave"
-						@drop="handleDrop"
-						class="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center transition-colors hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500">
-						<div class="space-y-4">
-							<div class="mx-auto h-12 w-12 text-gray-400">
-								<svg
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24">
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-								</svg>
-							</div>
-							<div>
-								<p
-									class="text-lg font-medium text-gray-900 dark:text-white">
-									Drop your PNG image here
-								</p>
-								<p
-									class="text-sm text-gray-500 dark:text-gray-400">
-									or
-								</p>
-								<Button
-									@click="triggerFileInput"
-									variant="outline"
-									class="mt-2">
-									Browse Files
-								</Button>
-							</div>
-							<p
-								class="text-xs text-gray-500 dark:text-gray-400">
-								PNG files only, max 2MB
-							</p>
-						</div>
-					</div>
-
-					<!-- Hidden file input -->
-					<input
-						ref="fileInput"
-						type="file"
+					<ImageUpload
+						upload-url="/character-images"
 						accept="image/png"
-						class="hidden"
-						@change="handleFileSelect" />
+						:max-size="2 * 1024 * 1024"
+						:form-fields="[
+							{
+								name: 'alt_text',
+								label: 'Alt Text (Optional)',
+								placeholder:
+									'Describe the image for accessibility',
+								maxlength: 255,
+							},
+							{
+								name: 'description',
+								label: 'Description (Optional)',
+								placeholder:
+									'Add a description or notes about this character',
+								maxlength: 1000,
+							},
+						]"
+						drag-drop-text="Drop your PNG image here"
+						file-type-hint="PNG files only, max 2MB"
+						@success="handleUploadSuccess" />
 				</CardContent>
 			</Card>
 
@@ -428,79 +244,5 @@ onMounted(() => {
 				</template>
 			</div>
 		</div>
-
-		<!-- Preview Dialog -->
-		<Dialog v-model:open="showPreviewDialog">
-			<DialogContent class="max-w-2xl">
-				<DialogHeader>
-					<DialogTitle>Preview & Confirm Upload</DialogTitle>
-				</DialogHeader>
-
-				<div class="space-y-4">
-					<!-- Image Preview -->
-					<div class="flex justify-center">
-						<img
-							v-if="previewUrl"
-							:src="previewUrl"
-							alt="Preview"
-							class="max-h-96 max-w-full rounded-lg object-contain" />
-					</div>
-
-					<!-- Form Fields -->
-					<div class="space-y-4">
-						<div>
-							<Label for="alt_text"
-								>Alt Text (Optional)</Label
-							>
-							<Input
-								id="alt_text"
-								v-model="uploadForm.alt_text"
-								placeholder="Describe the image for accessibility"
-								maxlength="255" />
-						</div>
-
-						<div>
-							<Label for="description"
-								>Description (Optional)</Label
-							>
-							<Input
-								id="description"
-								v-model="uploadForm.description"
-								placeholder="Add a description or notes about this character"
-								maxlength="1000" />
-						</div>
-					</div>
-
-					<!-- Upload Progress -->
-					<div
-						v-if="isUploading"
-						class="space-y-2">
-						<div class="flex justify-between text-sm">
-							<span>Uploading...</span>
-							<span>{{ uploadProgress }}%</span>
-						</div>
-						<Progress :value="uploadProgress" />
-					</div>
-
-					<!-- Action Buttons -->
-					<div class="flex justify-end gap-3">
-						<Button
-							variant="outline"
-							@click="showPreviewDialog = false"
-							:disabled="isUploading">
-							Cancel
-						</Button>
-						<Button
-							@click="uploadImage"
-							:disabled="isUploading">
-							<template v-if="isUploading">
-								Uploading...
-							</template>
-							<template v-else> Upload Image </template>
-						</Button>
-					</div>
-				</div>
-			</DialogContent>
-		</Dialog>
 	</AppLayout>
 </template>

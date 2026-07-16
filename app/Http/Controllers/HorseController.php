@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\AdminAction;
 use App\Enums\HorseState;
+use App\Http\Requests\HorseImageUploadRequest;
 use App\Http\Requests\StoreHorseRequest;
 use App\Http\Requests\UpdateHorseRequest;
 use App\Models\AdminSubmissionLog;
@@ -11,10 +12,16 @@ use App\Models\Herd;
 use App\Models\Horse;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\ImageManager;
 
 class HorseController extends Controller
 {
@@ -349,7 +356,7 @@ class HorseController extends Controller
     /**
      * Approve a pending horse version and merge it with the public version.
      */
-    public function approve(Horse $horse): RedirectResponse
+    public function approve(Horse $horse, Request $request): RedirectResponse
     {
         if (! Auth::user()->isAdmin()) {
             abort(403);
@@ -361,19 +368,22 @@ class HorseController extends Controller
 
         $publicHorse = Horse::findOrFail($horse->public_horse_id);
 
-        // Update the public horse with pending changes
-        $publicHorse->update([
-            'name' => $horse->name,
-            'age' => $horse->age,
-            'design_link' => $horse->design_link,
-            'geno' => $horse->geno,
-            'herd_id' => $horse->herd_id,
-            'bloodline' => $horse->bloodline,
-            'progeny' => $horse->progeny,
-            'stats' => $horse->stats,
-            'inventory' => $horse->inventory,
-            'equipment' => $horse->equipment,
-        ]);
+        // Use admin-edited values if provided, otherwise use pending version values
+        $updateData = [
+            'name' => $request->input('name', $horse->name),
+            'age' => $request->input('age', $horse->age),
+            'design_link' => $request->input('design_link', $horse->design_link),
+            'geno' => $request->input('geno', $horse->geno),
+            'herd_id' => $request->input('herd_id', $horse->herd_id),
+            'bloodline' => $request->input('bloodline', $horse->bloodline ?? []),
+            'progeny' => $request->input('progeny', $horse->progeny ?? []),
+            'stats' => $request->input('stats', $horse->stats ?? []),
+            'inventory' => $request->input('inventory', $horse->inventory ?? []),
+            'equipment' => $request->input('equipment', $horse->equipment ?? []),
+        ];
+
+        // Update the public horse with pending changes (or admin edits)
+        $publicHorse->update($updateData);
 
         // Mark the pending version as approved instead of deleting
         $horse->update([
@@ -401,7 +411,7 @@ class HorseController extends Controller
     /**
      * Publish a new pending horse (make it public).
      */
-    public function publish(Horse $horse): RedirectResponse
+    public function publish(Horse $horse, Request $request): RedirectResponse
     {
         if (! Auth::user()->isAdmin()) {
             abort(403);
@@ -411,10 +421,23 @@ class HorseController extends Controller
             abort(400, 'Only new pending horses can be published.');
         }
 
-        $horse->update([
+        // Use admin-edited values if provided, otherwise use existing values
+        $updateData = [
+            'name' => $request->input('name', $horse->name),
+            'age' => $request->input('age', $horse->age),
+            'design_link' => $request->input('design_link', $horse->design_link),
+            'geno' => $request->input('geno', $horse->geno),
+            'herd_id' => $request->input('herd_id', $horse->herd_id),
+            'bloodline' => $request->input('bloodline', $horse->bloodline ?? []),
+            'progeny' => $request->input('progeny', $horse->progeny ?? []),
+            'stats' => $request->input('stats', $horse->stats ?? []),
+            'inventory' => $request->input('inventory', $horse->inventory ?? []),
+            'equipment' => $request->input('equipment', $horse->equipment ?? []),
             'state' => HorseState::Public,
             'approved_at' => now(),
-        ]);
+        ];
+
+        $horse->update($updateData);
 
         // Log the approval action
         AdminSubmissionLog::create([
@@ -432,5 +455,55 @@ class HorseController extends Controller
 
         return redirect()->route('horses.show', $horse)
             ->with('success', 'Horse published successfully!');
+    }
+
+    /**
+     * Upload a horse design image.
+     */
+    public function uploadImage(HorseImageUploadRequest $request): JsonResponse
+    {
+        try {
+            $file = $request->file('image');
+
+            // Generate unique filename
+            $filename = Str::random(40).'.webp';
+
+            // Create image manager
+            $manager = new ImageManager(new Driver);
+
+            // Process and store main image
+            $image = $manager->read($file);
+            $width = $image->width();
+            $height = $image->height();
+
+            // Resize if too large (max 1200x1200)
+            if ($width > 1200 || $height > 1200) {
+                $image->scaleDown(1200);
+            }
+
+            // Convert to WebP and store
+            $webpData = $image->toWebp(85);
+            Storage::disk('public')->put('horse-images/'.$filename, $webpData);
+
+            // Generate URL using a route (we'll create this route)
+            $url = route('horse-images.serve', $filename);
+
+            return response()->json([
+                'success' => true,
+                'url' => $url,
+                'message' => 'Image uploaded successfully!',
+            ]);
+
+        } catch (\Exception $e) {
+            // Clean up any uploaded files on error
+            if (isset($filename) && Storage::disk('public')->exists('horse-images/'.$filename)) {
+                Storage::disk('public')->delete('horse-images/'.$filename);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to upload image. Please try again.',
+            ], 500);
+        }
     }
 }

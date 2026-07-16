@@ -12,7 +12,9 @@ import {
 	Crown,
 	Home,
 	LogOut,
+	Package,
 	Settings,
+	Trophy,
 	Users,
 	UserSearch,
 	Zap,
@@ -34,7 +36,8 @@ defineProps<Props>();
 		<div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
 			<UserInfo
 				:user="user"
-				:show-email="true" />
+				:show-email="true"
+				:show-avatar="false" />
 		</div>
 	</DropdownMenuLabel>
 	<DropdownMenuSeparator />
@@ -83,11 +86,31 @@ defineProps<Props>();
 		<DropdownMenuItem :as-child="true">
 			<Link
 				class="block w-full"
+				:href="route('inventory.index')"
+				prefetch
+				as="button">
+				<Package class="mr-2 h-4 w-4" />
+				My Inventory
+			</Link>
+		</DropdownMenuItem>
+		<DropdownMenuItem :as-child="true">
+			<Link
+				class="block w-full"
 				:href="route('users.index')"
 				prefetch
 				as="button">
 				<UserSearch class="mr-2 h-4 w-4" />
 				All Users
+			</Link>
+		</DropdownMenuItem>
+		<DropdownMenuItem :as-child="true">
+			<Link
+				class="block w-full"
+				:href="route('leaderboard.index')"
+				prefetch
+				as="button">
+				<Trophy class="mr-2 h-4 w-4" />
+				Leaderboard
 			</Link>
 		</DropdownMenuItem>
 		<DropdownMenuItem :as-child="true">

@@ -1,0 +1,53 @@
+<?php
+
+return [
+    'face' => [
+        'Blaze',
+        'Strip',
+        'Snip',
+        'Bald Face',
+        'Star',
+        'Regular',
+        'None',
+        'Faint',
+        'Interrupted',
+        'Connected',
+        'Crooked',
+        'Irregular',
+        'Lip Markings',
+    ],
+
+    'leg' => [
+        'Regular',
+        'Coronet',
+        'Fetlock',
+        'Pastern',
+        'Sock',
+        'Stocking',
+        'Ermine Marks',
+        'None',
+        'Partial',
+        'High White',
+        'Irregular',
+    ],
+
+    'other' => [
+        'None',
+        'Bend-Or Spots',
+        'Birdcatcher Spots',
+        'Brindle',
+        'Chimera',
+        'Somatic',
+        'Medicine Hat',
+        'Shield',
+        'Bloodmark',
+        'Chubari Spots',
+        'Lacing',
+        'Vitiglio',
+        'Mis-Marked Appaloosa',
+        'Ink Spots',
+        'Belton Spots',
+        'Reverse Brindle',
+        'Manchado',
+    ],
+];

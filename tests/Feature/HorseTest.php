@@ -372,3 +372,28 @@ it('marks pending edit as archived and allows editing public horse', function ()
         'archived_at' => null, // New one should not be archived
     ]);
 });
+
+it('unarchives archived pending horse and restores to pending', function () {
+    $archivedHorse = Horse::factory()
+        ->for($this->user, 'owner')
+        ->for($this->user, 'bredBy')
+        ->create([
+            'state' => HorseState::Pending,
+            'archived_at' => now(),
+            'contacted_at' => now()->subDay(),
+        ]);
+
+    $response = $this->actingAs($this->admin)->post(route('admin.horses.unarchive', $archivedHorse));
+
+    $response->assertRedirect(route('admin.index'));
+
+    $archivedHorse->refresh();
+    expect($archivedHorse->archived_at)->toBeNull()
+        ->and($archivedHorse->contacted_at)->toBeNull();
+
+    $this->assertDatabaseHas('admin_submission_logs', [
+        'horse_id' => $archivedHorse->id,
+        'admin_id' => $this->admin->id,
+        'action' => 'unarchived',
+    ]);
+});

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Listeners\RecordLastLogin;
 use App\Listeners\SyncAdminRoleFromEmailList;
 use App\Models\User;
 use Illuminate\Auth\Events\Login;
@@ -28,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
             return $user->isAdmin();
         });
 
+        Event::listen(Login::class, RecordLastLogin::class);
         Event::listen(Login::class, SyncAdminRoleFromEmailList::class);
     }
 }

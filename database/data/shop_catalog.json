@@ -1,0 +1,418 @@
+[
+    {
+        "name": "Alder Buckthorn",
+        "scorpion_price": 1000,
+        "shop_description": "\"Unlike other buckthorns, the Alder Buckthorn does not have thorns.\"\n\n \n\nConsuming this plant permanently increases Intelligence by +10.",
+        "source_image": "de7hggz-9c816405-dbcc-48d0-9ab6-6287c3513406.png",
+        "image_file": "alder-buckthorn.png",
+        "sort_order": 0
+    },
+    {
+        "name": "Bear Clover",
+        "scorpion_price": 500,
+        "shop_description": "\"A tasty, and occasionally lucky, snack!\"\n\nEating Bear Clover ensures Herbs will be dropped during the next two rolls.",
+        "source_image": "17.png",
+        "image_file": "bear-clover.png",
+        "sort_order": 1
+    },
+    {
+        "name": "Bunchgrass",
+        "scorpion_price": 500,
+        "shop_description": "\"Many species have long roots that may reach 2 meters (6.6 ft) or more into the soil, which can aid slope stabilization, erosion control, and soil porosity for precipitation absorption.\"\n\nConsuming this plant removes one Benefit or Detriment from an NPC.",
+        "source_image": "ddxcdtn-c8d0bdea-0a43-4440-8fa6-42d70da3e7ca.png",
+        "image_file": "bunchgrass.png",
+        "sort_order": 2
+    },
+    {
+        "name": "California Rock Parsnip",
+        "scorpion_price": 2000,
+        "shop_description": "\"The Yuki chewed this plant while hunting to prevent deer from detecting human scents, while the Chumash called it chuchupaste and used it to cure headaches and stomach pain.\"\n\nThis plant halves the amount of points required to claim a horse.",
+        "source_image": "deargtv-12be7aba-fc16-44a0-99db-d142fc6664fd.png",
+        "image_file": "california-rock-parsnip.png",
+        "sort_order": 3
+    },
+    {
+        "name": "Chaparral Currant",
+        "scorpion_price": 2000,
+        "shop_description": "\"Chaparral Currant thrives under oaks in bright, dry conditions.\"\n\nThis plant provides a permanent +2 boost to all stats!",
+        "source_image": "ddxcdwd-d506938f-4088-431c-8717-c4f26b070ff9.png",
+        "image_file": "chaparral-currant.png",
+        "sort_order": 4
+    },
+    {
+        "name": "Creeping Sage",
+        "scorpion_price": 700,
+        "shop_description": "\"There are several varieties of this plant, all based on the different leaf types and flower colors.\"\n\nConsuming this plant will provide a permanent +2 boost to one stat of your choosing!",
+        "source_image": "ddxcdw1-419de7c8-03cf-4dc6-93eb-50072c7b80c3.png",
+        "image_file": "creeping-sage.png",
+        "sort_order": 5
+    },
+    {
+        "name": "Dogwood",
+        "scorpion_price": 500,
+        "shop_description": "\"The dogwood tree contains both male and female sexual reproductive organs.\"\n\nEating Dogwood ensures a Statue will be dropped during in the next roll.",
+        "source_image": "18.png",
+        "image_file": "dogwood.png",
+        "sort_order": 6
+    },
+    {
+        "name": "Greasewood",
+        "scorpion_price": 2000,
+        "shop_description": "\"Prefers limestone substrates.\"\n\nThis plant guarantees a pregnancy for one mare.",
+        "source_image": "rattlesnakeadmin.jpg",
+        "image_file": "greasewood.jpg",
+        "sort_order": 7
+    },
+    {
+        "name": "Joshua Leaves",
+        "scorpion_price": 500,
+        "shop_description": "\"Young Joshua Leaves are ideal food for a variety of animals.\"\n\nMunching down on this plant gives your character a temporary boost to Charisma by +10. Lasts for the next 3 submissions.",
+        "source_image": "08.png",
+        "image_file": "joshua-leaves.png",
+        "sort_order": 8
+    },
+    {
+        "name": "Lilac",
+        "scorpion_price": 1000,
+        "shop_description": "\"A sweet-smelling flower that only blooms in late spring or early summer.\"\n\nThis plant guarantees the sex of a foal to be female.",
+        "source_image": "rattlesnakeadmin.jpg",
+        "image_file": "lilac.jpg",
+        "sort_order": 9
+    },
+    {
+        "name": "Owl Clover",
+        "scorpion_price": 2000,
+        "shop_description": "\"Provides a splash of color and is ideal for nectoring insects.\"\n\nCalms foals during events, preventing their separation from the herd.",
+        "source_image": "02.png",
+        "image_file": "owl-clover.png",
+        "sort_order": 10
+    },
+    {
+        "name": "Ragwort",
+        "scorpion_price": 2000,
+        "shop_description": "\"Flowers from July to October.\"\n\nCalms one mare or stallion during events, preventing their separation from the herd.",
+        "source_image": "03.png",
+        "image_file": "ragwort.png",
+        "sort_order": 11
+    },
+    {
+        "name": "Scented Shooting Star",
+        "scorpion_price": 500,
+        "shop_description": "\"The Scented Shooting Star points downward to the ground, gradually pointing skyward with age.\"\n\nMunching down on this plant gives your character a temporary boost to Strength by +10. Lasts for the next 3 submissions.",
+        "source_image": "09.png",
+        "image_file": "scented-shooting-star.png",
+        "sort_order": 12
+    },
+    {
+        "name": "Serviceberry",
+        "scorpion_price": 500,
+        "shop_description": "\"Does well in acidic and well-drained soils.\"\n\n \n\nEating Serviceberry ensures Stones will be dropped during the next two rolls.",
+        "source_image": "16.png",
+        "image_file": "serviceberry.png",
+        "sort_order": 13
+    },
+    {
+        "name": "Sugar Pine Needles",
+        "scorpion_price": 1000,
+        "shop_description": "\"The Sugar Pine grows slowly while young and at a much more rapid pace as it ages.\"\n\nSugar Pine Needles are ideal for small cuts and bruises, healing a horse for +2% of its health.",
+        "source_image": "sugarpineneedles.png",
+        "image_file": "sugar-pine-needles.png",
+        "sort_order": 14
+    },
+    {
+        "name": "Tree Anemone",
+        "scorpion_price": 3000,
+        "shop_description": "\"Not an actual cnidarian.\"\n\n \n\nThis plant will heal a horse for 10% of its health pool.",
+        "source_image": "treeanemone.png",
+        "image_file": "tree-anemone.png",
+        "sort_order": 15
+    },
+    {
+        "name": "Ash Leaves",
+        "scorpion_price": 200,
+        "shop_description": "\"Ash trees are integral to healthy soils.\"\n\nAsh Leaves are ideal for fighting infection; the use of this item will remove all damage over time (DOT) effects.",
+        "source_image": "rattlesnakeadmin.jpg",
+        "image_file": "ash-leaves.jpg",
+        "sort_order": 16
+    },
+    {
+        "name": "Bitter Gooseberry",
+        "scorpion_price": 1000,
+        "shop_description": "\"Some types of gooseberry turn red, white, yellow, green or pink when it’s gooseberry harvest time, but the best way to tell if they are ripe is to squeeze them gently.\"\n\nConsuming this plant permanently increases Strength by +10.",
+        "source_image": "de7hhci-8b10b09b-16c8-4567-a041-73e1e8c59b8c.png",
+        "image_file": "bitter-gooseberry.png",
+        "sort_order": 17
+    },
+    {
+        "name": "California Buckeye",
+        "scorpion_price": 5000,
+        "shop_description": "\"Did you know? Buckeye are not considered true nuts.\"\n\n \n\nEating this plant will heal your horse to full health unless your horse is in critical (0 HP or less) health.",
+        "source_image": "buckeye.png",
+        "image_file": "california-buckeye.png",
+        "sort_order": 18
+    },
+    {
+        "name": "Coffeeberry",
+        "scorpion_price": 1000,
+        "shop_description": "\"Although the plant itself looks much like a coffee plant, its berries, which are succulent, do not.\"\n\nConsuming this plant permanently increases Stamina by +10.",
+        "source_image": "de7hh06-ae1b6b65-d720-4481-adc9-380099044607.png",
+        "image_file": "coffeeberry.png",
+        "sort_order": 19
+    },
+    {
+        "name": "Deer Fern",
+        "scorpion_price": 2000,
+        "shop_description": "\"A deep shade-loving fern with two distinctly different fronds.\"\n\nDeer Fern causes your herd to move swiftly, allowing them to fast-travel anywhere on the map!",
+        "source_image": "20.png",
+        "image_file": "deer-fern.png",
+        "sort_order": 20
+    },
+    {
+        "name": "Gray Mule's Ears",
+        "scorpion_price": 2000,
+        "shop_description": "\"A flowering species of plant in the sunflower family.\"\n\nGray Mule's Ears are a favorite of burros, donkeys, and mules - even the mere presence of the plant is enough to lure one to join your herd.",
+        "source_image": "04.png",
+        "image_file": "gray-mule-s-ears.png",
+        "sort_order": 21
+    },
+    {
+        "name": "Harlequin Lupine",
+        "scorpion_price": 5000,
+        "shop_description": "\"The fruit of this flower is a legume pod around 2 centimeters long containing usually 5 seeds.\"\n\nThis plant attracts one mare of your choice and auto-claims them. May be designed.",
+        "source_image": "ddxcdu3-ba4a2d22-6fcb-4491-ab93-831989103e12.png",
+        "image_file": "harlequin-lupine.png",
+        "sort_order": 22
+    },
+    {
+        "name": "Juniper Berries",
+        "scorpion_price": 5000,
+        "shop_description": "\"Not a true berry, instead a cone.\"\n\n \n\nJuniper Berries allow the redesign of one horse, excluding history.",
+        "source_image": "07.png",
+        "image_file": "juniper-berries.png",
+        "sort_order": 23
+    },
+    {
+        "name": "Mahogany Bark",
+        "scorpion_price": 5000,
+        "shop_description": "\"Characterized by the rich, brown-red color and striped appearance.\"\n\nThis bark attracts one stallion to your herd and auto-claims them. May be designed.",
+        "source_image": "06.png",
+        "image_file": "mahogany-bark.png",
+        "sort_order": 24
+    },
+    {
+        "name": "Monkeyflower",
+        "scorpion_price": 10000,
+        "shop_description": "Not available in Welcome Packages.\n\n\"The blossoms resemble a monkey's face!\"\n\n \n\nMonkeyflower cures all ailments, including serious injury, and restores a horse to full health. Usable during death saving throws.",
+        "source_image": "01.png",
+        "image_file": "monkeyflower.png",
+        "sort_order": 25
+    },
+    {
+        "name": "Phlox",
+        "scorpion_price": 500,
+        "shop_description": "\"A low-growing plant, excellent for ground cover.\"\n\nMunching down on this plant gives your character a temporary boost to Intellect by +10. Lasts for the next 3 submissions.",
+        "source_image": "12.png",
+        "image_file": "phlox.png",
+        "sort_order": 26
+    },
+    {
+        "name": "Purple Mouse Ear",
+        "scorpion_price": 500,
+        "shop_description": "\"The success of some plant species comes from the simple fact that they can grow where other plants can't. Such is the case for the Purple Mouse Ear.\"\n\n \n\nConsuming this plant adds one Benefit or Detriment to an NPC. May be random or from the player's Vault.",
+        "source_image": "ddxcdtb-3c347e96-2664-4610-b1ae-54776c03aa37.png",
+        "image_file": "purple-mouse-ear.png",
+        "sort_order": 27
+    },
+    {
+        "name": "Redbud",
+        "scorpion_price": 1000,
+        "shop_description": "\"Blooms in April.\"\n\nConsuming Redbud permanently increases Charisma by +10.",
+        "source_image": "rattlesnakeadmin.jpg",
+        "image_file": "redbud.jpg",
+        "sort_order": 28
+    },
+    {
+        "name": "Scrub Oak Leaf",
+        "scorpion_price": 2000,
+        "shop_description": "Scrub Oak Leaves will cause a pregnancy to fail.",
+        "source_image": "rattlesnakeadmin.jpg",
+        "image_file": "scrub-oak-leaf.jpg",
+        "sort_order": 29
+    },
+    {
+        "name": "Spiny Hopsage",
+        "scorpion_price": 1000,
+        "shop_description": "\"This plant flowers and fruits in May through June.\"\n\nConsuming this plant permanently increases Wisdom by +10.",
+        "source_image": "11.png",
+        "image_file": "spiny-hopsage.png",
+        "sort_order": 30
+    },
+    {
+        "name": "Teal Lovegrass",
+        "scorpion_price": 5000,
+        "shop_description": "\"Teal Lovegrass is found in moist areas near water in substrates of sand or mud.\"\n\nA favorite of all equines, Teal Lovegrass will increase a herd's unity score by +10 points.",
+        "source_image": "ddxcduu-28b1a327-5d63-4d2f-9584-284ec05ba3f0.png",
+        "image_file": "teal-lovegrass.png",
+        "sort_order": 31
+    },
+    {
+        "name": "Wild Carrot",
+        "scorpion_price": 3000,
+        "shop_description": "\"Like the cultivated carrot, the root is edible while young, but it quickly becomes too woody to consume.\"\n\nA favorite of all equines, the Wild Carrot will increase a herd's unity score by +5 points.",
+        "source_image": "ddxcdv6-1cdf47f3-e08a-4a9f-be39-4203409c70a2.png",
+        "image_file": "wild-carrot.png",
+        "sort_order": 32
+    },
+    {
+        "name": "Yosemite Onion",
+        "scorpion_price": 5000,
+        "shop_description": "\"The Yosemite Onion is listed by the State of California as a Rare plant.\"\n\nIncreases a horse's chance of finding items by 50% for five consecutive submissions.",
+        "source_image": "ddxcdvp-f4c9d11b-1651-4dd2-ba92-1f3e6e82063c.png",
+        "image_file": "yosemite-onion.png",
+        "sort_order": 33
+    },
+    {
+        "name": "Azalea",
+        "scorpion_price": 1000,
+        "shop_description": "\"Nothing is more beautiful than an Azalea shrub in bloom!\"\n\nConsuming an Azalea will allow a mare to given birth out of season.",
+        "source_image": "19.png",
+        "image_file": "azalea.png",
+        "sort_order": 34
+    },
+    {
+        "name": "Buckwheat",
+        "scorpion_price": 500,
+        "shop_description": "\"Buckwheat is rich in fiber.\"\n\nMunching down on this plant gives your character a temporary boost to Dexterity by +10. Lasts for the next 3 submissions.",
+        "source_image": "10.png",
+        "image_file": "buckwheat.png",
+        "sort_order": 35
+    },
+    {
+        "name": "California Flannelbush",
+        "scorpion_price": 1000,
+        "shop_description": "\"This plant is highly adapted to withstand natural forest fires.\"\n\nEating some Flannelbush will protect your herd from fire-related events.",
+        "source_image": "rattlesnakeadmin.jpg",
+        "image_file": "california-flannelbush.jpg",
+        "sort_order": 36
+    },
+    {
+        "name": "Cedar Bough",
+        "scorpion_price": 500,
+        "shop_description": "\"Cedar is aromatic and a natural insect repellent.\"\n\nEating a Cedar Bough ensures a Feather will be dropped in the next roll.",
+        "source_image": "15.png",
+        "image_file": "cedar-bough.png",
+        "sort_order": 37
+    },
+    {
+        "name": "Common Sagebrush",
+        "scorpion_price": 2000,
+        "shop_description": "\"A perennial plant with stiff, straight stems.\"\n\nCommon Sagebrush attracts one foal to your herd and auto-claims them. May be designed.",
+        "source_image": "05.png",
+        "image_file": "common-sagebrush.png",
+        "sort_order": 38
+    },
+    {
+        "name": "Desert Parsley",
+        "scorpion_price": 4000,
+        "shop_description": "\"In addition to being particularly tasty, Desert Parsley might help to eliminate different types of bacteria, fungi, or viruses that can cause infections.\"\n\nThis herb will waive all secret number requirements while claiming a new herd member.",
+        "source_image": "ddxcdub-ec9227cb-e355-4a05-b2c9-1bc5c28684e1.png",
+        "image_file": "desert-parsley.png",
+        "sort_order": 39
+    },
+    {
+        "name": "Golden Currant",
+        "scorpion_price": 1000,
+        "shop_description": "\"Unlike some other species of currants, Ribes aureum is in the remarkably drought-tolerant group of Ribes.\"\n\nConsuming this plant permanently increases Dexterity by +10.",
+        "source_image": "de7hhr4-61ae1b16-44eb-49ae-84a2-21965161dd40.png",
+        "image_file": "golden-currant.png",
+        "sort_order": 40
+    },
+    {
+        "name": "Iris",
+        "scorpion_price": 5000,
+        "shop_description": "Not available in Welcome Packages.\n\n\"Popular in gardens for their showy flowers.\"\n\nAllows the import of one horse with a breed other than Mustang. Does not include Draft\/Cold-blooded breeds.",
+        "source_image": "rattlesnakeadmin.jpg",
+        "image_file": "iris.jpg",
+        "sort_order": 41
+    },
+    {
+        "name": "Knobcone Pinecone",
+        "scorpion_price": 1000,
+        "shop_description": "\"Knobcone are the most widely distributed of the West Coast closed-cone pine species.\"\n\nConsuming this Pinecone permanently increases Constitution by +10.",
+        "source_image": "rattlesnakeadmin.jpg",
+        "image_file": "knobcone-pinecone.jpg",
+        "sort_order": 42
+    },
+    {
+        "name": "Manzanita",
+        "scorpion_price": 2000,
+        "shop_description": "\"The berries are edible - and delicious!\"\n\nThis flower ensures that a mare will have a healthy pregnancy.",
+        "source_image": "rattlesnakeadmin.jpg",
+        "image_file": "manzanita.jpg",
+        "sort_order": 43
+    },
+    {
+        "name": "Oak Leaf",
+        "scorpion_price": 2000,
+        "shop_description": "\"Most oak leaves can be identified by their somewhat lobed leaves.\"\n\nThese leaves are able to heal most minor injuries, healing your horse for 5% of its health.",
+        "source_image": "leaf01.png",
+        "image_file": "oak-leaf.png",
+        "sort_order": 44
+    },
+    {
+        "name": "Ponderosa Pine Needles",
+        "scorpion_price": 700,
+        "shop_description": "\"Ponderosa Pine Needles can be up to seven inches long!\"\n\nMunching down on this plant gives your character a temporary boost to Health by +10%. Lasts for the next 3 submissions.",
+        "source_image": "14.png",
+        "image_file": "ponderosa-pine-needles.png",
+        "sort_order": 45
+    },
+    {
+        "name": "Purple Sage",
+        "scorpion_price": 500,
+        "shop_description": "\"Purple Sage can be made into teas for medicinal purposes.\"\n\nMunching down on this plant gives your character a temporary boost to Constitution by +10. Lasts for the next 3 submissions.",
+        "source_image": "13.png",
+        "image_file": "purple-sage.png",
+        "sort_order": 46
+    },
+    {
+        "name": "Red Sierra Onion",
+        "scorpion_price": 2000,
+        "shop_description": "\"This plant tends to grow in granitic sands, at elevations 2600-11500 feet.\"\n\nThis plant is super healthy! It will protect one newborn foal from all illnesses and injuries.",
+        "source_image": "ddxcdvw-60a4b044-0f61-411b-9c6d-0efbb856ca8e.png",
+        "image_file": "red-sierra-onion.png",
+        "sort_order": 47
+    },
+    {
+        "name": "Sierra Monardella",
+        "scorpion_price": 6000,
+        "shop_description": "\"Monardella is a nectar plant for many Lepidoptera, including the endangered Myrtle's silverspot.\"\n\nLooking to respec? This plant will reset a horse's stats.",
+        "source_image": "ddxcdtw-3ae4a37f-de96-4ad6-8c57-fee85a1baaa7.png",
+        "image_file": "sierra-monardella.png",
+        "sort_order": 48
+    },
+    {
+        "name": "Spiny Redberry",
+        "scorpion_price": 1000,
+        "shop_description": "\"When eaten in large quantities, the berry is reported to impart a red tint to the entire body of the consumer.\"\n\nMunching down on this plant gives your character a temporary boost to Wisdom by +10. Lasts for the next 3 submissions.",
+        "source_image": "de7hh6y-e78c818f-2616-42a6-92bd-09344cc98d37.png",
+        "image_file": "spiny-redberry.png",
+        "sort_order": 49
+    },
+    {
+        "name": "Toyon",
+        "scorpion_price": 1000,
+        "shop_description": "\"The berries of these trees, unlike some other holly trees, are edible.\"\n\nThis plant guarantees the sex of a foal to be male.",
+        "source_image": "rattlesnakeadmin.jpg",
+        "image_file": "toyon.jpg",
+        "sort_order": 50
+    },
+    {
+        "name": "Willow Sprig",
+        "scorpion_price": 200,
+        "shop_description": "\"Willows are susceptible to mildew, fungi, and root rot.\"\n\nWillow Sprigs negate most poisons and toxins.",
+        "source_image": "rattlesnakeadmin.jpg",
+        "image_file": "willow-sprig.jpg",
+        "sort_order": 51
+    }
+]

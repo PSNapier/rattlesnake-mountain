@@ -18,12 +18,25 @@ export interface NavItem {
 	isActive?: boolean;
 }
 
+export interface NavMenuItem {
+	id: number;
+	label: string;
+	path: string | null;
+	children: {
+		id: number;
+		label: string;
+		path: string | null;
+	}[];
+}
+
 export interface SharedData extends PageProps {
 	name: string;
 	quote: { message: string; author: string };
 	auth: Auth;
 	ziggy: Config & { location: string };
 	sidebarOpen: boolean;
+	navMenu: NavMenuItem[];
+	unreadMessageCount?: number;
 }
 
 export interface User {
@@ -31,10 +44,11 @@ export interface User {
 	name: string;
 	email: string;
 	avatar?: string;
-	role: 'user' | 'admin';
+	role: string;
 	email_verified_at: string | null;
 	created_at?: string;
 	updated_at?: string;
+	is_frozen?: boolean;
 }
 
 export type BreadcrumbItemType = BreadcrumbItem;

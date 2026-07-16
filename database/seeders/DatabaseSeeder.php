@@ -34,6 +34,19 @@ class DatabaseSeeder extends Seeder
         // Create sample herds and horses
         $this->call(HerdHorseSeeder::class);
 
+        // Seed default items
+        $this->call(ItemSeeder::class);
+
+        $this->call(ShopCatalogSeeder::class);
+
+        // Seed CMS pages and navigation menu
+        $this->call([
+            CmsPageSeeder::class,
+            MenuItemSeeder::class,
+        ]);
+
+        $this->call(SanctuarySeeder::class);
+
         // Run local-only seeder if it exists (not present on server)
         if (class_exists('Database\Seeders\LocalOnly')) {
             $this->call('Database\Seeders\LocalOnly');

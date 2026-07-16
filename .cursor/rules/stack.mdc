@@ -2,4 +2,6 @@
 alwaysApply: true
 ---
 
-Project is Laravel 12 vue starterkit w/ tailwind and MySQL
+Project is Laravel 12 vue starterkit w/ tailwind and MySQL.
+
+Our development environment is on Windows with cursor, and our production environment is Laravel Forge with a Linux server.
