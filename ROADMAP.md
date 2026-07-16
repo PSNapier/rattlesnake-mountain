@@ -442,8 +442,8 @@ Opt-in player-vs-player gameplay after core activity systems exist (ref doc: imp
 
 ## [018] Automatic Inactivity Freeze
 
-**Status:** `freezer`
-**Priority:** low
+**Status:** `next`
+**Priority:** high
 **Depends On:** [015]
 
 ### Goal
@@ -455,13 +455,13 @@ Freeze accounts after 4 months without art/lit submissions; frozen accounts skip
 -   Scheduler using submission activity (not login proxy)
 -   Enforce frozen state in aging/events/PvP
 -   Keep existing admin freeze + self-unfreeze
--   NOT in scope until activities submissions exist
+-   NOT in scope: inventing a login-based proxy; full activities system ([015])
 
 ### Technical Notes
 
 -   Manual freeze already: `frozen_at`, Admin Users tab, profile self-unfreeze
--   **Blocked:** trigger data requires [015]
--   Deferred deliberately at launch grill
+-   Unfrozen from post-MVP (2026-07-16); still gated on submission activity from [015]
+-   Can ship freeze *enforcement* + scheduler skeleton before [015] if activity source is stubbed — confirm trigger strategy before coding
 
 ### Acceptance Criteria
 
