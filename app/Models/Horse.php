@@ -94,6 +94,14 @@ class Horse extends Model
         return $query->where('state', HorseState::Pending);
     }
 
+    public function scopeActivePending(Builder $query): Builder
+    {
+        return $query
+            ->where('state', HorseState::Pending)
+            ->whereNull('approved_at')
+            ->whereNull('archived_at');
+    }
+
     public function scopeVisibleTo(Builder $query, ?User $user = null): Builder
     {
         return $query->where(function (Builder $q) use ($user) {
@@ -111,5 +119,44 @@ class Horse extends Model
                 });
             }
         });
+    }
+
+    public function isPublic(): bool
+    {
+        return $this->state === HorseState::Public;
+    }
+
+    public function isPending(): bool
+    {
+        return $this->state === HorseState::Pending;
+    }
+
+    public function isActivePending(): bool
+    {
+        return $this->isPending()
+            && $this->approved_at === null
+            && $this->archived_at === null;
+    }
+
+    public function isHistoricalPending(): bool
+    {
+        return $this->isPending()
+            && ($this->approved_at !== null || $this->archived_at !== null);
+    }
+
+    public function hasActivePendingEdit(): bool
+    {
+        return $this->activePendingEdit() !== null;
+    }
+
+    public function activePendingEdit(): ?Horse
+    {
+        if (! $this->isPublic()) {
+            return null;
+        }
+
+        return $this->pendingVersions()
+            ->activePending()
+            ->first();
     }
 }
