@@ -1,5 +1,41 @@
 # Roadmap Done
 
+## [002] Staff Role Gates
+
+**Status:** `done`
+**Priority:** high
+**Depends On:** none
+
+### Goal
+
+`Designer`, `StoryAdmin`, and `GameMaster` roles unlock the admin features they are meant to use, instead of being cosmetic labels while only `Admin` passes `access-admin`.
+
+### Scope
+
+-   Define per-role capability map (e.g. Designer → submissions review; StoryAdmin/GM → rollers/lifecycle; Admin → full)
+-   Replace or extend `Gate::define('access-admin')` and tab-level authorization
+-   Update admin UI to hide tabs the role cannot use
+-   NOT in scope: inventing a Founder role; changing Discord staff process
+
+### Technical Notes
+
+-   Capability map: `Role::capabilities()` in [`app/Models/Role.php`](app/Models/Role.php); `User::isStaff()` / `hasCapability()`
+-   Gates: `access-admin` = any staff; per-area `admin.*` in [`app/Providers/AppServiceProvider.php`](app/Providers/AppServiceProvider.php)
+-   Routes: per-area `can:admin.*` middleware in [`routes/web.php`](routes/web.php)
+-   Admin shell: [`resources/js/pages/admin/Index.vue`](resources/js/pages/admin/Index.vue) — tabs + props scoped via `adminCapabilities`
+-   Login sync: [`app/Listeners/SyncAdminRoleFromEmailList.php`](app/Listeners/SyncAdminRoleFromEmailList.php) only toggles Admin ↔ User; preserves Designer/StoryAdmin/GameMaster
+-   Tests: [`tests/Feature/StaffRoleGatesTest.php`](tests/Feature/StaffRoleGatesTest.php) — dataset-driven role × area matrix
+-   Matrix (pending client confirm): Designer → submissions; StoryAdmin/GameMaster → rollers + lifecycle; Admin → all
+
+### Acceptance Criteria
+
+-   [x] Each non-admin staff role can access at least one documented admin capability
+-   [x] Users with `Role::User` remain forbidden from all admin routes
+-   [x] Pest tests cover allow/deny per role for representative routes
+-   [x] Admin nav only shows authorized tabs
+
+---
+
 ## [001] Welcome Package on Registration
 
 **Status:** `done`

@@ -1,39 +1,6 @@
 # Roadmap
 
-<!-- Next task number: [021] -->
-
-## [002] Staff Role Gates
-
-**Status:** `next`
-**Priority:** high
-**Depends On:** none
-
-### Goal
-
-`Designer`, `StoryAdmin`, and `GameMaster` roles unlock the admin features they are meant to use, instead of being cosmetic labels while only `Admin` passes `access-admin`.
-
-### Scope
-
--   Define per-role capability map (e.g. Designer → submissions review; StoryAdmin/GM → rollers/lifecycle; Admin → full)
--   Replace or extend `Gate::define('access-admin')` and tab-level authorization
--   Update admin UI to hide tabs the role cannot use
--   NOT in scope: inventing a Founder role; changing Discord staff process
-
-### Technical Notes
-
--   Enum: [`app/Models/Role.php`](app/Models/Role.php)
--   Gate: [`app/Providers/AppServiceProvider.php`](app/Providers/AppServiceProvider.php) — currently `$user->isAdmin()` only
--   Admin shell: [`resources/js/pages/admin/Index.vue`](resources/js/pages/admin/Index.vue)
--   Confirm intended matrix with client if ambiguous; default to least privilege
-
-### Acceptance Criteria
-
--   [ ] Each non-admin staff role can access at least one documented admin capability
--   [ ] Users with `Role::User` remain forbidden from all admin routes
--   [ ] Pest tests cover allow/deny per role for representative routes
--   [ ] Admin nav only shows authorized tabs
-
----
+<!-- Next task number: [022] -->
 
 ## [003] Recruit-a-Friend Rewards
 
@@ -593,3 +560,40 @@ Tests behave the same locally and in CI so failures are trustworthy.
 -   [ ] Documented list of previously divergent tests now passing in both environments
 -   [ ] CI green on main with same suite run locally
 -   [ ] No skipped/commented tests left as silent CI workarounds without tickets
+
+---
+
+## [021] Admin-Managed User Role Matrix
+
+**Status:** `next`
+**Priority:** high
+**Depends On:** none
+
+### Goal
+
+Admins can view and edit the role → capability matrix (which admin areas each role can access) from the admin panel, instead of capabilities being hardcoded in the `Role` enum.
+
+### Scope
+
+-   Admin UI (Users tab or new section) showing roles × capability areas as an editable matrix
+-   Persist matrix in DB (e.g. `role_capabilities` table or config-backed settings model); `Role::capabilities()` reads from it with sensible defaults
+-   Only Admin role can edit the matrix; Admin's own `users` capability cannot be removed (no lockout)
+-   Seeder/migration establishing current defaults from existing enum matrix
+-   NOT in scope: creating/deleting roles (enum stays fixed); per-user capability overrides; full permissions package (spatie) unless approved
+
+### Technical Notes
+
+-   Current matrix hardcoded: [`app/Models/Role.php`](app/Models/Role.php) `capabilities()`
+-   Capability checks: `User::hasCapability()` used by admin middleware/controllers ([`app/Http/Controllers/Admin/DashboardController.php`](app/Http/Controllers/Admin/DashboardController.php))
+-   Role assignment UI already exists in Admin Users tab (`UpdateUserRoleRequest`); this manages what roles *can do*, not who has them
+-   Cache matrix lookups; invalidate on save
+-   Security: guard against self-lockout and privilege escalation by non-admin staff
+
+### Acceptance Criteria
+
+-   [ ] Admin can toggle capability areas per role in admin UI; changes persist
+-   [ ] Capability checks throughout app respect the stored matrix
+-   [ ] Non-admin staff cannot access or edit the matrix
+-   [ ] Admin role cannot lose `users` capability (lockout guard tested)
+-   [ ] Migration/seeder installs defaults matching current enum behavior
+-   [ ] Pest tests cover toggle persistence, enforcement, and authorization
