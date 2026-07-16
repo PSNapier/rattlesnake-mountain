@@ -42,7 +42,7 @@ dataset('staff_role_area_matrix', function () {
                 $meta['route'],
                 $meta['method'],
                 $meta['needs_horse'],
-                $role->hasCapability($area),
+                in_array($area, $role->defaultCapabilities(), true),
             ];
         }
     }

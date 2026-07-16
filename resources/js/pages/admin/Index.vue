@@ -120,6 +120,9 @@ interface Props {
 	cmsPages?: unknown[];
 	menuItems?: unknown[];
 	lifecycleSettings?: LifecycleSettings | null;
+	canManageRoleMatrix?: boolean;
+	roleCapabilityMatrix?: Record<string, string[]> | null;
+	capabilityAreas?: string[];
 }
 
 const ALL_TABS: AdminTab[] = ['submissions', 'rollers', 'users', 'items', 'shop', 'lifecycle', 'cms'];
@@ -133,6 +136,9 @@ const props = withDefaults(defineProps<Props>(), {
 	cmsPages: () => [],
 	menuItems: () => [],
 	userSearch: '',
+	canManageRoleMatrix: false,
+	roleCapabilityMatrix: null,
+	capabilityAreas: () => [],
 });
 const page = usePage();
 
@@ -280,7 +286,10 @@ onMounted(() => {
 			<UsersTab
 				v-if="activeTab === 'users' && canAccess('users') && props.users"
 				:users="props.users"
-				:user-search="props.userSearch" />
+				:user-search="props.userSearch"
+				:can-manage-role-matrix="props.canManageRoleMatrix"
+				:role-capability-matrix="props.roleCapabilityMatrix"
+				:capability-areas="props.capabilityAreas" />
 
 			<ItemsTab
 				v-if="activeTab === 'items' && canAccess('items')"

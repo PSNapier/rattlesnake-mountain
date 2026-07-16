@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CmsController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ItemController;
 use App\Http\Controllers\Admin\LifecycleController;
+use App\Http\Controllers\Admin\RoleCapabilityController;
 use App\Http\Controllers\Admin\ShopListingController;
 use App\Http\Controllers\Admin\SubmissionController;
 use App\Http\Controllers\Admin\UserController;
@@ -39,6 +40,9 @@ Route::get('dashboard', function () {
 // Admin
 Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
     Route::get('/admin', [DashboardController::class, 'index'])->name('admin.index');
+
+    Route::put('/admin/role-capabilities', [RoleCapabilityController::class, 'update'])
+        ->name('admin.role-capabilities.update');
 
     Route::middleware('can:admin.lifecycle')->group(function () {
         Route::put('/admin/lifecycle', [LifecycleController::class, 'updateLifecycle'])->name('admin.lifecycle.update');

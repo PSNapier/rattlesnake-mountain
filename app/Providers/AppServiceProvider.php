@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Listeners\RecordLastLogin;
 use App\Listeners\SyncAdminRoleFromEmailList;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
@@ -29,15 +30,7 @@ class AppServiceProvider extends ServiceProvider
             return $user->isStaff();
         });
 
-        foreach ([
-            'submissions',
-            'rollers',
-            'lifecycle',
-            'users',
-            'items',
-            'shop',
-            'cms',
-        ] as $area) {
+        foreach (Role::areas() as $area) {
             Gate::define("admin.{$area}", function (User $user) use ($area): bool {
                 return $user->hasCapability($area);
             });

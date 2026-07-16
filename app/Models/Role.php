@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\RoleCapabilityService;
+
 enum Role: string
 {
     case User = 'user';
@@ -13,7 +15,25 @@ enum Role: string
     /**
      * @return list<string>
      */
-    public function capabilities(): array
+    public static function areas(): array
+    {
+        return [
+            'submissions',
+            'rollers',
+            'lifecycle',
+            'users',
+            'items',
+            'shop',
+            'cms',
+        ];
+    }
+
+    /**
+     * Hardcoded defaults used by migration seed and as fallback when DB has no rows.
+     *
+     * @return list<string>
+     */
+    public function defaultCapabilities(): array
     {
         return match ($this) {
             self::Admin => [
@@ -34,6 +54,14 @@ enum Role: string
             ],
             self::User => [],
         };
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function capabilities(): array
+    {
+        return app(RoleCapabilityService::class)->capabilitiesFor($this);
     }
 
     public function hasCapability(string $area): bool

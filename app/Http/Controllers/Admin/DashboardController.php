@@ -10,22 +10,33 @@ use App\Models\Item;
 use App\Models\LifecycleSetting;
 use App\Models\MenuItem;
 use App\Models\Message;
+use App\Models\Role;
 use App\Models\ShopListing;
 use App\Models\User;
+use App\Services\RoleCapabilityService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, RoleCapabilityService $roleCapabilities): Response
     {
         $user = $request->user();
         $capabilities = $user->adminCapabilities();
 
         $props = [
             'adminCapabilities' => $capabilities,
+            'canManageRoleMatrix' => false,
+            'roleCapabilityMatrix' => null,
+            'capabilityAreas' => [],
         ];
+
+        if ($user->isAdmin()) {
+            $props['canManageRoleMatrix'] = true;
+            $props['roleCapabilityMatrix'] = $roleCapabilities->matrix();
+            $props['capabilityAreas'] = Role::areas();
+        }
 
         if ($user->can('admin.submissions')) {
             $props['submissions'] = $this->submissions();

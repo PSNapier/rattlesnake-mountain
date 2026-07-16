@@ -533,7 +533,7 @@ Tests behave the same locally and in CI so failures are trustworthy.
 
 ## [021] Admin-Managed User Role Matrix
 
-**Status:** `next`
+**Status:** `in-progress`
 **Priority:** high
 **Depends On:** none
 
