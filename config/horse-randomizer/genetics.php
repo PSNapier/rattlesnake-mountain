@@ -1,6 +1,10 @@
 <?php
 
 return [
+    /*
+    | Randomizer phenotype tables. Breeding inheritance loci live in config/breeding.php.
+    | Cream_Pearl remains a randomizer phenotype roll key; Pearl is a separate breedable locus.
+    */
     'e_locus' => [
         'EE' => [1, 33],
         'Ee' => [34, 66],

@@ -48,15 +48,18 @@ interface Comment {
 
 interface Message {
 	id: number;
+	type: 'horse_submission' | 'breeding_result';
 	subject: string;
 	initial_message?: string | null;
 	is_read: boolean;
-	status: 'pending' | 'accepted' | 'declined';
+	status: 'pending' | 'accepted' | 'declined' | 'informational';
 	created_at: string;
-	horse: Horse;
-	admin: Admin;
+	horse?: Horse | null;
+	admin?: Admin | null;
 	admin_edits?: Record<string, unknown> | null;
 	comments: Comment[];
+	breeding_request_id?: number | null;
+	breeding_url?: string | null;
 }
 
 interface Props {
@@ -81,6 +84,9 @@ const commentBody = ref('');
 const showDeclineDialog = ref(false);
 const declineReason = ref('');
 
+const isBreedingResult = computed(
+	() => props.message.type === 'breeding_result',
+);
 const isPending = computed(() => props.message.status === 'pending');
 const hasAdminEdits = computed(
 	() => props.message.admin_edits !== null && props.message.admin_edits !== undefined,
@@ -152,8 +158,8 @@ const getFieldValue = (field: string): string => {
 
 const formatEditedAge = (): string => {
 	const edits = props.message.admin_edits;
-	if (!edits) {
-		return props.message.horse.formatted_age ?? '—';
+	if (!edits || !props.message.horse) {
+		return props.message.horse?.formatted_age ?? '—';
 	}
 
 	const hasYears = edits.age_years !== null && edits.age_years !== undefined;
@@ -188,7 +194,7 @@ const formatEditedAge = (): string => {
 				<CardHeader>
 					<CardTitle>{{ message.subject }}</CardTitle>
 					<div class="mt-2 flex items-center gap-4 text-sm text-gray-600">
-						<p>From: {{ message.admin.name }}</p>
+						<p>From: {{ message.admin?.name ?? 'Staff' }}</p>
 						<p>•</p>
 						<p>{{ formatDate(message.created_at) }}</p>
 						<span
@@ -198,249 +204,277 @@ const formatEditedAge = (): string => {
 									? 'bg-yellow-100 text-yellow-800'
 									: message.status === 'accepted'
 										? 'bg-green-100 text-green-800'
-										: 'bg-red-100 text-red-800',
+										: message.status === 'informational'
+											? 'bg-blue-100 text-blue-800'
+											: 'bg-red-100 text-red-800',
 							]">
 							{{
-								message.status.charAt(0).toUpperCase() +
-								message.status.slice(1)
+								message.status === 'informational'
+									? 'Notice'
+									: message.status.charAt(0).toUpperCase() +
+										message.status.slice(1)
 							}}
 						</span>
 					</div>
 				</CardHeader>
 				<CardContent class="space-y-6">
-					<!-- Horse Info -->
-					<div class="flex items-start gap-4">
+					<template v-if="isBreedingResult">
 						<div
-							v-if="message.horse.design_link"
-							class="flex-shrink-0">
-							<img
-								:src="message.horse.design_link"
-								:alt="message.horse.name"
-								class="h-32 w-32 rounded border border-gray-200 object-cover" />
-						</div>
-						<div class="flex-1">
-							<p class="text-lg font-semibold">
-								<Link
-									:href="
-										message.horse.is_edit &&
-										message.horse.public_horse_id
-											? route(
-													'horses.show',
-													message.horse
-														.public_horse_id,
-												)
-											: route(
-													'horses.show',
-													message.horse.id,
-												)
-									"
-									class="text-shakespeare-600 hover:underline">
-									{{ message.horse.name }}
-								</Link>
-								<span
-									v-if="message.horse.is_edit"
-									class="text-cape-palliser-500 ml-1 text-xs">
-									(Edit)
-								</span>
+							v-if="message.initial_message"
+							class="rounded-md border border-gray-200 bg-gray-50 p-4">
+							<p class="text-sm font-medium text-gray-700">
+								Message:
+							</p>
+							<p class="mt-1 text-sm text-gray-600">
+								{{ message.initial_message }}
 							</p>
 						</div>
-					</div>
-
-					<!-- Initial Message -->
-					<div
-						v-if="message.initial_message"
-						class="rounded-md border border-gray-200 bg-gray-50 p-4">
-						<p class="text-sm font-medium text-gray-700">
-							Message:
-						</p>
-						<p class="mt-1 text-sm text-gray-600">
-							{{ message.initial_message }}
-						</p>
-					</div>
-
-					<!-- Admin Edits Comparison -->
-					<div
-						v-if="hasAdminEdits"
-						class="rounded-md border border-yellow-200 bg-yellow-50 p-4">
-						<h3 class="mb-4 text-sm font-semibold text-yellow-900">
-							Admin Edits
-						</h3>
-						<div class="grid grid-cols-2 gap-4 text-sm">
-							<div>
-								<Label class="text-xs text-gray-500">
-									Original Name
-								</Label>
-								<p class="mt-1">{{ message.horse.name }}</p>
-							</div>
-							<div>
-								<Label class="text-xs text-gray-500">
-									Edited Name
-								</Label>
-								<p
-									:class="[
-										'mt-1',
-										getFieldValue('name') !==
-											message.horse.name
-											? 'font-semibold text-red-600'
-											: '',
-									]">
-									{{ getFieldValue('name') }}
-								</p>
-							</div>
-							<div>
-								<Label class="text-xs text-gray-500">
-									Original Age
-								</Label>
-								<p class="mt-1">
-									{{ message.horse.formatted_age ?? '—' }}
-								</p>
-							</div>
-							<div>
-								<Label class="text-xs text-gray-500">
-									Edited Age
-								</Label>
-								<p
-									:class="[
-										'mt-1',
-										formatEditedAge() !==
-											(message.horse.formatted_age ?? '')
-											? 'font-semibold text-red-600'
-											: '',
-									]">
-									{{ formatEditedAge() }}
-								</p>
-							</div>
-							<div>
-								<Label class="text-xs text-gray-500">
-									Original Geno
-								</Label>
-								<p class="mt-1 font-mono text-xs">
-									{{ message.horse.geno ?? '—' }}
-								</p>
-							</div>
-							<div>
-								<Label class="text-xs text-gray-500">
-									Edited Geno
-								</Label>
-								<p
-									:class="[
-										'mt-1 font-mono text-xs',
-										getFieldValue('geno') !==
-											(message.horse.geno ?? '')
-											? 'font-semibold text-red-600'
-											: '',
-									]">
-									{{ getFieldValue('geno') }}
-								</p>
-							</div>
-							<div>
-								<Label class="text-xs text-gray-500">
-									Original Design Link
-								</Label>
-								<p class="mt-1 break-all text-xs">
-									{{ message.horse.design_link ?? '—' }}
-								</p>
-							</div>
-							<div>
-								<Label class="text-xs text-gray-500">
-									Edited Design Link
-								</Label>
-								<p
-									:class="[
-										'mt-1 break-all text-xs',
-										getFieldValue('design_link') !==
-											(message.horse.design_link ?? '')
-											? 'font-semibold text-red-600'
-											: '',
-									]">
-									{{ getFieldValue('design_link') }}
-								</p>
-							</div>
+						<div v-if="message.breeding_url">
+							<Link :href="message.breeding_url">
+								<Button>View Breeding</Button>
+							</Link>
 						</div>
-					</div>
+					</template>
 
-					<!-- Comments Section -->
-					<div class="space-y-4">
-						<h3 class="text-sm font-semibold">
-							Comments
-							<span
-								v-if="message.comments.length > 0"
-								class="text-cape-palliser-500 font-normal">
-								({{ message.comments.length }})
-							</span>
-						</h3>
-
+					<template v-else>
+						<!-- Horse Info -->
 						<div
-							v-if="message.comments.length === 0"
-							class="rounded-md border border-gray-200 bg-gray-50 p-4 text-center text-sm text-gray-500">
-							No comments yet.
-						</div>
-
-						<div
-							v-else
-							class="space-y-4">
+							v-if="message.horse"
+							class="flex items-start gap-4">
 							<div
-								v-for="comment in message.comments"
-								:key="comment.id"
-								:class="[
-									'rounded-md border p-4',
-									comment.user.is_staff
-										? 'border-blue-200 bg-blue-50'
-										: 'border-gray-200 bg-gray-50',
-								]">
-								<div class="flex items-start justify-between">
-									<div class="flex-1">
-										<p class="text-sm font-medium">
-											{{ comment.user.name }}
-											<span
-												v-if="comment.user.is_staff"
-												class="text-blue-600 text-xs">
-												(Staff)
-											</span>
-										</p>
-										<p class="mt-1 text-sm text-gray-700">
-											{{ comment.body }}
-										</p>
-									</div>
-									<p class="text-cape-palliser-500 ml-4 text-xs">
-										{{ formatDate(comment.created_at) }}
+								v-if="message.horse.design_link"
+								class="flex-shrink-0">
+								<img
+									:src="message.horse.design_link"
+									:alt="message.horse.name"
+									class="h-32 w-32 rounded border border-gray-200 object-cover" />
+							</div>
+							<div class="flex-1">
+								<p class="text-lg font-semibold">
+									<Link
+										:href="
+											message.horse.is_edit &&
+											message.horse.public_horse_id
+												? route(
+														'horses.show',
+														message.horse
+															.public_horse_id,
+													)
+												: route(
+														'horses.show',
+														message.horse.id,
+													)
+										"
+										class="text-shakespeare-600 hover:underline">
+										{{ message.horse.name }}
+									</Link>
+									<span
+										v-if="message.horse.is_edit"
+										class="text-cape-palliser-500 ml-1 text-xs">
+										(Edit)
+									</span>
+								</p>
+							</div>
+						</div>
+
+						<!-- Initial Message -->
+						<div
+							v-if="message.initial_message"
+							class="rounded-md border border-gray-200 bg-gray-50 p-4">
+							<p class="text-sm font-medium text-gray-700">
+								Message:
+							</p>
+							<p class="mt-1 text-sm text-gray-600">
+								{{ message.initial_message }}
+							</p>
+						</div>
+
+						<!-- Admin Edits Comparison -->
+						<div
+							v-if="hasAdminEdits && message.horse"
+							class="rounded-md border border-yellow-200 bg-yellow-50 p-4">
+							<h3 class="mb-4 text-sm font-semibold text-yellow-900">
+								Admin Edits
+							</h3>
+							<div class="grid grid-cols-2 gap-4 text-sm">
+								<div>
+									<Label class="text-xs text-gray-500">
+										Original Name
+									</Label>
+									<p class="mt-1">{{ message.horse.name }}</p>
+								</div>
+								<div>
+									<Label class="text-xs text-gray-500">
+										Edited Name
+									</Label>
+									<p
+										:class="[
+											'mt-1',
+											getFieldValue('name') !==
+												message.horse.name
+												? 'font-semibold text-red-600'
+												: '',
+										]">
+										{{ getFieldValue('name') }}
+									</p>
+								</div>
+								<div>
+									<Label class="text-xs text-gray-500">
+										Original Age
+									</Label>
+									<p class="mt-1">
+										{{ message.horse.formatted_age ?? '—' }}
+									</p>
+								</div>
+								<div>
+									<Label class="text-xs text-gray-500">
+										Edited Age
+									</Label>
+									<p
+										:class="[
+											'mt-1',
+											formatEditedAge() !==
+												(message.horse.formatted_age ?? '')
+												? 'font-semibold text-red-600'
+												: '',
+										]">
+										{{ formatEditedAge() }}
+									</p>
+								</div>
+								<div>
+									<Label class="text-xs text-gray-500">
+										Original Geno
+									</Label>
+									<p class="mt-1 font-mono text-xs">
+										{{ message.horse.geno ?? '—' }}
+									</p>
+								</div>
+								<div>
+									<Label class="text-xs text-gray-500">
+										Edited Geno
+									</Label>
+									<p
+										:class="[
+											'mt-1 font-mono text-xs',
+											getFieldValue('geno') !==
+												(message.horse.geno ?? '')
+												? 'font-semibold text-red-600'
+												: '',
+										]">
+										{{ getFieldValue('geno') }}
+									</p>
+								</div>
+								<div>
+									<Label class="text-xs text-gray-500">
+										Original Design Link
+									</Label>
+									<p class="mt-1 break-all text-xs">
+										{{ message.horse.design_link ?? '—' }}
+									</p>
+								</div>
+								<div>
+									<Label class="text-xs text-gray-500">
+										Edited Design Link
+									</Label>
+									<p
+										:class="[
+											'mt-1 break-all text-xs',
+											getFieldValue('design_link') !==
+												(message.horse.design_link ?? '')
+												? 'font-semibold text-red-600'
+												: '',
+										]">
+										{{ getFieldValue('design_link') }}
 									</p>
 								</div>
 							</div>
 						</div>
 
-						<!-- Add Comment Form -->
-						<div class="space-y-2">
-							<Label for="comment">Add a comment</Label>
-							<div class="flex gap-2">
-								<Input
-									id="comment"
-									v-model="commentBody"
-									type="text"
-									placeholder="Type your comment..."
-									@keyup.enter="submitComment" />
-								<Button
-									@click="submitComment"
-									:disabled="!commentBody.trim()">
-									Send
-								</Button>
+						<!-- Comments Section -->
+						<div class="space-y-4">
+							<h3 class="text-sm font-semibold">
+								Comments
+								<span
+									v-if="message.comments.length > 0"
+									class="text-cape-palliser-500 font-normal">
+									({{ message.comments.length }})
+								</span>
+							</h3>
+
+							<div
+								v-if="message.comments.length === 0"
+								class="rounded-md border border-gray-200 bg-gray-50 p-4 text-center text-sm text-gray-500">
+								No comments yet.
+							</div>
+
+							<div
+								v-else
+								class="space-y-4">
+								<div
+									v-for="comment in message.comments"
+									:key="comment.id"
+									:class="[
+										'rounded-md border p-4',
+										comment.user.is_staff
+											? 'border-blue-200 bg-blue-50'
+											: 'border-gray-200 bg-gray-50',
+									]">
+									<div class="flex items-start justify-between">
+										<div class="flex-1">
+											<p class="text-sm font-medium">
+												{{ comment.user.name }}
+												<span
+													v-if="comment.user.is_staff"
+													class="text-xs text-blue-600">
+													(Staff)
+												</span>
+											</p>
+											<p class="mt-1 text-sm text-gray-700">
+												{{ comment.body }}
+											</p>
+										</div>
+										<p class="text-cape-palliser-500 ml-4 text-xs">
+											{{ formatDate(comment.created_at) }}
+										</p>
+									</div>
+								</div>
+							</div>
+
+							<!-- Add Comment Form -->
+							<div class="space-y-2">
+								<Label for="comment">Add a comment</Label>
+								<div class="flex gap-2">
+									<Input
+										id="comment"
+										v-model="commentBody"
+										type="text"
+										placeholder="Type your comment..."
+										@keyup.enter="submitComment" />
+									<Button
+										:disabled="!commentBody.trim()"
+										@click="submitComment">
+										Send
+									</Button>
+								</div>
 							</div>
 						</div>
-					</div>
 
-					<!-- Action Buttons -->
-					<div
-						v-if="isPending && hasAdminEdits"
-						class="flex gap-4 border-t pt-4">
-						<Button @click="acceptEdits" variant="default">
-							Accept Edits
-						</Button>
-						<Button
-							@click="showDeclineDialog = true"
-							variant="outline">
-							Decline Edits
-						</Button>
-					</div>
+						<!-- Action Buttons -->
+						<div
+							v-if="isPending && hasAdminEdits"
+							class="flex gap-4 border-t pt-4">
+							<Button
+								variant="default"
+								@click="acceptEdits">
+								Accept Edits
+							</Button>
+							<Button
+								variant="outline"
+								@click="showDeclineDialog = true">
+								Decline Edits
+							</Button>
+						</div>
+					</template>
 				</CardContent>
 			</Card>
 		</div>

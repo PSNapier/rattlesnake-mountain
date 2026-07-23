@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\HorseSex;
 use App\Enums\HorseState;
 use App\Enums\NpcDeathProposalStatus;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,6 +20,7 @@ class Horse extends Model
         'owner_id',
         'bred_by',
         'name',
+        'sex',
         'bloodline',
         'progeny',
         'age_months',
@@ -53,6 +55,7 @@ class Horse extends Model
             'inventory' => 'array',
             'equipment' => 'array',
             'state' => HorseState::class,
+            'sex' => HorseSex::class,
             'is_npc' => 'boolean',
             'is_claimable' => 'boolean',
             'age_months' => 'integer',
@@ -116,6 +119,11 @@ class Horse extends Model
     public function deathProposals(): HasMany
     {
         return $this->hasMany(NpcDeathProposal::class);
+    }
+
+    public function breedingSlots(): HasMany
+    {
+        return $this->hasMany(BreedingSlot::class);
     }
 
     public function getAgeYearsAttribute(): int

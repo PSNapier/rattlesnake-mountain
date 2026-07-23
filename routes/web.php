@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\BreedingController as AdminBreedingController;
 use App\Http\Controllers\Admin\CmsController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ItemController;
@@ -9,6 +10,8 @@ use App\Http\Controllers\Admin\ShopListingController;
 use App\Http\Controllers\Admin\SubmissionController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AdminRollerController;
+use App\Http\Controllers\BreedingController;
+use App\Http\Controllers\BreedingSlotTransferController;
 use App\Http\Controllers\CharacterImageController;
 use App\Http\Controllers\DevPasswordController;
 use App\Http\Controllers\HerdController;
@@ -54,6 +57,10 @@ Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
 
     Route::middleware('can:admin.rollers')->group(function () {
         Route::post('/admin/rollers/horse-randomizer/roll', [AdminRollerController::class, 'rollHorse'])->name('admin.rollers.horse-randomizer.roll');
+        Route::post('/admin/breeding-requests/{breedingRequest}/roll', [AdminBreedingController::class, 'roll'])->name('admin.breeding-requests.roll');
+        Route::post('/admin/breeding-requests/{breedingRequest}/reject', [AdminBreedingController::class, 'reject'])->name('admin.breeding-requests.reject');
+        Route::put('/admin/horses/{horse}/sex', [AdminBreedingController::class, 'updateSex'])->name('admin.horses.sex.update');
+        Route::post('/admin/breeding-slots/grant', [AdminBreedingController::class, 'grantSlot'])->name('admin.breeding-slots.grant');
     });
 
     Route::middleware('can:admin.submissions')->group(function () {
@@ -149,6 +156,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/horses/{horse}/approve', [HorseController::class, 'approve'])->name('horses.approve');
     Route::post('/horses/{horse}/publish', [HorseController::class, 'publish'])->name('horses.publish');
     Route::post('/horses/upload-image', [HorseController::class, 'uploadImage'])->name('horses.upload-image')->middleware('rate.limit.uploads');
+
+    Route::get('/breedings', [BreedingController::class, 'index'])->name('breedings.index');
+    Route::post('/breedings', [BreedingController::class, 'store'])->name('breedings.store');
+    Route::post('/breedings/{breedingRequest}/cancel', [BreedingController::class, 'cancel'])->name('breedings.cancel');
+    Route::post('/breedings/{breedingRequest}/foal', [BreedingController::class, 'createFoal'])->name('breedings.foal');
+
+    Route::post('/breeding-slot-transfers', [BreedingSlotTransferController::class, 'store'])->name('breeding-slot-transfers.store');
+    Route::post('/breeding-slot-transfers/{transfer}/accept', [BreedingSlotTransferController::class, 'accept'])->name('breeding-slot-transfers.accept');
+    Route::post('/breeding-slot-transfers/{transfer}/decline', [BreedingSlotTransferController::class, 'decline'])->name('breeding-slot-transfers.decline');
+    Route::post('/breeding-slot-transfers/{transfer}/cancel', [BreedingSlotTransferController::class, 'cancel'])->name('breeding-slot-transfers.cancel');
+
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
     Route::post('/inventory/redeem-voucher', RedeemVoucherController::class)
         ->name('inventory.redeem-voucher');

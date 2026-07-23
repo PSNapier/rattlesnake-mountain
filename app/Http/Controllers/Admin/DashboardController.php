@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\BreedingRequestStatus;
+use App\Enums\BreedingSlotStatus;
 use App\Enums\HorseState;
 use App\Enums\NpcDeathProposalStatus;
 use App\Http\Controllers\Controller;
+use App\Models\BreedingRequest;
+use App\Models\BreedingSlot;
 use App\Models\CmsPage;
 use App\Models\Horse;
 use App\Models\Item;
@@ -144,6 +148,75 @@ class DashboardController extends Controller
             $props['userSearch'] = $search ?? '';
         }
 
+        if ($user->can('admin.rollers')) {
+            $props['breedingRequests'] = BreedingRequest::query()
+                ->with([
+                    'requester:id,name',
+                    'sire:id,name,sex,geno',
+                    'dam:id,name,sex,geno',
+                ])
+                ->where('status', BreedingRequestStatus::PendingStaff)
+                ->latest()
+                ->paginate(15, ['*'], 'breeding_page')
+                ->withQueryString()
+                ->through(fn (BreedingRequest $breedingRequest) => [
+                    'id' => $breedingRequest->id,
+                    'requester_name' => $breedingRequest->requester?->name,
+                    'sire_id' => $breedingRequest->sire_id,
+                    'sire_name' => $breedingRequest->sire?->name,
+                    'sire_sex' => $breedingRequest->sire?->sex?->value,
+                    'sire_geno' => $breedingRequest->sire?->geno,
+                    'dam_id' => $breedingRequest->dam_id,
+                    'dam_name' => $breedingRequest->dam?->name,
+                    'dam_sex' => $breedingRequest->dam?->sex?->value,
+                    'dam_geno' => $breedingRequest->dam?->geno,
+                    'evidence_url' => $breedingRequest->evidence_url,
+                    'notes' => $breedingRequest->notes,
+                    'created_at' => $breedingRequest->created_at?->toIso8601String(),
+                ]);
+
+            $props['horsesMissingSex'] = Horse::query()
+                ->where('state', HorseState::Public)
+                ->whereNull('sex')
+                ->orderBy('name')
+                ->limit(50)
+                ->get(['id', 'name', 'geno'])
+                ->map(fn (Horse $horse) => [
+                    'id' => $horse->id,
+                    'name' => $horse->name,
+                    'geno' => $horse->geno,
+                ])
+                ->values()
+                ->all();
+
+            $sanctuaryId = User::query()->where('is_sanctuary', true)->value('id');
+            $props['sanctuarySlots'] = $sanctuaryId
+                ? BreedingSlot::query()
+                    ->with(['horse:id,name'])
+                    ->where('holder_id', $sanctuaryId)
+                    ->where('status', BreedingSlotStatus::Available)
+                    ->orderBy('horse_id')
+                    ->orderBy('sequence')
+                    ->limit(100)
+                    ->get()
+                    ->map(fn (BreedingSlot $slot) => [
+                        'id' => $slot->id,
+                        'horse_id' => $slot->horse_id,
+                        'horse_name' => $slot->horse?->name,
+                        'sequence' => $slot->sequence,
+                    ])
+                    ->values()
+                    ->all()
+                : [];
+
+            $props['grantableUsers'] = User::query()
+                ->whereNull('deleted_at')
+                ->where('is_sanctuary', false)
+                ->orderBy('name')
+                ->limit(100)
+                ->get(['id', 'name']);
+        }
+
         return Inertia::render('admin/Index', $props);
     }
 
@@ -227,6 +300,7 @@ class DashboardController extends Controller
                 'age_months_total' => $horse->age_months,
                 'formatted_age' => $horse->formatted_age,
                 'geno' => $horse->geno,
+                'sex' => $horse->sex?->value,
                 'herd_id' => $horse->herd_id,
                 'message' => $message ? [
                     'id' => $message->id,

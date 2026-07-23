@@ -18,6 +18,7 @@ interface Herd {
 interface Horse {
 	id: number;
 	name: string;
+	sex?: string | null;
 	age_years: number;
 	age_months_part: number;
 	formatted_age: string;
@@ -77,20 +78,31 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const form = useForm({
 	name: props.horse.name,
+	sex: props.horse.sex ?? '',
 	age_years: props.horse.age_years,
 	age_months: props.horse.age_months_part,
 	design_link: props.horse.design_link || '',
 	geno: props.horse.geno,
 	herd_id: props.horse.herd_id,
-	bloodline: props.horse.bloodline,
-	progeny: props.horse.progeny,
 	stats: props.horse.stats,
 	inventory: props.horse.inventory,
 	equipment: props.horse.equipment,
 });
 
+const canEditSex = computed(() => !props.horse.sex || isStaff.value);
+
 const submit = () => {
-	form.put(route('horses.update', props.horse.id));
+	form
+		.transform((data) => {
+			if (!canEditSex.value) {
+				const { sex: _sex, ...rest } = data;
+
+				return rest;
+			}
+
+			return data;
+		})
+		.put(route('horses.update', props.horse.id));
 };
 
 const handleImageUploadSuccess = (data: { url: string }) => {
@@ -206,6 +218,29 @@ const handleImageUploadSuccess = (data: { url: string }) => {
 									class="mt-1 text-sm text-red-500">
 									{{ form.errors.name }}
 								</p>
+							</div>
+
+							<div v-if="canEditSex">
+								<Label for="sex">Sex</Label>
+								<Select
+									id="sex"
+									v-model="form.sex"
+									:options="[
+										{ value: 'mare', label: 'Mare' },
+										{ value: 'stallion', label: 'Stallion' },
+									]" />
+								<p
+									v-if="form.errors.sex"
+									class="mt-1 text-sm text-red-500">
+									{{ form.errors.sex }}
+								</p>
+							</div>
+							<div
+								v-else
+								class="text-sm text-gray-600">
+								<strong>Sex:</strong>
+								{{ props.horse.sex ?? 'Unset' }}
+								(staff only to change)
 							</div>
 
 							<div class="grid grid-cols-2 gap-4">

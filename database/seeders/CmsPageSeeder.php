@@ -443,7 +443,7 @@ class CmsPageSeeder extends Seeder
                     ],
                     'box3' => [
                         '![](/images/breedingfoaling-banner-submit.png)',
-                        "a. Prior to submitting a breeding request, please take note of the following.\n- Breeding attempts must be accompanied by a non-graphic or descriptive image or short story - keep it PG or a fade-to-black - during a Checkpoint.\n- Breeding may only be attempted twice per estrus cycle.\n- Please keep in mind that breedings are not always 100% effective, nor do they guarantee a live foal that will live a long life or a healthy mare. Predators have to eat, too, and as a prey animal, the life of a wild horse is nothing if not dangerous.\n\nb. Breeding requests should be posted in the #breeding-rolls channel with the correct form filled out.",
+                        "a. Prior to submitting a breeding request, please take note of the following.\n- Breeding attempts must be accompanied by a non-graphic or descriptive image or short story - keep it PG or a fade-to-black - during a Checkpoint.\n- Breeding may only be attempted twice per estrus cycle.\n- Please keep in mind that breedings are not always 100% effective, nor do they guarantee a live foal that will live a long life or a healthy mare. Predators have to eat, too, and as a prey animal, the life of a wild horse is nothing if not dangerous.\n\nb. Breeding requests are submitted in-app from the Breeding page. Staff with rollers access publish genotype results; you then choose one option and create a pending foal for review.",
                     ],
                     'box4' => [
                         '![](/images/breedingfoaling-banner-results.png)',

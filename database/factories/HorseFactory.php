@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\HorseSex;
 use App\Enums\HorseState;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -19,6 +20,7 @@ class HorseFactory extends Factory
     {
         return [
             'name' => fake()->firstName(),
+            'sex' => null,
             'age_months' => fake()->numberBetween(0, 20) * 12,
             'geno' => $this->generateEquineGeno(),
             'design_link' => fake()->optional(0.7)->imageUrl(400, 400, 'horses'),
@@ -35,36 +37,51 @@ class HorseFactory extends Factory
             'is_npc' => false,
             'is_claimable' => false,
             'state' => HorseState::Pending,
+            'died_at' => null,
         ];
+    }
+
+    public function published(): static
+    {
+        return $this->state(fn (): array => [
+            'state' => HorseState::Public,
+            'age_months' => fake()->numberBetween(2, 12) * 12,
+            'died_at' => null,
+        ]);
+    }
+
+    public function breedableStallion(): static
+    {
+        return $this->state(fn (): array => [
+            'sex' => HorseSex::Stallion,
+            'state' => HorseState::Public,
+            'age_months' => 36,
+            'geno' => 'Ee Aa',
+            'died_at' => null,
+        ]);
+    }
+
+    public function breedableMare(): static
+    {
+        return $this->state(fn (): array => [
+            'sex' => HorseSex::Mare,
+            'state' => HorseState::Public,
+            'age_months' => 36,
+            'geno' => 'ee aa',
+            'died_at' => null,
+        ]);
     }
 
     private function generateEquineGeno(): string
     {
-        $genePairs = [];
-        $numPairs = fake()->numberBetween(2, 4);
+        $e = fake()->randomElement(['EE', 'Ee', 'ee']);
+        $a = fake()->randomElement(['A+A+', 'A+A', 'A+a', 'AA', 'Aa', 'aa']);
+        $tokens = [$e, $a];
 
-        // Common equine gene pairs
-        $possibleGenes = [
-            ['ee', 'Ee', 'EE'], // Extension
-            ['aa', 'Aa', 'AA'], // Agouti
-            ['gg', 'Gg', 'GG'], // Gray
-            ['tt', 'Tt', 'TT'], // Tobiano
-            ['ww', 'Ww', 'WW'], // White
-        ];
-
-        // Special genes (less common)
-        $specialGenes = ['nCr', 'Ncr', 'NCr', 'ncr'];
-
-        for ($i = 0; $i < $numPairs; $i++) {
-            if ($i === $numPairs - 1 && fake()->boolean(20)) {
-                // 20% chance for a special gene
-                $genePairs[] = fake()->randomElement($specialGenes);
-            } else {
-                $geneSet = fake()->randomElement($possibleGenes);
-                $genePairs[] = fake()->randomElement($geneSet);
-            }
+        if (fake()->boolean(25)) {
+            $tokens[] = fake()->randomElement(['nCr', 'CrCr', 'nPrl', 'nD', 'nG', 'nT']);
         }
 
-        return implode(' ', $genePairs);
+        return implode(' ', $tokens);
     }
 }

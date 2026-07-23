@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select } from '@/components/ui/select';
 import { Copy, Dices } from 'lucide-vue-next';
-import { router, usePage } from '@inertiajs/vue3';
+import { router, useForm, usePage } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 
 interface HorseRollResult {
@@ -21,6 +22,36 @@ interface HorseRollResult {
 	other_marks: string;
 }
 
+interface MissingSexHorse {
+	id: number;
+	name: string;
+	geno: string;
+}
+
+interface SanctuarySlot {
+	id: number;
+	horse_id: number;
+	horse_name?: string | null;
+	sequence: number;
+}
+
+interface GrantableUser {
+	id: number;
+	name: string;
+}
+
+interface Props {
+	horsesMissingSex?: MissingSexHorse[];
+	sanctuarySlots?: SanctuarySlot[];
+	grantableUsers?: GrantableUser[];
+}
+
+const props = withDefaults(defineProps<Props>(), {
+	horsesMissingSex: () => [],
+	sanctuarySlots: () => [],
+	grantableUsers: () => [],
+});
+
 const page = usePage();
 const result = ref<HorseRollResult | null>(null);
 const isRolling = ref(false);
@@ -31,6 +62,12 @@ const ageMax = ref(30);
 const benefitDoubleUp = ref(5);
 const detrimentDoubleUp = ref(2);
 const healthyRollMin = ref(57);
+
+const grantForm = useForm({
+	breeding_slot_id: null as number | null,
+	to_user_id: null as number | null,
+	notes: '',
+});
 
 watch(
 	() => (page.props.flash as { rollResult?: HorseRollResult })?.rollResult,
@@ -97,6 +134,14 @@ const copyToClipboard = async (): Promise<void> => {
 	} catch {
 		// ignore
 	}
+};
+
+const setSex = (horseId: number, sex: string): void => {
+	router.put(route('admin.horses.sex.update', horseId), { sex }, { preserveScroll: true });
+};
+
+const grantSlot = (): void => {
+	grantForm.post(route('admin.breeding-slots.grant'), { preserveScroll: true });
 };
 </script>
 
@@ -186,7 +231,7 @@ const copyToClipboard = async (): Promise<void> => {
 
 				<div
 					v-if="result"
-					class="rounded-md border border-shakespeare-200 bg-shakespeare-50/50 p-4 font-mono text-sm columns-2 gap-8 space-y-1">
+					class="columns-2 gap-8 space-y-1 rounded-md border border-shakespeare-200 bg-shakespeare-50/50 p-4 font-mono text-sm">
 					<div><span class="text-cape-palliser-600">Breed:</span> {{ result.breed }}</div>
 					<div><span class="text-cape-palliser-600">Sex:</span> {{ result.sex }}</div>
 					<div><span class="text-cape-palliser-600">Age:</span> {{ result.age }}</div>
@@ -221,15 +266,89 @@ const copyToClipboard = async (): Promise<void> => {
 
 		<Card>
 			<CardHeader>
-				<CardTitle>Breeding</CardTitle>
+				<CardTitle>Breeding Tools</CardTitle>
+				<p class="text-cape-palliser-600 mt-1 text-sm">
+					Backfill sex and grant Sanctuary slots. Pending breeding requests live under Submissions.
+				</p>
 			</CardHeader>
-			<CardContent>
-				<p class="text-cape-palliser-600 text-sm">
-					Breeding rolls, genetics, and foal outcomes.
-				</p>
-				<p class="text-cape-palliser-500 mt-2 text-xs">
-					Placeholder – coming soon
-				</p>
+			<CardContent class="space-y-6">
+				<div class="space-y-3">
+					<p class="text-sm font-medium text-cape-palliser-700">
+						Horses missing sex
+					</p>
+					<div
+						v-if="!props.horsesMissingSex?.length"
+						class="text-cape-palliser-500 text-sm">
+						No public horses missing sex.
+					</div>
+					<div
+						v-for="horse in props.horsesMissingSex || []"
+						:key="horse.id"
+						class="flex flex-wrap items-center justify-between gap-2 rounded border p-3 text-sm">
+						<div>
+							<p class="font-medium">{{ horse.name }}</p>
+							<p class="font-mono text-xs">{{ horse.geno }}</p>
+						</div>
+						<div class="flex gap-2">
+							<Button
+								size="sm"
+								variant="outline"
+								@click="setSex(horse.id, 'mare')">
+								Mare
+							</Button>
+							<Button
+								size="sm"
+								variant="outline"
+								@click="setSex(horse.id, 'stallion')">
+								Stallion
+							</Button>
+						</div>
+					</div>
+				</div>
+
+				<div class="space-y-3 border-t pt-4">
+					<p class="text-sm font-medium text-cape-palliser-700">
+						Grant Sanctuary slot
+					</p>
+					<div class="grid gap-3 md:grid-cols-3">
+						<div>
+							<Label>Slot</Label>
+							<Select
+								v-model="grantForm.breeding_slot_id"
+								:options="[
+									{ value: null, label: 'Select slot' },
+									...(props.sanctuarySlots || []).map((slot) => ({
+										value: slot.id,
+										label: `${slot.horse_name} #${slot.sequence}`,
+									})),
+								]" />
+						</div>
+						<div>
+							<Label>Recipient</Label>
+							<Select
+								v-model="grantForm.to_user_id"
+								:options="[
+									{ value: null, label: 'Select user' },
+									...(props.grantableUsers || []).map((user) => ({
+										value: user.id,
+										label: user.name,
+									})),
+								]" />
+						</div>
+						<div class="flex items-end">
+							<Button
+								:disabled="grantForm.processing"
+								@click="grantSlot">
+								Grant
+							</Button>
+						</div>
+					</div>
+					<p
+						v-if="grantForm.errors.breeding_slot_id"
+						class="text-sm text-red-500">
+						{{ grantForm.errors.breeding_slot_id }}
+					</p>
+				</div>
 			</CardContent>
 		</Card>
 	</div>

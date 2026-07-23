@@ -10,6 +10,7 @@ import type { User } from '@/types';
 import { Link, router } from '@inertiajs/vue3';
 import {
 	Crown,
+	Heart,
 	Home,
 	LogOut,
 	Package,
@@ -81,6 +82,16 @@ defineProps<Props>();
 				as="button">
 				<Zap class="mr-2 h-4 w-4" />
 				My Horses
+			</Link>
+		</DropdownMenuItem>
+		<DropdownMenuItem :as-child="true">
+			<Link
+				class="block w-full"
+				:href="route('breedings.index')"
+				prefetch
+				as="button">
+				<Heart class="mr-2 h-4 w-4" />
+				My Breedings
 			</Link>
 		</DropdownMenuItem>
 		<DropdownMenuItem :as-child="true">

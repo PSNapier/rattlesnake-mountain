@@ -1,5 +1,39 @@
 # Roadmap Done
 
+## [005] Breeding System (Punnett-Square)
+
+**Status:** `done`
+**Priority:** high
+**Depends On:** [004]
+
+### Goal
+
+Players submit breeding requests; staff with rollers access publish two Punnett genotype options; players choose one and create a pending foal. Breeding authorization uses transferable per-horse slots (10), not horse ownership alone.
+
+### Scope
+
+-   Strict local Punnett provider behind a genetics-provider contract (external API seam reserved)
+-   Transferable breeding slots with offer/accept and Sanctuary staff grants
+-   Create pending foal after player chooses one of two immutable results; update `bloodline` / `progeny` / `bred_by`
+-   Add nullable horse `sex`; staff backfill required for existing horses
+-   NOT in scope: phenotype reader; Stones; seasons/estrus/checkpoints/attempt limits; twins/rerolls; health/stats/traits rolls; full foaling story UI
+
+### Technical Notes
+
+-   Provider contract + local Punnett: `app/Services/Contracts/BreedingGeneticsProvider.php`, `config/breeding.php`
+-   Admin UI: Rollers Breeding section; player UI: `/breedings`
+-   Deferred: [023] advanced breeding lifecycle + Stones; [024] shared phenotype reader
+
+### Acceptance Criteria
+
+-   [x] Breeding two horses with known genos yields offspring geno consistent with Punnett rules (unit-tested)
+-   [x] Bloodline/progeny relationships update correctly
+-   [x] Ineligible pairs rejected with clear errors (same horse, wrong/missing sex, underage, dead, bad geno, missing slots)
+-   [x] Feature test covers create-foal happy path
+-   [x] Documented inheritance edge cases listed if deferred
+
+---
+
 ## [004] Lifecycle Automation
 
 **Status:** `done`

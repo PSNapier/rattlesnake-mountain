@@ -16,6 +16,8 @@ import { ArchiveRestore, ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-vue-next
 import { computed, ref } from 'vue';
 
 type Status = 'pending' | 'contacted' | 'approved' | 'archived';
+type SubmissionKind = 'horse' | 'breeding';
+type TypeFilter = 'all' | SubmissionKind;
 type SortField =
 	| 'user_name'
 	| 'name'
@@ -64,20 +66,61 @@ interface Submission {
 	age_months?: number;
 	formatted_age?: string;
 	geno?: string;
+	sex?: string | null;
 	herd_id?: number | null;
 	message?: Message | null;
 	comments?: Comment[];
 }
 
+interface BreedingRequestRow {
+	id: number;
+	requester_name?: string | null;
+	sire_id: number;
+	sire_name?: string | null;
+	sire_sex?: string | null;
+	sire_geno?: string | null;
+	dam_id: number;
+	dam_name?: string | null;
+	dam_sex?: string | null;
+	dam_geno?: string | null;
+	evidence_url: string;
+	notes?: string | null;
+	created_at?: string | null;
+}
+
+interface PaginatedBreedingRequests {
+	data: BreedingRequestRow[];
+}
+
+interface UnifiedRow {
+	key: string;
+	kind: SubmissionKind;
+	id: number;
+	user_id: number | null;
+	user_name: string;
+	name: string;
+	date_submitted: string;
+	status: Status;
+	last_contact_date: string | null;
+	last_admin_name?: string | null;
+	submission?: Submission;
+	breeding?: BreedingRequestRow;
+}
+
 interface Props {
 	submissions: Submission[];
 	herds?: Herd[];
+	breedingRequests?: PaginatedBreedingRequests | null;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+	herds: () => [],
+	breedingRequests: null,
+});
 
 const searchQuery = ref('');
 const statusFilter = ref<Status | 'all'>('all');
+const typeFilter = ref<TypeFilter>('all');
 const sortField = ref<SortField>('date_submitted');
 const sortDirection = ref<SortDirection>('desc');
 
@@ -91,6 +134,7 @@ const adminForm = ref({
 	age_years: 0,
 	age_months: 0,
 	geno: '',
+	sex: '' as string,
 	herd_id: null as number | null,
 	design_link: '',
 });
@@ -104,6 +148,7 @@ const initializeAdminForm = (submission: Submission): void => {
 		age_years: (adminEdits?.age_years as number) ?? submission.age_years ?? 0,
 		age_months: (adminEdits?.age_months as number) ?? submission.age_months ?? 0,
 		geno: (adminEdits?.geno as string) ?? submission.geno ?? '',
+		sex: (adminEdits?.sex as string) ?? submission.sex ?? '',
 		herd_id:
 			(adminEdits?.herd_id as number) ?? submission.herd_id ?? null,
 		design_link:
@@ -133,6 +178,7 @@ const hasAnyEdits = computed((): boolean => {
 		isFieldChanged('age_years') ||
 		isFieldChanged('age_months') ||
 		isFieldChanged('geno') ||
+		isFieldChanged('sex') ||
 		isFieldChanged('herd_id') ||
 		isFieldChanged('design_link')
 	);
@@ -141,10 +187,47 @@ const hasAnyEdits = computed((): boolean => {
 // Computed property to safely access selected submission
 const currentSubmission = computed(() => selectedSubmission.value);
 
-const filteredAndSorted = computed(() => {
-	let result = [...props.submissions];
+const unifiedRows = computed((): UnifiedRow[] => {
+	const horseRows: UnifiedRow[] = props.submissions.map((submission) => ({
+		key: `horse-${submission.id}`,
+		kind: 'horse' as const,
+		id: submission.id,
+		user_id: submission.user_id,
+		user_name: submission.user_name,
+		name: submission.name,
+		date_submitted: submission.date_submitted,
+		status: submission.status,
+		last_contact_date: submission.last_contact_date,
+		last_admin_name: submission.last_admin_name,
+		submission,
+	}));
 
-	// Filter by search query
+	const breedingRows: UnifiedRow[] = (props.breedingRequests?.data || []).map(
+		(breeding) => ({
+			key: `breeding-${breeding.id}`,
+			kind: 'breeding' as const,
+			id: breeding.id,
+			user_id: null,
+			user_name: breeding.requester_name ?? 'Unknown',
+			name: `${breeding.sire_name ?? 'Sire'} × ${breeding.dam_name ?? 'Dam'}`,
+			date_submitted: breeding.created_at ?? '',
+			status: 'pending' as const,
+			last_contact_date: null,
+			last_admin_name: null,
+			breeding,
+		}),
+	);
+
+	return [...horseRows, ...breedingRows];
+});
+
+const filteredAndSorted = computed(() => {
+	let result = [...unifiedRows.value];
+
+	if (typeFilter.value !== 'all') {
+		result = result.filter((item) => item.kind === typeFilter.value);
+	}
+
 	if (searchQuery.value.trim()) {
 		const query = searchQuery.value.toLowerCase();
 		result = result.filter(
@@ -154,12 +237,10 @@ const filteredAndSorted = computed(() => {
 		);
 	}
 
-	// Filter by status
 	if (statusFilter.value !== 'all') {
 		result = result.filter((item) => item.status === statusFilter.value);
 	}
 
-	// Sort
 	if (sortField.value && sortDirection.value) {
 		result.sort((a, b) => {
 			let aValue: string | Date;
@@ -298,6 +379,7 @@ const handleContactOwner = (): void => {
 		age_years: adminForm.value.age_years,
 		age_months: adminForm.value.age_months,
 		geno: adminForm.value.geno,
+		sex: adminForm.value.sex || null,
 		herd_id: adminForm.value.herd_id,
 		design_link: adminForm.value.design_link,
 	};
@@ -324,6 +406,7 @@ const handleApprove = (): void => {
 		age_years: adminForm.value.age_years,
 		age_months: adminForm.value.age_months,
 		geno: adminForm.value.geno,
+		sex: adminForm.value.sex || null,
 		herd_id: adminForm.value.herd_id,
 		design_link: adminForm.value.design_link,
 	};
@@ -357,6 +440,14 @@ const handleApprove = (): void => {
 		);
 	}
 };
+
+const rollBreeding = (id: number): void => {
+	router.post(route('admin.breeding-requests.roll', id), {}, { preserveScroll: true });
+};
+
+const rejectBreeding = (id: number): void => {
+	router.post(route('admin.breeding-requests.reject', id), {}, { preserveScroll: true });
+};
 </script>
 
 <template>
@@ -369,6 +460,25 @@ const handleApprove = (): void => {
 						v-model="searchQuery"
 						placeholder="Search by user name or herd/horse name..."
 						class="w-full" />
+				</div>
+				<div class="w-full sm:w-48">
+					<Select
+						v-model="typeFilter"
+						:options="[
+							{
+								value: 'all',
+								label: 'All Types',
+							},
+							{
+								value: 'horse',
+								label: 'Horse',
+							},
+							{
+								value: 'breeding',
+								label: 'Breeding',
+							},
+						]"
+						placeholder="Filter by type" />
 				</div>
 				<div class="w-full sm:w-48">
 					<Select
@@ -404,6 +514,9 @@ const handleApprove = (): void => {
 				<table class="w-full border-collapse">
 					<thead>
 						<tr class="border-b border-gray-200">
+							<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+								Type
+							</th>
 							<th
 								class="text-cape-palliser-950 cursor-pointer px-4 py-3 text-left text-sm font-semibold hover:bg-gray-50"
 								@click="handleSort('user_name')">
@@ -465,115 +578,192 @@ const handleApprove = (): void => {
 							v-if="filteredAndSorted.length === 0"
 							class="border-b border-gray-200">
 							<td
-								colspan="7"
+								colspan="8"
 								class="text-cape-palliser-600 px-4 py-8 text-center">
 								No submissions found
 							</td>
 						</tr>
-						<tr
-							v-for="submission in filteredAndSorted"
-							:key="submission.id"
-							:class="[
-								'border-b border-gray-200 hover:bg-gray-50',
-								submission.status === 'approved' ||
-								submission.status === 'archived'
-									? 'opacity-75'
-									: '',
-							]">
-							<td class="text-cape-palliser-950 px-4 py-3 text-sm">
-								<Link
-									:href="route('users.profile', submission.user_id)"
-									class="hover:text-shakespeare-600 hover:underline">
-									{{ submission.user_name }}
-								</Link>
-							</td>
-							<td class="text-cape-palliser-950 px-4 py-3 text-sm">
-								<div class="flex items-center gap-3">
-									<div
-										v-if="submission.design_link"
-										class="flex-shrink-0">
-										<img
-											:src="submission.design_link"
-											:alt="submission.name"
-											class="h-12 w-12 rounded border border-gray-200 object-cover" />
-									</div>
+						<template
+							v-for="row in filteredAndSorted"
+							:key="row.key">
+							<tr
+								v-if="row.kind === 'horse' && row.submission"
+								:class="[
+									'border-b border-gray-200 hover:bg-gray-50',
+									row.submission.status === 'approved' ||
+									row.submission.status === 'archived'
+										? 'opacity-75'
+										: '',
+								]">
+								<td class="text-cape-palliser-700 px-4 py-3 text-sm">
+									<span class="inline-flex items-center rounded-full bg-shakespeare-50 px-2.5 py-0.5 text-xs font-medium text-shakespeare-700">
+										Horse
+									</span>
+								</td>
+								<td class="text-cape-palliser-950 px-4 py-3 text-sm">
 									<Link
-										:href="
-											submission.is_edit &&
-											submission.public_horse_id
-												? route(
-														'horses.show',
-														submission.public_horse_id,
-													)
-												: route('horses.show', submission.id)
-										"
+										:href="route('users.profile', row.submission.user_id)"
 										class="hover:text-shakespeare-600 hover:underline">
-										{{ submission.name }}
-										<span
-											v-if="submission.is_edit"
-											class="text-cape-palliser-500 ml-1 text-xs">
-											(Edit)
-										</span>
+										{{ row.submission.user_name }}
 									</Link>
-								</div>
-							</td>
-							<td class="text-cape-palliser-700 px-4 py-3 text-sm">
-								{{ formatDate(submission.date_submitted) }}
-							</td>
-							<td class="px-4 py-3 text-sm">
-								<span
-									:class="[
-										'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-										getStatusBadgeClass(submission.status),
-										submission.status === 'approved' ||
-										submission.status === 'archived'
-											? 'opacity-100'
-											: '',
-									]">
-									{{
-										submission.status
-											.charAt(0)
-											.toUpperCase() +
-										submission.status.slice(1)
-									}}
-								</span>
-							</td>
-							<td class="text-cape-palliser-700 px-4 py-3 text-sm">
-								{{ formatDate(submission.last_contact_date) }}
-							</td>
-							<td class="text-cape-palliser-700 px-4 py-3 text-sm">
-								{{ submission.last_admin_name || '—' }}
-							</td>
-							<td class="flex gap-2 px-4 py-3 text-sm">
-								<Button
-									v-if="submission.status !== 'approved' && submission.status !== 'archived'"
-									variant="outline"
-									size="sm"
-									@click="openReviewModal(submission)">
-									Review
-								</Button>
-								<Button
-									v-if="submission.status === 'archived'"
-									variant="outline"
-									size="sm"
-									@click="handleUnarchive(submission)">
-									<ArchiveRestore class="mr-1 h-4 w-4" />
-									Unarchive
-								</Button>
-								<Button
-									v-if="submission.status === 'archived'"
-									variant="outline"
-									size="sm"
-									@click="openReviewModal(submission)">
-									Review
-								</Button>
-								<span
-									v-if="submission.status === 'approved'"
-									class="text-cape-palliser-500 text-sm">
-									Approved
-								</span>
-							</td>
-						</tr>
+								</td>
+								<td class="text-cape-palliser-950 px-4 py-3 text-sm">
+									<div class="flex items-center gap-3">
+										<div
+											v-if="row.submission.design_link"
+											class="flex-shrink-0">
+											<img
+												:src="row.submission.design_link"
+												:alt="row.submission.name"
+												class="h-12 w-12 rounded border border-gray-200 object-cover" />
+										</div>
+										<Link
+											:href="
+												row.submission.is_edit &&
+												row.submission.public_horse_id
+													? route(
+															'horses.show',
+															row.submission.public_horse_id,
+														)
+													: route('horses.show', row.submission.id)
+											"
+											class="hover:text-shakespeare-600 hover:underline">
+											{{ row.submission.name }}
+											<span
+												v-if="row.submission.is_edit"
+												class="text-cape-palliser-500 ml-1 text-xs">
+												(Edit)
+											</span>
+										</Link>
+									</div>
+								</td>
+								<td class="text-cape-palliser-700 px-4 py-3 text-sm">
+									{{ formatDate(row.submission.date_submitted) }}
+								</td>
+								<td class="px-4 py-3 text-sm">
+									<span
+										:class="[
+											'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+											getStatusBadgeClass(row.submission.status),
+											row.submission.status === 'approved' ||
+											row.submission.status === 'archived'
+												? 'opacity-100'
+												: '',
+										]">
+										{{
+											row.submission.status
+												.charAt(0)
+												.toUpperCase() +
+											row.submission.status.slice(1)
+										}}
+									</span>
+								</td>
+								<td class="text-cape-palliser-700 px-4 py-3 text-sm">
+									{{ formatDate(row.submission.last_contact_date) }}
+								</td>
+								<td class="text-cape-palliser-700 px-4 py-3 text-sm">
+									{{ row.submission.last_admin_name || '—' }}
+								</td>
+								<td class="flex gap-2 px-4 py-3 text-sm">
+									<Button
+										v-if="row.submission.status !== 'approved' && row.submission.status !== 'archived'"
+										variant="outline"
+										size="sm"
+										@click="openReviewModal(row.submission)">
+										Review
+									</Button>
+									<Button
+										v-if="row.submission.status === 'archived'"
+										variant="outline"
+										size="sm"
+										@click="handleUnarchive(row.submission)">
+										<ArchiveRestore class="mr-1 h-4 w-4" />
+										Unarchive
+									</Button>
+									<Button
+										v-if="row.submission.status === 'archived'"
+										variant="outline"
+										size="sm"
+										@click="openReviewModal(row.submission)">
+										Review
+									</Button>
+									<span
+										v-if="row.submission.status === 'approved'"
+										class="text-cape-palliser-500 text-sm">
+										Approved
+									</span>
+								</td>
+							</tr>
+							<tr
+								v-else-if="row.kind === 'breeding' && row.breeding"
+								class="border-b border-gray-200 hover:bg-gray-50">
+								<td class="text-cape-palliser-700 px-4 py-3 text-sm">
+									<span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+										Breeding
+									</span>
+								</td>
+								<td class="text-cape-palliser-950 px-4 py-3 text-sm">
+									{{ row.breeding.requester_name }}
+								</td>
+								<td class="text-cape-palliser-950 px-4 py-3 text-sm">
+									<div class="space-y-1">
+										<p class="font-medium">
+											{{ row.breeding.sire_name }}
+											({{ row.breeding.sire_sex }}) ×
+											{{ row.breeding.dam_name }}
+											({{ row.breeding.dam_sex }})
+										</p>
+										<p class="font-mono text-xs text-cape-palliser-600">
+											{{ row.breeding.sire_geno }} ·
+											{{ row.breeding.dam_geno }}
+										</p>
+										<a
+											:href="row.breeding.evidence_url"
+											class="text-shakespeare-600 underline"
+											target="_blank"
+											rel="noopener">
+											Evidence
+										</a>
+										<p
+											v-if="row.breeding.notes"
+											class="text-cape-palliser-600 text-xs">
+											{{ row.breeding.notes }}
+										</p>
+									</div>
+								</td>
+								<td class="text-cape-palliser-700 px-4 py-3 text-sm">
+									{{ formatDate(row.breeding.created_at ?? null) }}
+								</td>
+								<td class="px-4 py-3 text-sm">
+									<span
+										:class="[
+											'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+											getStatusBadgeClass('pending'),
+										]">
+										Pending
+									</span>
+								</td>
+								<td class="text-cape-palliser-700 px-4 py-3 text-sm">
+									—
+								</td>
+								<td class="text-cape-palliser-700 px-4 py-3 text-sm">
+									—
+								</td>
+								<td class="flex gap-2 px-4 py-3 text-sm">
+									<Button
+										size="sm"
+										@click="rollBreeding(row.breeding.id)">
+										Roll
+									</Button>
+									<Button
+										size="sm"
+										variant="outline"
+										@click="rejectBreeding(row.breeding.id)">
+										Reject
+									</Button>
+								</td>
+							</tr>
+						</template>
 					</tbody>
 				</table>
 			</div>
@@ -745,6 +935,38 @@ const handleApprove = (): void => {
 										v-model="adminForm.geno"
 										type="text"
 										class="w-full font-mono text-xs" />
+								</div>
+							</div>
+						</div>
+
+						<!-- Sex Row -->
+						<div
+							:class="[
+								'-m-1 grid grid-cols-2 gap-4 rounded border p-3 transition-colors',
+								isFieldChanged('sex')
+									? 'border-red-200 bg-red-50'
+									: 'border-transparent bg-transparent',
+							]">
+							<div>
+								<Label class="text-xs text-gray-500">Sex</Label>
+								<p class="mt-1 text-sm">
+									{{ currentSubmission.sex ?? '—' }}
+								</p>
+							</div>
+							<div>
+								<Label
+									for="admin-sex"
+									class="text-xs text-gray-500">
+									Sex</Label>
+								<div class="mt-1">
+									<select
+										id="admin-sex"
+										v-model="adminForm.sex"
+										class="w-full rounded border px-2 py-1 text-sm">
+										<option value="">Unset</option>
+										<option value="mare">Mare</option>
+										<option value="stallion">Stallion</option>
+									</select>
 								</div>
 							</div>
 						</div>

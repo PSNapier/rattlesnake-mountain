@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\HorseSex;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreHorseRequest extends FormRequest
 {
@@ -18,13 +20,12 @@ class StoreHorseRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
+            'sex' => ['required', Rule::enum(HorseSex::class)],
             'age_years' => 'required|integer|min:0|max:50',
             'age_months' => 'required|integer|min:0|max:11',
             'design_link' => 'nullable|string|max:500',
             'geno' => 'required|string|max:255',
             'herd_id' => 'nullable|exists:herds,id',
-            'bloodline' => 'nullable|array',
-            'progeny' => 'nullable|array',
             'stats' => 'nullable|array',
             'inventory' => 'nullable|array',
             'equipment' => 'nullable|array',
@@ -41,6 +42,7 @@ class StoreHorseRequest extends FormRequest
         return [
             'name.required' => 'The horse name is required.',
             'name.max' => 'The horse name must not exceed 255 characters.',
+            'sex.required' => 'The horse sex is required.',
             'age_years.required' => 'The horse age in years is required.',
             'age_years.integer' => 'The horse age in years must be a number.',
             'age_years.min' => 'The horse age in years must be at least 0.',

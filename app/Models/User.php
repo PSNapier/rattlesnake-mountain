@@ -71,12 +71,12 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isStaff(): bool
     {
-        return $this->role->isStaff();
+        return ($this->role ?? Role::User)->isStaff();
     }
 
     public function hasCapability(string $area): bool
     {
-        return $this->role->hasCapability($area);
+        return ($this->role ?? Role::User)->hasCapability($area);
     }
 
     /**
@@ -84,7 +84,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function adminCapabilities(): array
     {
-        return $this->role->capabilities();
+        return ($this->role ?? Role::User)->capabilities();
     }
 
     public function isFrozen(): bool

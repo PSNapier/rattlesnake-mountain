@@ -126,6 +126,22 @@ interface NpcDeathProposal {
 	rolled_at: string | null;
 }
 
+interface BreedingRequestAdminRow {
+	id: number;
+	requester_name?: string | null;
+	sire_id: number;
+	sire_name?: string | null;
+	sire_sex?: string | null;
+	sire_geno?: string | null;
+	dam_id: number;
+	dam_name?: string | null;
+	dam_sex?: string | null;
+	dam_geno?: string | null;
+	evidence_url: string;
+	notes?: string | null;
+	created_at?: string | null;
+}
+
 type AdminTab = 'submissions' | 'rollers' | 'users' | 'items' | 'shop' | 'lifecycle' | 'cms';
 
 interface Props {
@@ -140,6 +156,10 @@ interface Props {
 	menuItems?: unknown[];
 	lifecycleSettings?: LifecycleSettings | null;
 	npcDeathProposals?: NpcDeathProposal[];
+	breedingRequests?: { data: BreedingRequestAdminRow[] } | null;
+	horsesMissingSex?: { id: number; name: string; geno: string }[];
+	sanctuarySlots?: { id: number; horse_id: number; horse_name?: string | null; sequence: number }[];
+	grantableUsers?: { id: number; name: string }[];
 	canManageRoleMatrix?: boolean;
 	roleCapabilityMatrix?: Record<string, string[]> | null;
 	capabilityAreas?: string[];
@@ -307,10 +327,14 @@ onMounted(() => {
 			<SubmissionsTab
 				v-if="activeTab === 'submissions' && canAccess('submissions')"
 				:submissions="props.submissions"
-				:herds="props.herds" />
+				:herds="props.herds"
+				:breeding-requests="props.breedingRequests" />
 
 			<RollersTab
-				v-if="activeTab === 'rollers' && canAccess('rollers')" />
+				v-if="activeTab === 'rollers' && canAccess('rollers')"
+				:horses-missing-sex="props.horsesMissingSex"
+				:sanctuary-slots="props.sanctuarySlots"
+				:grantable-users="props.grantableUsers" />
 
 			<div
 				v-if="activeTab === 'users' && canAccess('users')"

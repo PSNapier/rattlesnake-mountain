@@ -20,16 +20,19 @@ interface Admin {
 
 interface Message {
 	id: number;
+	type: 'horse_submission' | 'breeding_result';
 	subject: string;
 	initial_message?: string | null;
 	is_read: boolean;
-	status: 'pending' | 'accepted' | 'declined';
+	status: 'pending' | 'accepted' | 'declined' | 'informational';
 	created_at: string;
-	horse: Horse;
-	admin: Admin;
+	horse?: Horse | null;
+	admin?: Admin | null;
 	admin_edits?: Record<string, unknown> | null;
 	comment_count: number;
 	latest_comment_at?: string | null;
+	breeding_request_id?: number | null;
+	breeding_url?: string | null;
 }
 
 interface Props {
@@ -53,6 +56,8 @@ const getStatusBadgeClass = (status: string): string => {
 			return 'bg-green-100 text-green-800';
 		case 'declined':
 			return 'bg-red-100 text-red-800';
+		case 'informational':
+			return 'bg-blue-100 text-blue-800';
 		default:
 			return 'bg-gray-100 text-gray-800';
 	}
@@ -67,6 +72,14 @@ const formatDate = (dateString: string): string => {
 		minute: '2-digit',
 	});
 };
+
+const statusLabel = (status: string): string => {
+	if (status === 'informational') {
+		return 'Notice';
+	}
+
+	return status.charAt(0).toUpperCase() + status.slice(1);
+};
 </script>
 
 <template>
@@ -79,7 +92,7 @@ const formatDate = (dateString: string): string => {
 					Inbox
 				</h1>
 				<p class="text-cape-palliser-700 mt-2">
-					Review admin submissions and communicate with admins.
+					Review admin messages and breeding updates.
 				</p>
 			</div>
 
@@ -102,10 +115,9 @@ const formatDate = (dateString: string): string => {
 							: '',
 					]">
 					<CardHeader>
-						<div class="flex items-start justify-between">
+						<div class="flex items-start justify-between gap-3">
 							<div class="flex-1">
-								<CardTitle
-									class="flex items-center gap-2">
+								<CardTitle class="flex items-center gap-2">
 									<Link
 										:href="route('inbox.show', message.id)"
 										:class="[
@@ -121,7 +133,8 @@ const formatDate = (dateString: string): string => {
 										class="bg-blue-500 size-2 rounded-full"></span>
 								</CardTitle>
 								<p class="text-cape-palliser-600 mt-1 text-sm">
-									From: {{ message.admin.name }}
+									From:
+									{{ message.admin?.name ?? 'Staff' }}
 								</p>
 								<p class="text-cape-palliser-500 mt-1 text-xs">
 									{{ formatDate(message.created_at) }}
@@ -132,18 +145,45 @@ const formatDate = (dateString: string): string => {
 									'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
 									getStatusBadgeClass(message.status),
 								]">
-								{{
-									message.status.charAt(0).toUpperCase() +
-									message.status.slice(1)
-								}}
+								{{ statusLabel(message.status) }}
 							</span>
 						</div>
 					</CardHeader>
 					<CardContent>
-						<div class="space-y-4">
+						<div
+							v-if="message.type === 'breeding_result'"
+							class="space-y-4">
+							<p
+								v-if="message.initial_message"
+								class="text-cape-palliser-700 text-sm">
+								{{ message.initial_message }}
+							</p>
+							<div class="flex justify-end gap-2">
+								<Link
+									v-if="message.breeding_url"
+									:href="message.breeding_url">
+									<Button
+										variant="default"
+										size="sm">
+										View Breeding
+									</Button>
+								</Link>
+								<Link :href="route('inbox.show', message.id)">
+									<Button
+										variant="outline"
+										size="sm">
+										View Message
+									</Button>
+								</Link>
+							</div>
+						</div>
+
+						<div
+							v-else
+							class="space-y-4">
 							<div class="flex items-center gap-4">
 								<div
-									v-if="message.horse.design_link"
+									v-if="message.horse?.design_link"
 									class="flex-shrink-0">
 									<img
 										:src="message.horse.design_link"
@@ -151,7 +191,9 @@ const formatDate = (dateString: string): string => {
 										class="h-16 w-16 rounded border border-gray-200 object-cover" />
 								</div>
 								<div class="flex-1">
-									<p class="text-sm">
+									<p
+										v-if="message.horse"
+										class="text-sm">
 										<strong>Horse:</strong>
 										<Link
 											:href="
@@ -183,7 +225,7 @@ const formatDate = (dateString: string): string => {
 									</p>
 									<p
 										v-if="message.admin_edits"
-										class="text-yellow-700 mt-2 text-sm">
+										class="mt-2 text-sm text-yellow-700">
 										⚠️ Admin has made edits that require
 										your review
 									</p>
@@ -199,8 +241,7 @@ const formatDate = (dateString: string): string => {
 											? 'comment'
 											: 'comments'
 									}}
-									<span
-										v-if="message.latest_comment_at">
+									<span v-if="message.latest_comment_at">
 										• Last
 										{{
 											formatDate(
@@ -209,9 +250,10 @@ const formatDate = (dateString: string): string => {
 										}}
 									</span>
 								</p>
-								<Link
-									:href="route('inbox.show', message.id)">
-									<Button variant="outline" size="sm">
+								<Link :href="route('inbox.show', message.id)">
+									<Button
+										variant="outline"
+										size="sm">
 										View Message
 									</Button>
 								</Link>

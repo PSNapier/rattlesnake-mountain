@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Herd;
 use App\Models\Horse;
 use App\Models\User;
+use App\Services\BreedingSlotService;
 use Illuminate\Database\Seeder;
 
 class HerdHorseSeeder extends Seeder
@@ -14,52 +15,80 @@ class HerdHorseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Find or create a test user
-        $user = User::first();
+        $slotService = app(BreedingSlotService::class);
 
-        if (! $user) {
-            $user = User::factory()->create([
-                'name' => 'Test User',
-            ]);
+        $users = collect([
+            User::query()->first() ?? User::factory()->create(['name' => 'Test User']),
+            User::query()->firstOrCreate(
+                ['email' => 'arjones.tx@gmail.com'],
+                [
+                    'name' => 'Arjon',
+                    'password' => 'password',
+                    'email_verified_at' => now(),
+                ]
+            ),
+        ])->unique('id');
+
+        foreach ($users as $user) {
+            $this->seedHerdsAndHorsesFor($user, $slotService);
         }
+    }
 
-        // Create sample herds
+    private function seedHerdsAndHorsesFor(User $user, BreedingSlotService $slotService): void
+    {
         $herds = Herd::factory()
             ->count(3)
             ->for($user, 'owner')
             ->for($user, 'createdBy')
             ->create();
 
-        // Create sample horses
         $horses = collect();
 
         foreach ($herds as $herd) {
-            $herdHorses = Horse::factory()
-                ->count(4)
-                ->for($user, 'owner')
-                ->for($user, 'bredBy')
-                ->create([
-                    'herd_id' => $herd->id,
-                ]);
+            $herdHorses = collect([
+                ...Horse::factory()
+                    ->count(2)
+                    ->for($user, 'owner')
+                    ->for($user, 'bredBy')
+                    ->breedableStallion()
+                    ->create(['herd_id' => $herd->id]),
+                ...Horse::factory()
+                    ->count(2)
+                    ->for($user, 'owner')
+                    ->for($user, 'bredBy')
+                    ->breedableMare()
+                    ->create(['herd_id' => $herd->id]),
+            ]);
+
+            $herdHorses->each(fn (Horse $horse) => $slotService->ensureSlotsForHorse($horse));
 
             $horses = $horses->merge($herdHorses);
 
-            // Update herd with horse IDs
             $herd->update([
                 'herd_members' => $herdHorses->pluck('id')->toArray(),
                 'herd_leader_id' => $herdHorses->first()->id,
             ]);
         }
 
-        // Create some horses without herds
-        $wildHorses = Horse::factory()
-            ->count(2)
-            ->for($user, 'owner')
-            ->for($user, 'bredBy')
-            ->create();
+        $wildHorses = collect([
+            ...Horse::factory()
+                ->count(1)
+                ->for($user, 'owner')
+                ->for($user, 'bredBy')
+                ->breedableStallion()
+                ->create(),
+            ...Horse::factory()
+                ->count(1)
+                ->for($user, 'owner')
+                ->for($user, 'bredBy')
+                ->breedableMare()
+                ->create(),
+        ]);
+
+        $wildHorses->each(fn (Horse $horse) => $slotService->ensureSlotsForHorse($horse));
 
         $horses = $horses->merge($wildHorses);
 
-        $this->command->info('Created '.$herds->count().' herds and '.$horses->count().' horses for '.$user->name);
+        $this->command->info('Created '.$herds->count().' herds and '.$horses->count().' horses for '.$user->email);
     }
 }

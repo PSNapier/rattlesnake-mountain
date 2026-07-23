@@ -46,13 +46,12 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const form = useForm({
 	name: '',
+	sex: 'mare',
 	age_years: 0,
 	age_months: 0,
 	design_link: '',
 	geno: '',
 	herd_id: null,
-	bloodline: [],
-	progeny: [],
 	stats: [],
 	inventory: [],
 	equipment: [],
@@ -104,6 +103,22 @@ const handleImageUploadSuccess = (data: { url: string }) => {
 									v-if="form.errors.name"
 									class="mt-1 text-sm text-red-500">
 									{{ form.errors.name }}
+								</p>
+							</div>
+
+							<div>
+								<Label for="sex">Sex</Label>
+								<Select
+									id="sex"
+									v-model="form.sex"
+									:options="[
+										{ value: 'mare', label: 'Mare' },
+										{ value: 'stallion', label: 'Stallion' },
+									]" />
+								<p
+									v-if="form.errors.sex"
+									class="mt-1 text-sm text-red-500">
+									{{ form.errors.sex }}
 								</p>
 							</div>
 

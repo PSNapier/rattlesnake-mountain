@@ -62,11 +62,16 @@ const canEditHorse = (horse: Horse): boolean => {
 		<div class="space-y-6">
 			<div class="flex items-center justify-between">
 				<h1 class="text-3xl font-bold">My Horses</h1>
-				<Link
-					v-if="props.can.create"
-					:href="route('horses.create')">
-					<Button>Add New Horse</Button>
-				</Link>
+				<div class="flex gap-2">
+					<Link :href="route('breedings.index')">
+						<Button variant="outline">Breeding</Button>
+					</Link>
+					<Link
+						v-if="props.can.create"
+						:href="route('horses.create')">
+						<Button>Add New Horse</Button>
+					</Link>
+				</div>
 			</div>
 
 			<div

@@ -18,6 +18,7 @@ interface User {
 interface Horse {
 	id: number;
 	name: string;
+	sex?: string | null;
 	age_years: number;
 	age_months_part: number;
 	formatted_age: string;
@@ -124,6 +125,10 @@ const deleteHorse = () => {
 								<p>
 									<strong>Name:</strong>
 									{{ props.horse.name }}
+								</p>
+								<p>
+									<strong>Sex:</strong>
+									{{ props.horse.sex ?? 'Unset' }}
 								</p>
 								<p>
 									<strong>Age:</strong>

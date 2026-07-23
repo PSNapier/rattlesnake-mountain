@@ -11,6 +11,7 @@ use App\Models\AdminSubmissionLog;
 use App\Models\Herd;
 use App\Models\Horse;
 use App\Models\User;
+use App\Services\BreedingSlotService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -91,12 +92,13 @@ class HorseController extends Controller
             'owner_id' => Auth::id(),
             'bred_by' => Auth::id(),
             'name' => $request->name,
+            'sex' => $request->validated('sex'),
             'age_months' => $request->ageMonthsTotal(),
             'design_link' => $request->design_link,
             'geno' => $request->geno,
             'herd_id' => $request->herd_id,
-            'bloodline' => $request->bloodline ?? [],
-            'progeny' => $request->progeny ?? [],
+            'bloodline' => [],
+            'progeny' => [],
             'stats' => $request->stats ?? [],
             'inventory' => $request->inventory ?? [],
             'equipment' => $request->equipment ?? [],
@@ -236,18 +238,20 @@ class HorseController extends Controller
 
             if ($pendingVersion) {
                 // Update existing pending version
-                $pendingVersion->update([
+                $pendingData = [
                     'name' => $request->name,
                     'age_months' => $request->ageMonthsTotal(),
                     'design_link' => $request->design_link,
                     'geno' => $request->geno,
                     'herd_id' => $request->herd_id,
-                    'bloodline' => $request->bloodline ?? [],
-                    'progeny' => $request->progeny ?? [],
                     'stats' => $request->stats ?? [],
                     'inventory' => $request->inventory ?? [],
                     'equipment' => $request->equipment ?? [],
-                ]);
+                ];
+                if (Auth::user()->can('admin.submissions') && $request->filled('sex')) {
+                    $pendingData['sex'] = $request->validated('sex');
+                }
+                $pendingVersion->update($pendingData);
 
                 return redirect()->route('horses.show', $pendingVersion)
                     ->with('success', 'Pending changes updated. Waiting for approval.');
@@ -258,12 +262,13 @@ class HorseController extends Controller
                 'owner_id' => $horse->owner_id,
                 'bred_by' => $horse->bred_by,
                 'name' => $request->name,
+                'sex' => $horse->sex,
                 'age_months' => $request->ageMonthsTotal(),
                 'design_link' => $request->design_link,
                 'geno' => $request->geno,
                 'herd_id' => $request->herd_id,
-                'bloodline' => $request->bloodline ?? [],
-                'progeny' => $request->progeny ?? [],
+                'bloodline' => $horse->bloodline ?? [],
+                'progeny' => $horse->progeny ?? [],
                 'stats' => $request->stats ?? [],
                 'inventory' => $request->inventory ?? [],
                 'equipment' => $request->equipment ?? [],
@@ -276,18 +281,24 @@ class HorseController extends Controller
         }
 
         // For pending horses, update directly
-        $horse->update([
+        $pendingUpdate = [
             'name' => $request->name,
             'age_months' => $request->ageMonthsTotal(),
             'design_link' => $request->design_link,
             'geno' => $request->geno,
             'herd_id' => $request->herd_id,
-            'bloodline' => $request->bloodline ?? [],
-            'progeny' => $request->progeny ?? [],
             'stats' => $request->stats ?? [],
             'inventory' => $request->inventory ?? [],
             'equipment' => $request->equipment ?? [],
-        ]);
+        ];
+
+        if ($horse->sex === null && $request->filled('sex')) {
+            $pendingUpdate['sex'] = $request->validated('sex');
+        } elseif (Auth::user()->can('admin.submissions') && $request->filled('sex')) {
+            $pendingUpdate['sex'] = $request->validated('sex');
+        }
+
+        $horse->update($pendingUpdate);
 
         return redirect()->route('horses.show', $horse)
             ->with('success', 'Horse updated successfully!');
@@ -375,12 +386,14 @@ class HorseController extends Controller
             'design_link' => $request->input('design_link', $horse->design_link),
             'geno' => $request->input('geno', $horse->geno),
             'herd_id' => $request->input('herd_id', $horse->herd_id),
-            'bloodline' => $request->input('bloodline', $horse->bloodline ?? []),
-            'progeny' => $request->input('progeny', $horse->progeny ?? []),
             'stats' => $request->input('stats', $horse->stats ?? []),
             'inventory' => $request->input('inventory', $horse->inventory ?? []),
             'equipment' => $request->input('equipment', $horse->equipment ?? []),
         ];
+
+        if ($request->filled('sex')) {
+            $updateData['sex'] = $request->input('sex');
+        }
 
         // Update the public horse with pending changes (or admin edits)
         $publicHorse->update($updateData);
@@ -411,7 +424,7 @@ class HorseController extends Controller
     /**
      * Publish a new pending horse (make it public).
      */
-    public function publish(Horse $horse, Request $request): RedirectResponse
+    public function publish(Horse $horse, Request $request, BreedingSlotService $slotService): RedirectResponse
     {
         if (! Auth::user()->can('admin.submissions')) {
             abort(403);
@@ -427,14 +440,16 @@ class HorseController extends Controller
             'design_link' => $request->input('design_link', $horse->design_link),
             'geno' => $request->input('geno', $horse->geno),
             'herd_id' => $request->input('herd_id', $horse->herd_id),
-            'bloodline' => $request->input('bloodline', $horse->bloodline ?? []),
-            'progeny' => $request->input('progeny', $horse->progeny ?? []),
             'stats' => $request->input('stats', $horse->stats ?? []),
             'inventory' => $request->input('inventory', $horse->inventory ?? []),
             'equipment' => $request->input('equipment', $horse->equipment ?? []),
             'state' => HorseState::Public,
             'approved_at' => now(),
         ];
+
+        if ($request->filled('sex')) {
+            $updateData['sex'] = $request->input('sex');
+        }
 
         if ($request->filled('age_years') || $request->filled('age_months')) {
             $years = (int) $request->input('age_years', $horse->age_years);
@@ -443,6 +458,7 @@ class HorseController extends Controller
         }
 
         $horse->update($updateData);
+        $slotService->ensureSlotsForHorse($horse->fresh());
 
         // Log the approval action
         AdminSubmissionLog::create([

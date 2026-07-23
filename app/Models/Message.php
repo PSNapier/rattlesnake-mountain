@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\MessageType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,9 @@ class Message extends Model
     use HasFactory;
 
     protected $fillable = [
+        'type',
         'horse_id',
+        'breeding_request_id',
         'user_id',
         'admin_id',
         'subject',
@@ -27,6 +30,7 @@ class Message extends Model
     protected function casts(): array
     {
         return [
+            'type' => MessageType::class,
             'is_read' => 'boolean',
             'read_at' => 'datetime',
             'responded_at' => 'datetime',
@@ -37,6 +41,11 @@ class Message extends Model
     public function horse(): BelongsTo
     {
         return $this->belongsTo(Horse::class);
+    }
+
+    public function breedingRequest(): BelongsTo
+    {
+        return $this->belongsTo(BreedingRequest::class);
     }
 
     public function user(): BelongsTo

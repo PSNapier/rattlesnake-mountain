@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Horse;
 use App\Models\User;
+use App\Services\BreedingSlotService;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -24,12 +25,25 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Create 5 random horses for test user
-        Horse::factory()
-            ->count(5)
-            ->for($test, 'owner')
-            ->for($test, 'bredBy')
-            ->create();
+        $slotService = app(BreedingSlotService::class);
+
+        // Breedable stallions + mares for test user (public, adult, slots)
+        $seedHorses = collect([
+            ...Horse::factory()
+                ->count(3)
+                ->for($test, 'owner')
+                ->for($test, 'bredBy')
+                ->breedableStallion()
+                ->create(),
+            ...Horse::factory()
+                ->count(2)
+                ->for($test, 'owner')
+                ->for($test, 'bredBy')
+                ->breedableMare()
+                ->create(),
+        ]);
+
+        $seedHorses->each(fn (Horse $horse) => $slotService->ensureSlotsForHorse($horse));
 
         // Create sample herds and horses
         $this->call(HerdHorseSeeder::class);
