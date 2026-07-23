@@ -19,7 +19,7 @@ class HorseFactory extends Factory
     {
         return [
             'name' => fake()->firstName(),
-            'age' => fake()->numberBetween(0, 20),
+            'age_months' => fake()->numberBetween(0, 20) * 12,
             'geno' => $this->generateEquineGeno(),
             'design_link' => fake()->optional(0.7)->imageUrl(400, 400, 'horses'),
             'bloodline' => [],
@@ -32,6 +32,8 @@ class HorseFactory extends Factory
             ],
             'inventory' => [],
             'equipment' => [],
+            'is_npc' => false,
+            'is_claimable' => false,
             'state' => HorseState::Pending,
         ];
     }

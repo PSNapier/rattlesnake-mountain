@@ -187,7 +187,11 @@ class UserController extends Controller
 
         $user->herds()->update(['owner_id' => $sanctuary->id, 'created_by' => $sanctuary->id]);
         $user->createdHerds()->update(['created_by' => $sanctuary->id]);
-        $user->horses()->update(['owner_id' => $sanctuary->id]);
+        $user->horses()->update([
+            'owner_id' => $sanctuary->id,
+            'is_npc' => true,
+            'is_claimable' => true,
+        ]);
         $user->bredHorses()->update(['bred_by' => $sanctuary->id]);
 
         $user->items()->detach();

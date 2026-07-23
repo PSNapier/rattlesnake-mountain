@@ -18,7 +18,9 @@ interface User {
 interface Horse {
 	id: number;
 	name: string;
-	age: number;
+	age_years: number;
+	age_months_part: number;
+	formatted_age: string;
 	geno: string;
 	design_link?: string;
 	owner_id: number;
@@ -125,7 +127,7 @@ const deleteHorse = () => {
 								</p>
 								<p>
 									<strong>Age:</strong>
-									{{ props.horse.age }}
+									{{ props.horse.formatted_age }}
 								</p>
 								<p>
 									<strong>Geno:</strong>

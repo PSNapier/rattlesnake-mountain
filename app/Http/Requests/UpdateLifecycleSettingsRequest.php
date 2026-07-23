@@ -29,6 +29,10 @@ class UpdateLifecycleSettingsRequest extends FormRequest
             'horse_auto_age_game_years' => 'required|numeric|min:0.25|max:10',
             'horse_auto_health_roll_min' => 'required|integer|min:0|max:100|lte:horse_auto_health_roll_max',
             'horse_auto_health_roll_max' => 'required|integer|min:0|max:100|gte:horse_auto_health_roll_min',
+            'npc_death_age_threshold' => 'required|integer|min:1|max:40',
+            'npc_death_base_percent' => 'required|integer|min:1|max:100',
+            'npc_death_double_every_years' => 'required|integer|min:1|max:10',
+            'npc_death_cap_percent' => 'required|integer|min:1|max:100',
         ];
     }
 }

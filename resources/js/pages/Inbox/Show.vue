@@ -18,7 +18,9 @@ import { computed, ref } from 'vue';
 interface Horse {
 	id: number;
 	name: string;
-	age?: number | null;
+	age_years?: number | null;
+	age_months?: number | null;
+	formatted_age?: string | null;
 	geno?: string | null;
 	herd_id?: number | null;
 	design_link?: string | null;
@@ -147,6 +149,34 @@ const getFieldValue = (field: string): string => {
 	const value = props.message.admin_edits[field];
 	return value !== null && value !== undefined ? String(value) : '—';
 };
+
+const formatEditedAge = (): string => {
+	const edits = props.message.admin_edits;
+	if (!edits) {
+		return props.message.horse.formatted_age ?? '—';
+	}
+
+	const hasYears = edits.age_years !== null && edits.age_years !== undefined;
+	const hasMonths = edits.age_months !== null && edits.age_months !== undefined;
+
+	if (!hasYears && !hasMonths) {
+		return props.message.horse.formatted_age ?? '—';
+	}
+
+	const years = Number(hasYears ? edits.age_years : props.message.horse.age_years ?? 0);
+	const months = Number(hasMonths ? edits.age_months : props.message.horse.age_months ?? 0);
+	const yearLabel = years === 1 ? '1 year' : `${years} years`;
+	const monthLabel = months === 1 ? '1 month' : `${months} months`;
+
+	if (months === 0) {
+		return yearLabel;
+	}
+	if (years === 0) {
+		return monthLabel;
+	}
+
+	return `${yearLabel}, ${monthLabel}`;
+};
 </script>
 
 <template>
@@ -262,7 +292,7 @@ const getFieldValue = (field: string): string => {
 									Original Age
 								</Label>
 								<p class="mt-1">
-									{{ message.horse.age ?? '—' }}
+									{{ message.horse.formatted_age ?? '—' }}
 								</p>
 							</div>
 							<div>
@@ -272,12 +302,12 @@ const getFieldValue = (field: string): string => {
 								<p
 									:class="[
 										'mt-1',
-										getFieldValue('age') !==
-											String(message.horse.age ?? '')
+										formatEditedAge() !==
+											(message.horse.formatted_age ?? '')
 											? 'font-semibold text-red-600'
 											: '',
 									]">
-									{{ getFieldValue('age') }}
+									{{ formatEditedAge() }}
 								</p>
 							</div>
 							<div>

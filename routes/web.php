@@ -46,6 +46,10 @@ Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
 
     Route::middleware('can:admin.lifecycle')->group(function () {
         Route::put('/admin/lifecycle', [LifecycleController::class, 'updateLifecycle'])->name('admin.lifecycle.update');
+        Route::post('/admin/lifecycle/preview', [LifecycleController::class, 'preview'])->name('admin.lifecycle.preview');
+        Route::post('/admin/lifecycle/run-now', [LifecycleController::class, 'runNow'])->name('admin.lifecycle.run-now');
+        Route::post('/admin/lifecycle/proposals/{proposal}/confirm', [LifecycleController::class, 'confirmProposal'])->name('admin.lifecycle.proposals.confirm');
+        Route::post('/admin/lifecycle/proposals/{proposal}/reject', [LifecycleController::class, 'rejectProposal'])->name('admin.lifecycle.proposals.reject');
     });
 
     Route::middleware('can:admin.rollers')->group(function () {

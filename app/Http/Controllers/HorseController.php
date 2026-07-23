@@ -91,7 +91,7 @@ class HorseController extends Controller
             'owner_id' => Auth::id(),
             'bred_by' => Auth::id(),
             'name' => $request->name,
-            'age' => $request->age,
+            'age_months' => $request->ageMonthsTotal(),
             'design_link' => $request->design_link,
             'geno' => $request->geno,
             'herd_id' => $request->herd_id,
@@ -238,7 +238,7 @@ class HorseController extends Controller
                 // Update existing pending version
                 $pendingVersion->update([
                     'name' => $request->name,
-                    'age' => $request->age,
+                    'age_months' => $request->ageMonthsTotal(),
                     'design_link' => $request->design_link,
                     'geno' => $request->geno,
                     'herd_id' => $request->herd_id,
@@ -258,7 +258,7 @@ class HorseController extends Controller
                 'owner_id' => $horse->owner_id,
                 'bred_by' => $horse->bred_by,
                 'name' => $request->name,
-                'age' => $request->age,
+                'age_months' => $request->ageMonthsTotal(),
                 'design_link' => $request->design_link,
                 'geno' => $request->geno,
                 'herd_id' => $request->herd_id,
@@ -278,7 +278,7 @@ class HorseController extends Controller
         // For pending horses, update directly
         $horse->update([
             'name' => $request->name,
-            'age' => $request->age,
+            'age_months' => $request->ageMonthsTotal(),
             'design_link' => $request->design_link,
             'geno' => $request->geno,
             'herd_id' => $request->herd_id,
@@ -368,10 +368,10 @@ class HorseController extends Controller
 
         $publicHorse = Horse::findOrFail($horse->public_horse_id);
 
-        // Use admin-edited values if provided, otherwise use pending version values
+        // Use admin-edited values if provided, otherwise use pending version values.
+        // Age always stays on the already-aged public horse.
         $updateData = [
             'name' => $request->input('name', $horse->name),
-            'age' => $request->input('age', $horse->age),
             'design_link' => $request->input('design_link', $horse->design_link),
             'geno' => $request->input('geno', $horse->geno),
             'herd_id' => $request->input('herd_id', $horse->herd_id),
@@ -424,7 +424,6 @@ class HorseController extends Controller
         // Use admin-edited values if provided, otherwise use existing values
         $updateData = [
             'name' => $request->input('name', $horse->name),
-            'age' => $request->input('age', $horse->age),
             'design_link' => $request->input('design_link', $horse->design_link),
             'geno' => $request->input('geno', $horse->geno),
             'herd_id' => $request->input('herd_id', $horse->herd_id),
@@ -436,6 +435,12 @@ class HorseController extends Controller
             'state' => HorseState::Public,
             'approved_at' => now(),
         ];
+
+        if ($request->filled('age_years') || $request->filled('age_months')) {
+            $years = (int) $request->input('age_years', $horse->age_years);
+            $months = (int) $request->input('age_months', $horse->age_months_part);
+            $updateData['age_months'] = Horse::monthsFromYearsAndMonths($years, $months);
+        }
 
         $horse->update($updateData);
 

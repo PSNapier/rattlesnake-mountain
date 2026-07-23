@@ -18,6 +18,10 @@ it('updates lifecycle settings', function () {
         'horse_auto_age_game_years' => 1.5,
         'horse_auto_health_roll_min' => 10,
         'horse_auto_health_roll_max' => 90,
+        'npc_death_age_threshold' => 15,
+        'npc_death_base_percent' => 2,
+        'npc_death_double_every_years' => 2,
+        'npc_death_cap_percent' => 95,
     ])
         ->assertRedirect()
         ->assertSessionHas('success');
@@ -41,5 +45,9 @@ it('forbids regular users', function () {
         'horse_auto_age_game_years' => 1,
         'horse_auto_health_roll_min' => 0,
         'horse_auto_health_roll_max' => 100,
+        'npc_death_age_threshold' => 15,
+        'npc_death_base_percent' => 2,
+        'npc_death_double_every_years' => 2,
+        'npc_death_cap_percent' => 95,
     ])->assertForbidden();
 });

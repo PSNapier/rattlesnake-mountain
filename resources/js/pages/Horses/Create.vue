@@ -46,7 +46,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const form = useForm({
 	name: '',
-	age: 0,
+	age_years: 0,
+	age_months: 0,
 	design_link: '',
 	geno: '',
 	herd_id: null,
@@ -106,25 +107,47 @@ const handleImageUploadSuccess = (data: { url: string }) => {
 								</p>
 							</div>
 
-							<div>
-								<Label for="age">Age</Label>
-								<Input
-									id="age"
-									v-model.number="form.age"
-									type="number"
-									min="0"
-									max="50"
-									placeholder="Enter horse age"
-									:class="{
-										'border-red-500':
-											form.errors.age,
-									}"
-									required />
-								<p
-									v-if="form.errors.age"
-									class="mt-1 text-sm text-red-500">
-									{{ form.errors.age }}
-								</p>
+							<div class="grid grid-cols-2 gap-4">
+								<div>
+									<Label for="age_years">Age (years)</Label>
+									<Input
+										id="age_years"
+										v-model.number="form.age_years"
+										type="number"
+										min="0"
+										max="50"
+										placeholder="Years"
+										:class="{
+											'border-red-500':
+												form.errors.age_years,
+										}"
+										required />
+									<p
+										v-if="form.errors.age_years"
+										class="mt-1 text-sm text-red-500">
+										{{ form.errors.age_years }}
+									</p>
+								</div>
+								<div>
+									<Label for="age_months">Age (months)</Label>
+									<Input
+										id="age_months"
+										v-model.number="form.age_months"
+										type="number"
+										min="0"
+										max="11"
+										placeholder="Months"
+										:class="{
+											'border-red-500':
+												form.errors.age_months,
+										}"
+										required />
+									<p
+										v-if="form.errors.age_months"
+										class="mt-1 text-sm text-red-500">
+										{{ form.errors.age_months }}
+									</p>
+								</div>
 							</div>
 
 							<div>

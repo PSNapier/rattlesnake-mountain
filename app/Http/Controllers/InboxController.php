@@ -79,7 +79,9 @@ class InboxController extends Controller
                 'horse' => [
                     'id' => $message->horse->id,
                     'name' => $message->horse->name,
-                    'age' => $message->horse->age,
+                    'age_years' => $message->horse->age_years,
+                    'age_months' => $message->horse->age_months_part,
+                    'formatted_age' => $message->horse->formatted_age,
                     'geno' => $message->horse->geno,
                     'herd_id' => $message->horse->herd_id,
                     'design_link' => $message->horse->design_link,
@@ -172,8 +174,16 @@ class InboxController extends Controller
                     $updateData[$field] = $value;
                 }
             }
-            $allowed = ['name', 'age', 'geno', 'herd_id', 'design_link'];
+            $allowed = ['name', 'age_years', 'age_months', 'geno', 'herd_id', 'design_link'];
             $updateData = array_intersect_key($updateData, array_flip($allowed));
+
+            if (array_key_exists('age_years', $updateData) || array_key_exists('age_months', $updateData)) {
+                $years = (int) ($updateData['age_years'] ?? $horse->age_years);
+                $months = (int) ($updateData['age_months'] ?? $horse->age_months_part);
+                $updateData['age_months'] = Horse::monthsFromYearsAndMonths($years, $months);
+                unset($updateData['age_years']);
+            }
+
             if (! empty($updateData)) {
                 $horse->update($updateData);
             }
@@ -183,10 +193,9 @@ class InboxController extends Controller
         if ($horse->public_horse_id) {
             $publicHorse = Horse::find($horse->public_horse_id);
             if ($publicHorse) {
-                // Merge pending changes (with admin edits applied) into public horse
+                // Merge pending changes into public horse; keep public age.
                 $publicHorse->update([
                     'name' => $horse->name,
-                    'age' => $horse->age,
                     'geno' => $horse->geno,
                     'herd_id' => $horse->herd_id,
                     'design_link' => $horse->design_link,

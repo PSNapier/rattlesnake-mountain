@@ -23,7 +23,8 @@ it('can create a horse', function () {
 
     $horseData = [
         'name' => 'Test Horse',
-        'age' => 5,
+        'age_years' => 5,
+        'age_months' => 0,
         'geno' => 'AaBbCc',
         'design_link' => 'https://example.com/horse.jpg',
         'herd_id' => $herd->id,
@@ -60,7 +61,8 @@ it('can update a horse', function () {
 
     $updateData = [
         'name' => 'Updated Horse Name',
-        'age' => 6,
+        'age_years' => 6,
+        'age_months' => 0,
         'geno' => 'AaBbCc',
         'design_link' => 'https://example.com/horse.jpg',
         'herd_id' => null,
@@ -77,7 +79,7 @@ it('can update a horse', function () {
     $this->assertDatabaseHas('horses', [
         'id' => $horse->id,
         'name' => 'Updated Horse Name',
-        'age' => 6,
+        'age_months' => 72,
     ]);
 });
 
@@ -97,7 +99,8 @@ it('prevents unauthorized access to horse management', function () {
     // Test update
     $response = $this->actingAs($this->user)->put(route('horses.update', $horse), [
         'name' => 'Hacked Name',
-        'age' => 1,
+        'age_years' => 1,
+        'age_months' => 0,
         'geno' => 'AaBbCc',
         'design_link' => null,
         'herd_id' => null,
@@ -121,7 +124,8 @@ it('allows admin to manage any horse', function () {
 
     $updateData = [
         'name' => 'Admin Updated Name',
-        'age' => 10,
+        'age_years' => 10,
+        'age_months' => 0,
         'geno' => 'AaBbCc',
         'design_link' => null,
         'herd_id' => null,
@@ -138,7 +142,7 @@ it('allows admin to manage any horse', function () {
     $this->assertDatabaseHas('horses', [
         'id' => $horse->id,
         'name' => 'Admin Updated Name',
-        'age' => 10,
+        'age_months' => 120,
     ]);
 });
 
@@ -150,7 +154,8 @@ it('creates pending version when editing public horse', function () {
 
     $updateData = [
         'name' => 'Updated Name',
-        'age' => 10,
+        'age_years' => 10,
+        'age_months' => 0,
         'geno' => 'AaBbCc',
         'design_link' => null,
         'herd_id' => null,
@@ -195,7 +200,8 @@ it('updates existing pending version when editing public horse again', function 
 
     $updateData = [
         'name' => 'Updated Name Again',
-        'age' => 15,
+        'age_years' => 15,
+        'age_months' => 0,
         'geno' => 'AaBbCc',
         'design_link' => null,
         'herd_id' => null,
@@ -214,7 +220,7 @@ it('updates existing pending version when editing public horse again', function 
     $this->assertDatabaseHas('horses', [
         'id' => $pendingHorse->id,
         'name' => 'Updated Name Again',
-        'age' => 15,
+        'age_months' => 180,
     ]);
 
     $this->assertDatabaseCount('horses', 2); // Only public and pending, no new one
@@ -227,7 +233,7 @@ it('allows admin to approve pending horse changes', function () {
         ->create([
             'state' => HorseState::Public,
             'name' => 'Original Name',
-            'age' => 5,
+            'age_months' => 5,
         ]);
 
     $pendingHorse = Horse::factory()
@@ -237,7 +243,7 @@ it('allows admin to approve pending horse changes', function () {
             'state' => HorseState::Pending,
             'public_horse_id' => $publicHorse->id,
             'name' => 'Updated Name',
-            'age' => 10,
+            'age_months' => 10,
         ]);
 
     $response = $this->actingAs($this->admin)->post(route('horses.approve', $pendingHorse));
@@ -248,7 +254,7 @@ it('allows admin to approve pending horse changes', function () {
     $this->assertDatabaseHas('horses', [
         'id' => $publicHorse->id,
         'name' => 'Updated Name',
-        'age' => 10,
+        'age_months' => 5,
         'state' => HorseState::Public->value,
     ]);
 
@@ -302,7 +308,7 @@ it('marks pending edit as archived and allows editing public horse', function ()
         ->create([
             'state' => HorseState::Public,
             'name' => 'Original Name',
-            'age' => 5,
+            'age_months' => 5,
         ]);
 
     $pendingEdit = Horse::factory()
@@ -312,7 +318,7 @@ it('marks pending edit as archived and allows editing public horse', function ()
             'state' => HorseState::Pending,
             'public_horse_id' => $publicHorse->id,
             'name' => 'Pending Edit Name',
-            'age' => 10,
+            'age_months' => 10,
         ]);
 
     // Archive the pending edit
@@ -334,7 +340,7 @@ it('marks pending edit as archived and allows editing public horse', function ()
     $this->assertDatabaseHas('horses', [
         'id' => $publicHorse->id,
         'name' => 'Original Name',
-        'age' => 5,
+        'age_months' => 5,
         'state' => HorseState::Public->value,
     ]);
 
@@ -350,7 +356,8 @@ it('marks pending edit as archived and allows editing public horse', function ()
     // Should be able to create a new pending edit
     $updateData = [
         'name' => 'New Pending Edit',
-        'age' => 15,
+        'age_years' => 15,
+        'age_months' => 0,
         'geno' => 'AaBbCc',
         'design_link' => null,
         'herd_id' => null,

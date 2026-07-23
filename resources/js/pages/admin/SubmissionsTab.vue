@@ -60,7 +60,9 @@ interface Submission {
 	public_horse_id?: number | null;
 	is_edit?: boolean;
 	design_link?: string | null;
-	age?: number;
+	age_years?: number;
+	age_months?: number;
+	formatted_age?: string;
 	geno?: string;
 	herd_id?: number | null;
 	message?: Message | null;
@@ -86,7 +88,8 @@ const reviewNotes = ref('');
 // Admin-editable form state
 const adminForm = ref({
 	name: '',
-	age: 0,
+	age_years: 0,
+	age_months: 0,
 	geno: '',
 	herd_id: null as number | null,
 	design_link: '',
@@ -98,7 +101,8 @@ const initializeAdminForm = (submission: Submission): void => {
 
 	adminForm.value = {
 		name: (adminEdits?.name as string) ?? submission.name ?? '',
-		age: (adminEdits?.age as number) ?? submission.age ?? 0,
+		age_years: (adminEdits?.age_years as number) ?? submission.age_years ?? 0,
+		age_months: (adminEdits?.age_months as number) ?? submission.age_months ?? 0,
 		geno: (adminEdits?.geno as string) ?? submission.geno ?? '',
 		herd_id:
 			(adminEdits?.herd_id as number) ?? submission.herd_id ?? null,
@@ -126,7 +130,8 @@ const hasAnyEdits = computed((): boolean => {
 	}
 	return (
 		isFieldChanged('name') ||
-		isFieldChanged('age') ||
+		isFieldChanged('age_years') ||
+		isFieldChanged('age_months') ||
 		isFieldChanged('geno') ||
 		isFieldChanged('herd_id') ||
 		isFieldChanged('design_link')
@@ -290,7 +295,8 @@ const handleContactOwner = (): void => {
 	const formData = {
 		notes: reviewNotes.value,
 		name: adminForm.value.name,
-		age: adminForm.value.age,
+		age_years: adminForm.value.age_years,
+		age_months: adminForm.value.age_months,
 		geno: adminForm.value.geno,
 		herd_id: adminForm.value.herd_id,
 		design_link: adminForm.value.design_link,
@@ -315,7 +321,8 @@ const handleApprove = (): void => {
 
 	const formData = {
 		name: adminForm.value.name,
-		age: adminForm.value.age,
+		age_years: adminForm.value.age_years,
+		age_months: adminForm.value.age_months,
 		geno: adminForm.value.geno,
 		herd_id: adminForm.value.herd_id,
 		design_link: adminForm.value.design_link,
@@ -669,29 +676,46 @@ const handleApprove = (): void => {
 						<div
 							:class="[
 								'-m-1 grid grid-cols-2 gap-4 rounded border p-3 transition-colors',
-								isFieldChanged('age')
+								isFieldChanged('age_years') || isFieldChanged('age_months')
 									? 'border-red-200 bg-red-50'
 									: 'border-transparent bg-transparent',
 							]">
 							<div>
 								<Label class="text-xs text-gray-500">Age</Label>
 								<p class="mt-1 text-sm">
-									{{ currentSubmission.age ?? '—' }}
+									{{ currentSubmission.formatted_age ?? '—' }}
 								</p>
 							</div>
-							<div>
-								<Label
-									for="admin-age"
-									class="text-xs text-gray-500">
-									Age</Label>
-								<div class="mt-1">
-									<Input
-										id="admin-age"
-										v-model.number="adminForm.age"
-										type="number"
-										min="0"
-										max="50"
-										class="w-full" />
+							<div class="grid grid-cols-2 gap-2">
+								<div>
+									<Label
+										for="admin-age-years"
+										class="text-xs text-gray-500">
+										Years</Label>
+									<div class="mt-1">
+										<Input
+											id="admin-age-years"
+											v-model.number="adminForm.age_years"
+											type="number"
+											min="0"
+											max="50"
+											class="w-full" />
+									</div>
+								</div>
+								<div>
+									<Label
+										for="admin-age-months"
+										class="text-xs text-gray-500">
+										Months</Label>
+									<div class="mt-1">
+										<Input
+											id="admin-age-months"
+											v-model.number="adminForm.age_months"
+											type="number"
+											min="0"
+											max="11"
+											class="w-full" />
+									</div>
 								</div>
 							</div>
 						</div>

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\HorseState;
+use App\Enums\NpcDeathProposalStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -20,18 +21,27 @@ class Horse extends Model
         'name',
         'bloodline',
         'progeny',
-        'age',
+        'age_months',
         'design_link',
         'stats',
         'geno',
         'herd_id',
         'inventory',
         'equipment',
+        'is_npc',
+        'is_claimable',
+        'died_at',
         'state',
         'public_horse_id',
         'approved_at',
         'archived_at',
         'contacted_at',
+    ];
+
+    protected $appends = [
+        'age_years',
+        'age_months_part',
+        'formatted_age',
     ];
 
     protected function casts(): array
@@ -43,10 +53,29 @@ class Horse extends Model
             'inventory' => 'array',
             'equipment' => 'array',
             'state' => HorseState::class,
+            'is_npc' => 'boolean',
+            'is_claimable' => 'boolean',
+            'age_months' => 'integer',
             'approved_at' => 'datetime',
             'archived_at' => 'datetime',
             'contacted_at' => 'datetime',
+            'died_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (Horse $horse): void {
+            if ($horse->isDirty('owner_id')) {
+                $horse->syncNpcFlagsFromOwner(voidProposals: false);
+            }
+        });
+
+        static::saved(function (Horse $horse): void {
+            if ($horse->wasChanged('owner_id') && ! $horse->is_npc) {
+                $horse->voidPendingDeathProposals();
+            }
+        });
     }
 
     public function owner(): BelongsTo
@@ -84,6 +113,87 @@ class Horse extends Model
         return $this->hasOne(AdminSubmissionLog::class)->latestOfMany();
     }
 
+    public function deathProposals(): HasMany
+    {
+        return $this->hasMany(NpcDeathProposal::class);
+    }
+
+    public function getAgeYearsAttribute(): int
+    {
+        return intdiv((int) $this->age_months, 12);
+    }
+
+    public function getAgeMonthsPartAttribute(): int
+    {
+        return ((int) $this->age_months) % 12;
+    }
+
+    public static function formatAgeMonths(int $ageMonths): string
+    {
+        $years = intdiv($ageMonths, 12);
+        $months = $ageMonths % 12;
+
+        $yearLabel = $years === 1 ? '1 year' : "{$years} years";
+        $monthLabel = $months === 1 ? '1 month' : "{$months} months";
+
+        if ($months === 0) {
+            return $yearLabel;
+        }
+
+        if ($years === 0) {
+            return $monthLabel;
+        }
+
+        return "{$yearLabel}, {$monthLabel}";
+    }
+
+    public function getFormattedAgeAttribute(): string
+    {
+        return self::formatAgeMonths((int) $this->age_months);
+    }
+
+    public static function monthsFromYearsAndMonths(int $years, int $months): int
+    {
+        return ($years * 12) + $months;
+    }
+
+    public function syncNpcFlagsFromOwner(bool $voidProposals = true): void
+    {
+        $sanctuaryId = User::query()->where('is_sanctuary', true)->value('id');
+        $isSanctuaryOwned = $sanctuaryId !== null && (int) $this->owner_id === (int) $sanctuaryId;
+
+        if ($isSanctuaryOwned) {
+            $this->is_npc = true;
+            if (! $this->exists || $this->isDirty('owner_id')) {
+                $this->is_claimable = true;
+            }
+
+            return;
+        }
+
+        $wasNpc = $this->is_npc;
+        $this->is_npc = false;
+
+        if ($voidProposals && $wasNpc) {
+            $this->voidPendingDeathProposals();
+        }
+    }
+
+    public function voidPendingDeathProposals(): void
+    {
+        $this->deathProposals()
+            ->where('status', NpcDeathProposalStatus::Pending)
+            ->update([
+                'status' => NpcDeathProposalStatus::Voided,
+                'resolved_at' => now(),
+            ]);
+    }
+
+    public function isAlive(): bool
+    {
+        return $this->died_at === null;
+    }
+
     public function scopePublic(Builder $query): Builder
     {
         return $query->where('state', HorseState::Public);
@@ -92,6 +202,11 @@ class Horse extends Model
     public function scopePending(Builder $query): Builder
     {
         return $query->where('state', HorseState::Pending);
+    }
+
+    public function scopeAlive(Builder $query): Builder
+    {
+        return $query->whereNull('died_at');
     }
 
     public function scopeActivePending(Builder $query): Builder

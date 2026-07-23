@@ -8,7 +8,9 @@ import { Head, Link, router } from '@inertiajs/vue3';
 interface Horse {
 	id: number;
 	name: string;
-	age: number;
+	age_years: number;
+	age_months_part: number;
+	formatted_age: string;
 	geno: string;
 	design_link?: string;
 	owner_id: number;
@@ -224,7 +226,7 @@ const deleteHerd = () => {
 							<CardContent>
 								<div class="space-y-1">
 									<p class="text-sm text-gray-600">
-										Age: {{ horse.age }}
+										Age: {{ horse.formatted_age }}
 									</p>
 									<p class="text-sm text-gray-600">
 										Geno: {{ horse.geno }}

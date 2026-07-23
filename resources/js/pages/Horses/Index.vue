@@ -18,7 +18,9 @@ interface User {
 interface Horse {
 	id: number;
 	name: string;
-	age: number;
+	age_years: number;
+	age_months_part: number;
+	formatted_age: string;
 	geno: string;
 	design_link?: string;
 	owner_id: number;
@@ -111,7 +113,7 @@ const canEditHorse = (horse: Horse): boolean => {
 					<CardContent>
 						<div class="space-y-2">
 							<p class="text-sm text-gray-600">
-								<strong>Age:</strong> {{ horse.age }}
+								<strong>Age:</strong> {{ horse.formatted_age }}
 							</p>
 							<p class="text-sm text-gray-600">
 								<strong>Geno:</strong> {{ horse.geno }}

@@ -75,6 +75,10 @@ it('enforces per-role access for each admin area', function (
             'horse_auto_age_game_years' => 1.5,
             'horse_auto_health_roll_min' => 10,
             'horse_auto_health_roll_max' => 90,
+            'npc_death_age_threshold' => 15,
+            'npc_death_base_percent' => 2,
+            'npc_death_double_every_years' => 2,
+            'npc_death_cap_percent' => 95,
         ],
         'shop' => [
             'item_id' => Item::create([

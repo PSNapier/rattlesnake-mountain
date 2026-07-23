@@ -99,7 +99,7 @@ class SubmissionController extends Controller
 
         // Create a message for the owner
         $adminEdits = [];
-        $adminForm = $request->only(['name', 'age', 'geno', 'herd_id', 'design_link']);
+        $adminForm = $request->only(['name', 'age_years', 'age_months', 'geno', 'herd_id', 'design_link']);
         foreach ($adminForm as $field => $value) {
             if ($value !== null && $value !== $horse->$field) {
                 $adminEdits[$field] = $value;

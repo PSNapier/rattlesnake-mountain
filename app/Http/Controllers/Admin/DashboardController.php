@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\HorseState;
+use App\Enums\NpcDeathProposalStatus;
 use App\Http\Controllers\Controller;
 use App\Models\CmsPage;
 use App\Models\Horse;
@@ -10,6 +11,7 @@ use App\Models\Item;
 use App\Models\LifecycleSetting;
 use App\Models\MenuItem;
 use App\Models\Message;
+use App\Models\NpcDeathProposal;
 use App\Models\Role;
 use App\Models\ShopListing;
 use App\Models\User;
@@ -89,7 +91,28 @@ class DashboardController extends Controller
                 'horse_auto_age_game_years' => $lifecycleSettings->horse_auto_age_game_years,
                 'horse_auto_health_roll_min' => $lifecycleSettings->horse_auto_health_roll_min,
                 'horse_auto_health_roll_max' => $lifecycleSettings->horse_auto_health_roll_max,
+                'npc_death_age_threshold' => $lifecycleSettings->npc_death_age_threshold,
+                'npc_death_base_percent' => $lifecycleSettings->npc_death_base_percent,
+                'npc_death_double_every_years' => $lifecycleSettings->npc_death_double_every_years,
+                'npc_death_cap_percent' => $lifecycleSettings->npc_death_cap_percent,
             ] : null;
+
+            $props['npcDeathProposals'] = NpcDeathProposal::query()
+                ->with(['horse:id,name,age_months,owner_id'])
+                ->where('status', NpcDeathProposalStatus::Pending)
+                ->latest('rolled_at')
+                ->get()
+                ->map(fn (NpcDeathProposal $proposal) => [
+                    'id' => $proposal->id,
+                    'horse_id' => $proposal->horse_id,
+                    'horse_name' => $proposal->horse?->name,
+                    'age_months_at_roll' => $proposal->age_months_at_roll,
+                    'formatted_age' => Horse::formatAgeMonths($proposal->age_months_at_roll),
+                    'chance_percent' => $proposal->chance_percent,
+                    'rolled_at' => $proposal->rolled_at?->toIso8601String(),
+                ])
+                ->values()
+                ->all();
         }
 
         if ($user->can('admin.users')) {
@@ -199,7 +222,10 @@ class DashboardController extends Controller
                 'public_horse_id' => $horse->public_horse_id,
                 'is_edit' => $horse->public_horse_id !== null,
                 'design_link' => $horse->design_link,
-                'age' => $horse->age,
+                'age_years' => $horse->age_years,
+                'age_months' => $horse->age_months_part,
+                'age_months_total' => $horse->age_months,
+                'formatted_age' => $horse->formatted_age,
                 'geno' => $horse->geno,
                 'herd_id' => $horse->herd_id,
                 'message' => $message ? [

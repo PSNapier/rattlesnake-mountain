@@ -12,3 +12,5 @@ Artisan::command('inspire', function () {
 Schedule::command('model:prune', [
     '--model' => [CharacterImage::class],
 ])->daily();
+
+Schedule::command('horses:lifecycle')->daily();

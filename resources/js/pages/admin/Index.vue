@@ -48,6 +48,10 @@ interface Submission {
 	is_edit?: boolean;
 	design_link?: string | null;
 	age?: number;
+	age_years?: number;
+	age_months?: number;
+	age_months_part?: number;
+	formatted_age?: string;
 	geno?: string;
 	herd_id?: number | null;
 	message?: Message | null;
@@ -106,6 +110,20 @@ interface LifecycleSettings {
 	horse_auto_age_game_years: number;
 	horse_auto_health_roll_min: number;
 	horse_auto_health_roll_max: number;
+	npc_death_age_threshold: number;
+	npc_death_base_percent: number;
+	npc_death_double_every_years: number;
+	npc_death_cap_percent: number;
+}
+
+interface NpcDeathProposal {
+	id: number;
+	horse_id: number;
+	horse_name: string | null;
+	age_months_at_roll: number;
+	formatted_age: string | null;
+	chance_percent: number;
+	rolled_at: string | null;
 }
 
 type AdminTab = 'submissions' | 'rollers' | 'users' | 'items' | 'shop' | 'lifecycle' | 'cms';
@@ -121,6 +139,7 @@ interface Props {
 	cmsPages?: unknown[];
 	menuItems?: unknown[];
 	lifecycleSettings?: LifecycleSettings | null;
+	npcDeathProposals?: NpcDeathProposal[];
 	canManageRoleMatrix?: boolean;
 	roleCapabilityMatrix?: Record<string, string[]> | null;
 	capabilityAreas?: string[];
@@ -310,7 +329,8 @@ onMounted(() => {
 
 			<LifecycleTab
 				v-if="activeTab === 'lifecycle' && canAccess('lifecycle')"
-				:settings="props.lifecycleSettings ?? undefined" />
+				:settings="props.lifecycleSettings ?? undefined"
+				:proposals="props.npcDeathProposals ?? []" />
 
 			<ShopTab
 				v-if="activeTab === 'shop' && canAccess('shop')"
