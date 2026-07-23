@@ -1,5 +1,42 @@
 # Roadmap Done
 
+## [004] Lifecycle Automation
+
+**Status:** `done`
+**Priority:** high
+**Depends On:** none
+
+### Goal
+
+Horses auto-age on the schedule stored in `lifecycle_settings`, and old NPC death rolls produce **proposals** that admins confirm before horses are marked dead. Health roll *application* deferred to [022].
+
+### Scope
+
+-   Artisan command + scheduler entry reading `LifecycleSetting`
+-   Age horses by configured game-years each run (years + months via `age_months`)
+-   NPC death-roll proposals queued for admin confirmation in Lifecycle tab (not auto-delete)
+-   Logging of aging/death outcomes for support
+-   Health roll settings retained in UI but not applied (deferred → [022])
+-   NOT in scope: auto-freeze ([018]); player PvP death; fully automatic NPC deletion without review; applying health ± from injury
+
+### Technical Notes
+
+-   Model: [`app/Models/LifecycleSetting.php`](app/Models/LifecycleSetting.php)
+-   Service: [`app/Services/LifecycleAgingService.php`](app/Services/LifecycleAgingService.php)
+-   UI: [`resources/js/pages/admin/LifecycleTab.vue`](resources/js/pages/admin/LifecycleTab.vue)
+-   Command: `horses:lifecycle` scheduled daily in [`routes/console.php`](routes/console.php)
+-   NPC = `is_npc` (auto for Sanctuary-owned; cleared on claim); soft death via `died_at`
+
+### Acceptance Criteria
+
+-   [x] Scheduled command ages eligible horses per settings and advances next-update date
+-   [x] Health roll settings persist; application deferred to [022] (injury/HP + story progression)
+-   [x] NPC death proposals appear for admin confirm/reject; confirm applies death state
+-   [x] Pest tests cover aging math, proposal creation, and confirm path
+-   [x] Dry-run or admin “run now” supported for staging
+
+---
+
 ## [021] Admin-Managed User Role Matrix
 
 **Status:** `done`

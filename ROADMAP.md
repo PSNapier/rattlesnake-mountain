@@ -1,39 +1,37 @@
 # Roadmap
 
-<!-- Next task number: [022] -->
+<!-- Next task number: [023] -->
 
-## [004] Lifecycle Automation
+## [022] Lifecycle Health Roll Application
 
 **Status:** `next`
 **Priority:** high
-**Depends On:** none
+**Depends On:** [004]
 
 ### Goal
 
-Horses auto-age on the schedule stored in `lifecycle_settings`, health rolls apply, and old NPC death rolls produce **proposals** that admins confirm before horses are marked dead.
+On each lifecycle aging cycle, health rolls from `lifecycle_settings` add or subtract horse health based on injury state (once HP/injury exists), instead of settings-only deferred behavior left by [004].
 
 ### Scope
 
--   Artisan command + scheduler entry reading `LifecycleSetting`
--   Age horses by configured game-years each run; apply health roll within min/max
--   NPC death-roll proposals queued for admin confirmation in Lifecycle tab (not auto-delete)
--   Logging of aging/health/death outcomes for support
--   NOT in scope: auto-freeze ([018]); player PvP death; fully automatic NPC deletion without review
+-   Apply min/max health roll from Lifecycle settings during `horses:lifecycle` / Run now
+-   Direction of change depends on whether the horse is injured
+-   Persist current health (or equivalent) on the horse; log outcomes for support
+-   NOT in scope: full story-progression roller UI; PvP injury; redesigning lifespan modifiers beyond what’s needed for the roll
 
 ### Technical Notes
 
--   Model: [`app/Models/LifecycleSetting.php`](app/Models/LifecycleSetting.php)
--   UI: [`resources/js/pages/admin/LifecycleTab.vue`](resources/js/pages/admin/LifecycleTab.vue) (NPC deaths currently placeholder)
--   Scheduler today: only `model:prune` in [`routes/console.php`](routes/console.php)
--   Define “NPC horse” clearly (e.g. Sanctuary-owned / unclaimed flag) before coding
+-   Deferred from [004]: settings + UI already exist; runner intentionally skips apply
+-   Needs injury / HP model (likely with story progression) before coding
+-   Service: [`app/Services/LifecycleAgingService.php`](app/Services/LifecycleAgingService.php)
+-   Settings: `horse_auto_health_roll_min` / `horse_auto_health_roll_max` on `LifecycleSetting`
 
 ### Acceptance Criteria
 
--   [ ] Scheduled command ages eligible horses per settings and advances next-update date
--   [ ] Health rolls update horse health within configured bounds
--   [ ] NPC death proposals appear for admin confirm/reject; confirm applies death state
--   [ ] Pest tests cover aging math, proposal creation, and confirm path
--   [ ] Dry-run or admin “run now” supported for staging
+-   [ ] Lifecycle run updates living horses’ health within configured min/max using injury-aware +/- rules
+-   [ ] Uninjured / injured paths covered by Pest tests
+-   [ ] Outcomes logged for support
+-   [ ] Lifecycle UI no longer labels health rolls as deferred-only
 
 ---
 
