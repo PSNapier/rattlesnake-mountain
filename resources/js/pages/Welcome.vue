@@ -4,7 +4,32 @@ import { linkDict } from '@/composables/useLinkDictionary';
 import { Head } from '@inertiajs/vue3';
 import Footer from '../components/custom/Footer.vue';
 import HeaderNav from '../components/custom/HeaderNav.vue';
-// import { ref } from 'vue';
+
+interface Announcement {
+	id: number;
+	title: string;
+	body: string;
+	published_at: string | null;
+}
+
+const props = withDefaults(
+	defineProps<{
+		announcements?: Announcement[];
+	}>(),
+	{ announcements: () => [] },
+);
+
+const formatPublishedAt = (published: string | null): string => {
+	if (!published) {
+		return '';
+	}
+
+	return new Date(published).toLocaleString('default', {
+		month: 'long',
+		day: 'numeric',
+		year: 'numeric',
+	});
+};
 
 function cycleBackground() {
 	const heroImg = document.querySelector('.hero-img') as HTMLElement;
@@ -79,22 +104,25 @@ function cycleBackground() {
 
 		<div class="box">
 			<h2>News</h2>
-			mb-2
-			<h5 class="border-new-orleans-500 mb-2 border-b-1">
-				{{
-					new Date().toLocaleString('default', {
-						month: 'long',
-						year: 'numeric',
-					})
-				}}
-			</h5>
-			<p>
-				An activity check is now open on our Discord. Be sure to
-				respond to it by September 30th, 2023 @ 11:59PM MT (Mountain
-				Time). Otherwise, we're currently looking for 2 Story
-				Progression Rollers to help out! If you're interested in
-				applying, head over here.
+
+			<p v-if="props.announcements.length === 0">
+				No announcements right now. Check back soon.
 			</p>
+
+			<div
+				v-for="announcement in props.announcements"
+				:key="announcement.id"
+				class="mb-4 last:mb-0">
+				<h5 class="border-new-orleans-500 mb-2 border-b-1">
+					{{ announcement.title }}
+				</h5>
+				<p class="whitespace-pre-line">{{ announcement.body }}</p>
+				<p
+					v-if="announcement.published_at"
+					class="mt-1 text-sm italic">
+					{{ formatPublishedAt(announcement.published_at) }}
+				</p>
+			</div>
 		</div>
 
 		<div class="box text-center lg:col-span-3">

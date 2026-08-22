@@ -41,44 +41,6 @@ Players can offer and accept simple item transfers using the existing `user_item
 
 ---
 
-## [007] Announcements System
-
-**Status:** `next`
-**Depends On:** none
-
-### Goal
-
-Staff can post announcements that appear on the Home page, replacing the hardcoded September 2023 news box.
-
-### Scope
-
-- `Announcement` model (title, body, published_at, author)
-- Admin CRUD tab or section
-- Home displays latest published announcement(s)
-- Remove stale hardcoded news copy from [`Welcome.vue`](resources/js/pages/Welcome.vue)
-- NOT in scope: CMS rich-text/WYSIWYG ([019]); making entire Home CMS-editable
-
-### Technical Notes
-
-- Home is not a `CmsPage` — wire props from controller/route closure for `/`
-- Keep markdown or plain text consistent with existing CMS rendering if reused
-
-### Acceptance Criteria
-
-- [ ] Admin can create/update/unpublish announcements
-- [ ] Home shows current published announcement(s); no 2023 hardcoded activity-check copy
-- [ ] Guests can read announcements; only staff can manage
-- [ ] Pest tests for public display and admin authz
-
-### Tests
-
-- [ ] `tests/Feature/AnnouncementTest.php::it_shows_the_latest_published_announcement_on_home`
-- [ ] `tests/Feature/AnnouncementTest.php::it_hides_unpublished_announcements_from_guests`
-- [ ] `tests/Feature/Admin/AdminAnnouncementTest.php::it_lets_staff_create_and_unpublish_announcements`
-- [ ] `tests/Feature/Admin/AdminAnnouncementTest.php::it_forbids_non_staff_from_managing_announcements`
-
----
-
 ## [008] Design Upload Terms and Graveyard Option
 
 **Status:** `next`

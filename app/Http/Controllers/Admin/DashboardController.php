@@ -7,6 +7,7 @@ use App\Enums\BreedingSlotStatus;
 use App\Enums\HorseState;
 use App\Enums\NpcDeathProposalStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Announcement;
 use App\Models\BreedingRequest;
 use App\Models\BreedingSlot;
 use App\Models\CmsPage;
@@ -84,6 +85,22 @@ class DashboardController extends Controller
                         'sort_order' => $child->sort_order,
                     ])->values()->all(),
                 ])->values()->all();
+
+            $props['announcements'] = Announcement::query()
+                ->with('author:id,name')
+                ->orderByDesc('published_at')
+                ->orderByDesc('id')
+                ->limit(50)
+                ->get()
+                ->map(fn (Announcement $announcement) => [
+                    'id' => $announcement->id,
+                    'title' => $announcement->title,
+                    'body' => $announcement->body,
+                    'published_at' => $announcement->published_at?->toIso8601String(),
+                    'author_name' => $announcement->author?->name,
+                ])
+                ->values()
+                ->all();
         }
 
         if ($user->can('admin.lifecycle')) {

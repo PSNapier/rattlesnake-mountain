@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\BreedingController as AdminBreedingController;
 use App\Http\Controllers\Admin\CmsController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\RedeemCreamPearlVoucherController;
 use App\Http\Controllers\RedeemVoucherController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\StaticPageController;
+use App\Models\Announcement;
 use App\Models\Herd;
 use App\Models\Horse;
 use App\Models\Item;
@@ -108,6 +110,10 @@ Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
         Route::post('/admin/cms/menu/reorder', [CmsController::class, 'reorderMenuItems'])->name('admin.cms.menu.reorder');
         Route::put('/admin/cms/menu/{menuItem}', [CmsController::class, 'updateMenuItem'])->name('admin.cms.menu.update');
         Route::delete('/admin/cms/menu/{menuItem}', [CmsController::class, 'destroyMenuItem'])->name('admin.cms.menu.destroy');
+
+        Route::post('/admin/announcements', [AnnouncementController::class, 'store'])->name('admin.announcements.store');
+        Route::put('/admin/announcements/{announcement}', [AnnouncementController::class, 'update'])->name('admin.announcements.update');
+        Route::delete('/admin/announcements/{announcement}', [AnnouncementController::class, 'destroy'])->name('admin.announcements.destroy');
     });
 });
 
@@ -207,7 +213,9 @@ Route::get('/u/{user}/inventory', [InventoryController::class, 'publicIndex'])->
 Route::get('/dev-password', [DevPasswordController::class, 'show'])->name('dev-password');
 Route::post('/dev-password', [DevPasswordController::class, 'authenticate'])->name('dev-password.authenticate');
 
-Route::get('/', fn () => Inertia::render('Welcome'))->name('home');
+Route::get('/', fn () => Inertia::render('Welcome', [
+    'announcements' => Announcement::publicFeed(),
+]))->name('home');
 
 Route::get('/getting-started', [StaticPageController::class, 'show'])
     ->defaults('slug', 'getting-started')

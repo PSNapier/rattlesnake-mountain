@@ -1,5 +1,47 @@
 # Roadmap Done
 
+## [007] Announcements System
+
+**Status:** `done`
+**Depends On:** none
+
+### Goal
+
+Staff can post announcements that appear on the Home page, replacing the hardcoded September 2023 news box.
+
+### Scope
+
+- `Announcement` model (title, body, published_at, author)
+- Admin CRUD tab or section
+- Home displays latest published announcement(s)
+- Remove stale hardcoded news copy from [`Welcome.vue`](resources/js/pages/Welcome.vue)
+- NOT in scope: CMS rich-text/WYSIWYG ([019]); making entire Home CMS-editable
+
+### Technical Notes
+
+- Home is not a `CmsPage` — props come from the `/` route closure via `Announcement::publicFeed()`
+- Announcement body is plain text rendered with `whitespace-pre-line`; rich text is deferred to [019]
+- Admin CRUD lives as a section under the existing CMS tab and is gated by the `admin.cms` capability, so no new capability area or role-matrix migration was needed
+- `published_at` is normalised to the app timezone by a model mutator. Eloquent's plain `datetime` cast preserves the incoming offset, which would let a non-UTC admin publish hours early or late
+- Admin list is capped at the 50 most recent announcements with no pagination. Accepted: the public feed is bounded at 3 and the admin list only degrades past 50 rows
+
+### Acceptance Criteria
+
+- [x] Admin can create/update/unpublish announcements
+- [x] Home shows current published announcement(s); no 2023 hardcoded activity-check copy
+- [x] Guests can read announcements; only staff can manage
+- [x] Pest tests for public display and admin authz
+
+### Tests
+
+- [x] `tests/Feature/AnnouncementTest.php::it_shows_the_latest_published_announcement_on_home`
+- [x] `tests/Feature/AnnouncementTest.php::it_hides_unpublished_announcements_from_guests`
+- [x] `tests/Feature/Admin/AdminAnnouncementTest.php::it_lets_staff_create_and_unpublish_announcements`
+- [x] `tests/Feature/Admin/AdminAnnouncementTest.php::it_forbids_non_staff_from_managing_announcements`
+- [x] `tests/Feature/Admin/AdminAnnouncementTest.php::it_stores_an_offset_aware_publish_time_as_the_correct_instant`
+
+---
+
 ## [005] Breeding System (Punnett-Square)
 
 **Status:** `done`

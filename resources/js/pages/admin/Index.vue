@@ -2,6 +2,7 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import { computed, onMounted, ref, watch } from 'vue';
+import AnnouncementsSection from './AnnouncementsSection.vue';
 import CmsTab from './CmsTab.vue';
 import ItemsTab from './ItemsTab.vue';
 import LifecycleTab from './LifecycleTab.vue';
@@ -142,7 +143,22 @@ interface BreedingRequestAdminRow {
 	created_at?: string | null;
 }
 
-type AdminTab = 'submissions' | 'rollers' | 'users' | 'items' | 'shop' | 'lifecycle' | 'cms';
+interface AdminAnnouncement {
+	id: number;
+	title: string;
+	body: string;
+	published_at: string | null;
+	author_name: string | null;
+}
+
+type AdminTab =
+	| 'submissions'
+	| 'rollers'
+	| 'users'
+	| 'items'
+	| 'shop'
+	| 'lifecycle'
+	| 'cms';
 
 interface Props {
 	adminCapabilities: AdminTab[];
@@ -154,18 +170,32 @@ interface Props {
 	userSearch?: string;
 	cmsPages?: unknown[];
 	menuItems?: unknown[];
+	announcements?: AdminAnnouncement[];
 	lifecycleSettings?: LifecycleSettings | null;
 	npcDeathProposals?: NpcDeathProposal[];
 	breedingRequests?: { data: BreedingRequestAdminRow[] } | null;
 	horsesMissingSex?: { id: number; name: string; geno: string }[];
-	sanctuarySlots?: { id: number; horse_id: number; horse_name?: string | null; sequence: number }[];
+	sanctuarySlots?: {
+		id: number;
+		horse_id: number;
+		horse_name?: string | null;
+		sequence: number;
+	}[];
 	grantableUsers?: { id: number; name: string }[];
 	canManageRoleMatrix?: boolean;
 	roleCapabilityMatrix?: Record<string, string[]> | null;
 	capabilityAreas?: string[];
 }
 
-const ALL_TABS: AdminTab[] = ['submissions', 'rollers', 'users', 'items', 'shop', 'lifecycle', 'cms'];
+const ALL_TABS: AdminTab[] = [
+	'submissions',
+	'rollers',
+	'users',
+	'items',
+	'shop',
+	'lifecycle',
+	'cms',
+];
 
 const props = withDefaults(defineProps<Props>(), {
 	adminCapabilities: () => [],
@@ -175,6 +205,7 @@ const props = withDefaults(defineProps<Props>(), {
 	shopListings: () => [],
 	cmsPages: () => [],
 	menuItems: () => [],
+	announcements: () => [],
 	userSearch: '',
 	canManageRoleMatrix: false,
 	roleCapabilityMatrix: null,
@@ -191,9 +222,12 @@ const canManageRoleMatrix = computed(() => {
 	return Boolean(props.canManageRoleMatrix || props.auth?.user?.is_admin);
 });
 
-const canAccess = (tab: AdminTab): boolean => props.adminCapabilities.includes(tab);
+const canAccess = (tab: AdminTab): boolean =>
+	props.adminCapabilities.includes(tab);
 
-const firstAllowedTab = (): AdminTab => props.adminCapabilities.find((tab) => ALL_TABS.includes(tab)) ?? 'submissions';
+const firstAllowedTab = (): AdminTab =>
+	props.adminCapabilities.find((tab) => ALL_TABS.includes(tab)) ??
+	'submissions';
 
 const activeTab = ref<AdminTab>(firstAllowedTab());
 const activeTabStorageKey = 'admin.activeTab';
@@ -203,7 +237,9 @@ onMounted(() => {
 		return;
 	}
 
-	const storedTab = window.localStorage.getItem(activeTabStorageKey) as AdminTab | null;
+	const storedTab = window.localStorage.getItem(
+		activeTabStorageKey,
+	) as AdminTab | null;
 
 	if (storedTab && ALL_TABS.includes(storedTab) && canAccess(storedTab)) {
 		activeTab.value = storedTab;
@@ -238,7 +274,8 @@ onMounted(() => {
 			<div
 				v-if="(page.props.flash as any)?.success"
 				class="mb-4 rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
-				<p class="text-sm font-medium text-green-800 dark:text-green-200">
+				<p
+					class="text-sm font-medium text-green-800 dark:text-green-200">
 					{{ (page.props.flash as any)?.success }}
 				</p>
 			</div>
@@ -252,7 +289,7 @@ onMounted(() => {
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
 						activeTab === 'submissions'
 							? 'bg-shakespeare-500 text-white shadow-xs'
-							: 'border border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700',
+							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700 border',
 					]">
 					<span class="text-base">Submissions</span>
 				</button>
@@ -263,7 +300,7 @@ onMounted(() => {
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
 						activeTab === 'rollers'
 							? 'bg-shakespeare-500 text-white shadow-xs'
-							: 'border border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700',
+							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700 border',
 					]">
 					<span class="text-base">Rollers</span>
 				</button>
@@ -274,7 +311,7 @@ onMounted(() => {
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
 						activeTab === 'users'
 							? 'bg-shakespeare-500 text-white shadow-xs'
-							: 'border border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700',
+							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700 border',
 					]">
 					<span class="text-base">Users</span>
 				</button>
@@ -285,7 +322,7 @@ onMounted(() => {
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
 						activeTab === 'items'
 							? 'bg-shakespeare-500 text-white shadow-xs'
-							: 'border border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700',
+							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700 border',
 					]">
 					<span class="text-base">Items</span>
 				</button>
@@ -296,7 +333,7 @@ onMounted(() => {
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
 						activeTab === 'shop'
 							? 'bg-shakespeare-500 text-white shadow-xs'
-							: 'border border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700',
+							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700 border',
 					]">
 					<span class="text-base">Shop</span>
 				</button>
@@ -307,7 +344,7 @@ onMounted(() => {
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
 						activeTab === 'lifecycle'
 							? 'bg-shakespeare-500 text-white shadow-xs'
-							: 'border border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700',
+							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700 border',
 					]">
 					<span class="text-base">Lifecycle</span>
 				</button>
@@ -318,14 +355,16 @@ onMounted(() => {
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
 						activeTab === 'cms'
 							? 'bg-shakespeare-500 text-white shadow-xs'
-							: 'border border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700',
+							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700 border',
 					]">
 					<span class="text-base">CMS</span>
 				</button>
 			</div>
 
 			<SubmissionsTab
-				v-if="activeTab === 'submissions' && canAccess('submissions')"
+				v-if="
+					activeTab === 'submissions' && canAccess('submissions')
+				"
 				:submissions="props.submissions"
 				:herds="props.herds"
 				:breeding-requests="props.breedingRequests" />
@@ -361,10 +400,16 @@ onMounted(() => {
 				:items="props.items"
 				:shop-listings="props.shopListings" />
 
-			<CmsTab
+			<div
 				v-if="activeTab === 'cms' && canAccess('cms')"
-				:cms-pages="props.cmsPages"
-				:menu-items="props.menuItems" />
+				class="space-y-6">
+				<CmsTab
+					:cms-pages="props.cmsPages"
+					:menu-items="props.menuItems" />
+
+				<AnnouncementsSection
+					:announcements="props.announcements" />
+			</div>
 		</div>
 	</AppLayout>
 </template>
