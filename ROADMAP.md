@@ -5,7 +5,6 @@
 ## [006] Player Trading
 
 **Status:** `next`
-**Priority:** high
 **Depends On:** none
 
 ### Goal
@@ -32,12 +31,19 @@ Players can offer and accept simple item transfers using the existing `user_item
 - [ ] Cancel works for open offers; accepted trades immutable
 - [ ] Pest tests cover happy path, insufficient qty, and unauthorized accept
 
+### Tests
+
+- [ ] `tests/Feature/TradeTest.php::it_creates_an_offer_between_two_users`
+- [ ] `tests/Feature/TradeTest.php::it_transfers_quantities_atomically_on_accept`
+- [ ] `tests/Feature/TradeTest.php::it_rejects_an_offer_exceeding_owned_quantity`
+- [ ] `tests/Feature/TradeTest.php::it_forbids_a_third_party_from_accepting`
+- [ ] `tests/Feature/TradeTest.php::it_cancels_open_offers_and_freezes_accepted_trades`
+
 ---
 
 ## [007] Announcements System
 
 **Status:** `next`
-**Priority:** high
 **Depends On:** none
 
 ### Goal
@@ -64,12 +70,18 @@ Staff can post announcements that appear on the Home page, replacing the hardcod
 - [ ] Guests can read announcements; only staff can manage
 - [ ] Pest tests for public display and admin authz
 
+### Tests
+
+- [ ] `tests/Feature/AnnouncementTest.php::it_shows_the_latest_published_announcement_on_home`
+- [ ] `tests/Feature/AnnouncementTest.php::it_hides_unpublished_announcements_from_guests`
+- [ ] `tests/Feature/Admin/AdminAnnouncementTest.php::it_lets_staff_create_and_unpublish_announcements`
+- [ ] `tests/Feature/Admin/AdminAnnouncementTest.php::it_forbids_non_staff_from_managing_announcements`
+
 ---
 
 ## [008] Design Upload Terms and Graveyard Option
 
 **Status:** `next`
-**Priority:** high
 **Depends On:** none
 
 ### Goal
@@ -97,12 +109,18 @@ Horse design create/upload requires agreement to upload terms, and herd-leader d
 - [ ] Choice stored and visible to admin on submission review
 - [ ] Pest validation tests for required fields
 
+### Tests
+
+- [ ] `tests/Feature/HorseDesignTermsTest.php::it_rejects_creation_without_terms_agreement`
+- [ ] `tests/Feature/HorseDesignTermsTest.php::it_requires_disposition_for_herd_leader_designs`
+- [ ] `tests/Feature/HorseDesignTermsTest.php::it_skips_disposition_for_npc_designs`
+- [ ] `tests/Feature/HorseDesignTermsTest.php::it_exposes_the_stored_choice_on_admin_review`
+
 ---
 
 ## [009] New-Player Onboarding Flow
 
 **Status:** `next`
-**Priority:** high
 **Depends On:** none
 
 ### Goal
@@ -128,12 +146,17 @@ Players without a herd leader are prompted on the dashboard toward character cre
 - [ ] Links resolve to real routes/pages
 - [ ] Pest or browser-level assertion for prompt visibility conditions
 
+### Tests
+
+- [ ] `tests/Feature/OnboardingPromptTest.php::it_shows_the_prompt_for_users_without_a_herd_leader`
+- [ ] `tests/Feature/OnboardingPromptTest.php::it_hides_the_prompt_once_a_herd_leader_exists`
+- [ ] `tests/Feature/OnboardingPromptTest.php::it_links_only_to_resolvable_routes`
+
 ---
 
 ## [010] Randomized Claimable Horses
 
 **Status:** `next`
-**Priority:** high
 **Depends On:** none
 
 ### Goal
@@ -160,12 +183,18 @@ In-app roller offers unclaimed/claimable designs (bachelor stallions / herd mare
 - [ ] Empty pool / ineligible user handled with clear errors
 - [ ] Pest tests for roll + claim concurrency (no double-claim)
 
+### Tests
+
+- [ ] `tests/Feature/ClaimableHorseTest.php::it_rolls_options_from_the_claimable_pool_per_gender`
+- [ ] `tests/Feature/ClaimableHorseTest.php::it_transfers_ownership_and_removes_the_horse_from_the_pool`
+- [ ] `tests/Feature/ClaimableHorseTest.php::it_prevents_double_claiming_the_same_horse`
+- [ ] `tests/Feature/ClaimableHorseTest.php::it_errors_clearly_on_empty_pool_or_ineligible_user`
+
 ---
 
 ## [011] Item Usage and Equipment Workflows
 
 **Status:** `next`
-**Priority:** high
 **Depends On:** none
 
 ### Goal
@@ -192,12 +221,19 @@ Players can equip/dequip items on horses (and use consumables where `uses_per_un
 - [ ] Unauthorized users cannot equip on others’ horses
 - [ ] Pest tests for equip, dequip, and consume
 
+### Tests
+
+- [ ] `tests/Feature/ItemEquipTest.php::it_moves_an_owned_item_onto_a_horse`
+- [ ] `tests/Feature/ItemEquipTest.php::it_returns_equipped_gear_to_inventory_on_dequip`
+- [ ] `tests/Feature/ItemEquipTest.php::it_decrements_uses_per_unit_when_consuming`
+- [ ] `tests/Feature/ItemEquipTest.php::it_enforces_max_count_on_equip`
+- [ ] `tests/Feature/ItemEquipTest.php::it_forbids_equipping_on_another_users_horse`
+
 ---
 
 ## [012] Light Mode Only and Legibility Pass
 
 **Status:** `next`
-**Priority:** high
 **Depends On:** none
 
 ### Goal
@@ -225,12 +261,16 @@ The site is light-mode only (no dark theme / appearance variants), with a per-pa
 - [ ] Obsolete ToyHouse / rattlesnake-admin promotional links removed or replaced per product decision
 - [ ] Smoke test: key public + auth pages render without theme flash to dark
 
+### Tests
+
+- [ ] `tests/Feature/LightModeTest.php::it_renders_key_pages_without_a_theme_toggle`
+- [ ] `tests/Feature/LightModeTest.php::it_omits_obsolete_toyhouse_and_admin_account_links_from_home`
+
 ---
 
 ## [013] Coming Soon Placeholders for Deferred Gameplay
 
 **Status:** `next`
-**Priority:** high
 **Depends On:** none
 
 ### Goal
@@ -254,12 +294,17 @@ Activities/story progression and seasonal events clearly show Coming Soon in-app
 - [ ] No dead “submit play” CTA that posts nowhere
 - [ ] Lightweight test or snapshot asserting Coming Soon presence on those routes
 
+### Tests
+
+- [ ] `tests/Feature/ComingSoonTest.php::it_shows_coming_soon_on_activity_entry_points`
+- [ ] `tests/Feature/ComingSoonTest.php::it_shows_coming_soon_on_seasonal_event_entry_points`
+- [ ] `tests/Feature/ComingSoonTest.php::it_exposes_no_submit_play_cta_on_those_routes`
+
 ---
 
 ## [014] Client Spec Gathering (Activities and Seasonal)
 
 **Status:** `next`
-**Priority:** high
 **Depends On:** none
 
 ### Goal
@@ -284,12 +329,15 @@ Extract roll tables and rules for activities, seasonal affixes, weather, and sto
 - [ ] Open questions explicitly listed
 - [ ] Roadmap [015]/[016] Dependencies updated to this item when specs land
 
+### Tests
+
+- [ ] No automated tests. Deliverable is documentation. Verified by client sign-off on `reference/*-SPEC.md`.
+
 ---
 
 ## [015] Activities and Competitions System
 
 **Status:** `freezer`
-**Priority:** low
 **Depends On:** [014]
 
 ### Goal
@@ -313,12 +361,18 @@ In-app traveling progression, art/lit submissions, admin/GM rolls, results, rela
 - [ ] End-to-end submit → approve → roll → results → story log
 - [ ] Pest coverage for core state transitions
 
+### Tests
+
+- [ ] `tests/Feature/ActivitySubmissionTest.php::it_moves_a_submission_through_submit_approve_roll_results`
+- [ ] `tests/Feature/ActivitySubmissionTest.php::it_forbids_non_staff_from_approving_or_rolling`
+- [ ] `tests/Feature/ActivityStoryLogTest.php::it_appends_results_to_the_per_horse_story_log`
+- [ ] `tests/Feature/ActivityEncounterTest.php::it_applies_encounter_and_drop_tables_from_spec`
+
 ---
 
 ## [016] Seasonal Events In-App
 
 **Status:** `freezer`
-**Priority:** low
 **Depends On:** [014]
 
 ### Goal
@@ -341,12 +395,17 @@ Move Wildlife Report, quests, and seasonal affixes from Discord-only into platfo
 - [ ] Affixes affect eligible rolls/rewards as specified
 - [ ] Tests for affix application
 
+### Tests
+
+- [ ] `tests/Feature/SeasonalEventTest.php::it_lets_staff_configure_a_seasons_affixes_and_quests`
+- [ ] `tests/Feature/SeasonalEventTest.php::it_applies_active_affixes_to_eligible_rolls`
+- [ ] `tests/Feature/SeasonalEventTest.php::it_ignores_affixes_outside_the_season_window`
+
 ---
 
 ## [017] Opt-In PvP
 
 **Status:** `freezer`
-**Priority:** low
 **Depends On:** [015]
 
 ### Goal
@@ -369,12 +428,17 @@ Opt-in player-vs-player gameplay after core activity systems exist (ref doc: imp
 - [ ] Core PvP actions implemented per agreed rules
 - [ ] Tests for opt-in enforcement
 
+### Tests
+
+- [ ] `tests/Feature/PvpTest.php::it_blocks_pvp_actions_for_users_who_have_not_opted_in`
+- [ ] `tests/Feature/PvpTest.php::it_allows_core_pvp_actions_between_opted_in_users`
+- [ ] `tests/Feature/PvpTest.php::it_lets_a_user_opt_back_out`
+
 ---
 
 ## [018] Automatic Inactivity Freeze
 
 **Status:** `next`
-**Priority:** high
 **Depends On:** [015]
 
 ### Goal
@@ -401,12 +465,18 @@ Freeze accounts after 4 months without art/lit submissions; frozen accounts skip
 - [ ] Unfreeze restores eligibility
 - [ ] Pest tests for scheduler and enforcement
 
+### Tests
+
+- [ ] `tests/Feature/InactivityFreezeTest.php::it_freezes_accounts_with_no_submissions_for_four_months`
+- [ ] `tests/Feature/InactivityFreezeTest.php::it_leaves_recently_active_accounts_unfrozen`
+- [ ] `tests/Feature/InactivityFreezeTest.php::it_excludes_frozen_users_from_aging_events_and_pvp`
+- [ ] `tests/Feature/InactivityFreezeTest.php::it_restores_eligibility_after_unfreeze`
+
 ---
 
 ## [019] CMS Rich Text / WYSIWYG and Home Editability
 
 **Status:** `freezer`
-**Priority:** low
 **Depends On:** none
 
 ### Goal
@@ -431,12 +501,17 @@ Replace multi-box JSON CMS editing with a simpler rich-text (or in-page WYSIWYG)
 - [ ] Home content editable without deploy
 - [ ] Tests for update + public render
 
+### Tests
+
+- [ ] `tests/Feature/AdminCmsPageTest.php::it_saves_rich_text_bodies_from_the_chosen_editor`
+- [ ] `tests/Feature/AdminCmsPageTest.php::it_updates_home_content_without_a_deploy`
+- [ ] `tests/Feature/CmsStaticPageTest.php::it_renders_edited_content_publicly`
+
 ---
 
 ## [020] Fix Local vs CI Test Discrepancies
 
 **Status:** `freezer`
-**Priority:** low
 **Depends On:** none
 
 ### Goal
@@ -460,12 +535,15 @@ Tests behave the same locally and in CI so failures are trustworthy.
 - [ ] CI green on main with same suite run locally
 - [ ] No skipped/commented tests left as silent CI workarounds without tickets
 
+### Tests
+
+- [ ] Full suite green locally and in CI on the same commit. No new test file. Verified by comparing both runs.
+
 ---
 
 ## [022] Lifecycle Health Roll Application
 
 **Status:** `next`
-**Priority:** high
 **Depends On:** [004]
 
 ### Goal
@@ -493,12 +571,19 @@ On each lifecycle aging cycle, health rolls from `lifecycle_settings` add or sub
 - [ ] Outcomes logged for support
 - [ ] Lifecycle UI no longer labels health rolls as deferred-only
 
+### Tests
+
+- [ ] `tests/Feature/LifecycleHealthRollTest.php::it_applies_a_health_roll_within_configured_min_and_max`
+- [ ] `tests/Feature/LifecycleHealthRollTest.php::it_subtracts_health_for_injured_horses`
+- [ ] `tests/Feature/LifecycleHealthRollTest.php::it_adds_health_for_uninjured_horses`
+- [ ] `tests/Feature/LifecycleHealthRollTest.php::it_skips_dead_horses`
+- [ ] `tests/Feature/LifecycleHealthRollTest.php::it_logs_each_health_outcome`
+
 ---
 
 ## [023] Advanced Breeding Lifecycle and Stone Modifiers
 
 **Status:** `freezer`
-**Priority:** low
 **Depends On:** [005]
 
 ### Goal
@@ -523,12 +608,19 @@ Enforce full breeding season/estrus/checkpoint/attempt rules and allow Stones to
 - [ ] Stones consume atomically when applied to a breeding
 - [ ] Pest coverage for failure paths and item races
 
+### Tests
+
+- [ ] `tests/Feature/BreedingSeasonTest.php::it_rejects_breeding_outside_the_season_window`
+- [ ] `tests/Feature/BreedingSeasonTest.php::it_enforces_estrus_and_attempt_limits`
+- [ ] `tests/Feature/BreedingSeasonTest.php::it_requires_checkpoints_before_conception`
+- [ ] `tests/Feature/BreedingStoneTest.php::it_consumes_a_stone_atomically_when_applied`
+- [ ] `tests/Feature/BreedingStoneTest.php::it_does_not_consume_a_stone_when_breeding_fails`
+
 ---
 
 ## [024] Shared Genotype-to-Phenotype Reader
 
 **Status:** `freezer`
-**Priority:** low
 **Depends On:** [005]
 
 ### Goal
@@ -551,3 +643,12 @@ Deterministic genotype → phenotype mapping reused by breeding results and the 
 - [ ] Supported genotypes produce stable phenotype labels
 - [ ] Breeding and randomizer share the same reader
 - [ ] Unit tests cover Cream/Pearl and base coat cases
+
+### Tests
+
+- [ ] `tests/Unit/PhenotypeReaderTest.php::it_maps_base_coat_genotypes_to_stable_labels`
+- [ ] `tests/Unit/PhenotypeReaderTest.php::it_resolves_cream_and_pearl_interactions`
+- [ ] `tests/Unit/PhenotypeReaderTest.php::it_matches_locus_definitions_from_config_breeding`
+- [ ] `tests/Feature/BreedingTest.php::it_uses_the_shared_reader_for_foal_phenotypes`
+- [ ] `tests/Feature/AdminHorseRandomizerTest.php::it_uses_the_shared_reader_for_coat_labels`
+
