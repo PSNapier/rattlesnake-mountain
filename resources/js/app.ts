@@ -5,7 +5,6 @@ import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
 import { ZiggyVue } from 'ziggy-js';
 import CookieConsent from './components/CookieConsent.vue';
-import { initializeTheme } from './composables/useAppearance';
 
 const appName = 'Rattlesnake Mountain';
 
@@ -19,8 +18,13 @@ function resolvePage(name: string) {
 
 	// Fallback: find by case-insensitive path match
 	const lower = exact.toLowerCase();
-	const key = Object.keys(pageModules).find((k) => k.toLowerCase() === lower);
-	if (key) return (pageModules as Record<string, () => Promise<DefineComponent>>)[key]();
+	const key = Object.keys(pageModules).find(
+		(k) => k.toLowerCase() === lower,
+	);
+	if (key)
+		return (
+			pageModules as Record<string, () => Promise<DefineComponent>>
+		)[key]();
 	throw new Error(`Page not found: ${exact}`);
 }
 
@@ -46,6 +50,3 @@ createInertiaApp({
 		color: '#1f90bb', // shakespeare-500
 	},
 });
-
-// This will set light / dark mode on page load...
-initializeTheme();

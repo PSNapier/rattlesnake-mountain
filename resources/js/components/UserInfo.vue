@@ -30,7 +30,7 @@ const hasAvatarImage = computed(() => props.user.avatar && props.user.avatar !==
 			:src="user.avatar"
 			:alt="user.name"
 		/>
-		<AvatarFallback class="rounded-lg text-black dark:text-white">
+		<AvatarFallback class="rounded-lg text-black">
 			{{ getInitials(user.name) }}
 		</AvatarFallback>
 	</Avatar>

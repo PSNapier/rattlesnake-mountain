@@ -83,10 +83,10 @@ const deleteImage = async (imageId: number) => {
 			<div class="flex items-center justify-between">
 				<div>
 					<h1
-						class="text-2xl font-bold text-gray-900 dark:text-white">
+						class="text-2xl font-bold text-gray-900">
 						Character Images
 					</h1>
-					<p class="text-gray-600 dark:text-gray-400">
+					<p class="text-gray-600">
 						Upload and manage your character images
 					</p>
 				</div>
@@ -95,7 +95,7 @@ const deleteImage = async (imageId: number) => {
 			<!-- Flash Messages -->
 			<div
 				v-if="(page.props.flash as any)?.success"
-				class="rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
+				class="rounded-lg bg-green-50 p-4">
 				<div class="flex">
 					<div class="flex-shrink-0">
 						<svg
@@ -110,7 +110,7 @@ const deleteImage = async (imageId: number) => {
 					</div>
 					<div class="ml-3">
 						<p
-							class="text-sm font-medium text-green-800 dark:text-green-200">
+							class="text-sm font-medium text-green-800">
 							{{ (page.props.flash as any)?.success }}
 						</p>
 					</div>
@@ -119,7 +119,7 @@ const deleteImage = async (imageId: number) => {
 
 			<div
 				v-if="(page.props.flash as any)?.error"
-				class="rounded-lg bg-red-50 p-4 dark:bg-red-900/20">
+				class="rounded-lg bg-red-50 p-4">
 				<div class="flex">
 					<div class="flex-shrink-0">
 						<svg
@@ -134,7 +134,7 @@ const deleteImage = async (imageId: number) => {
 					</div>
 					<div class="ml-3">
 						<p
-							class="text-sm font-medium text-red-800 dark:text-red-200">
+							class="text-sm font-medium text-red-800">
 							{{ (page.props.flash as any)?.error }}
 						</p>
 					</div>
@@ -193,17 +193,17 @@ const deleteImage = async (imageId: number) => {
 							</div>
 							<div class="p-4">
 								<h3
-									class="truncate font-medium text-gray-900 dark:text-white">
+									class="truncate font-medium text-gray-900">
 									{{ image.filename }}
 								</h3>
 								<p
-									class="text-sm text-gray-500 dark:text-gray-400">
+									class="text-sm text-gray-500">
 									{{ image.width }} ×
 									{{ image.height }}
 								</p>
 								<p
 									v-if="image.alt_text"
-									class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+									class="mt-1 text-sm text-gray-600">
 									{{ image.alt_text }}
 								</p>
 								<div class="mt-3 flex gap-2">
@@ -233,10 +233,10 @@ const deleteImage = async (imageId: number) => {
 							</svg>
 						</div>
 						<h3
-							class="mb-2 text-lg font-medium text-gray-900 dark:text-white">
+							class="mb-2 text-lg font-medium text-gray-900">
 							No images yet
 						</h3>
-						<p class="text-gray-500 dark:text-gray-400">
+						<p class="text-gray-500">
 							Upload your first character image to get
 							started!
 						</p>

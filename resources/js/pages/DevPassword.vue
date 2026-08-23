@@ -1,14 +1,13 @@
 <template>
 	<div
-		class="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8 dark:bg-gray-900">
+		class="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
 		<div class="w-full max-w-md space-y-8">
 			<div>
 				<h2
-					class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+					class="mt-6 text-center text-3xl font-extrabold text-gray-900">
 					Development Site Access
 				</h2>
-				<p
-					class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+				<p class="mt-2 text-center text-sm text-gray-600">
 					Enter the development password to continue
 				</p>
 			</div>
@@ -27,11 +26,11 @@
 						name="dev_password"
 						type="password"
 						required
-						class="relative block w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+						class="relative block w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
 						placeholder="Enter password" />
 					<div
 						v-if="errors?.dev_password"
-						class="mt-2 text-sm text-red-600 dark:text-red-400">
+						class="mt-2 text-sm text-red-600">
 						{{ errors.dev_password[0] }}
 					</div>
 				</div>

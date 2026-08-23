@@ -43,11 +43,10 @@ const breadcrumbs: BreadcrumbItem[] = [
 		<div class="mx-auto max-w-4xl space-y-8">
 			<div>
 				<h1
-					class="text-cape-palliser-950 dark:text-cape-palliser-50 flex items-center gap-2 text-3xl font-bold">
+					class="text-cape-palliser-950 flex items-center gap-2 text-3xl font-bold">
 					Leaderboard
 				</h1>
-				<p
-					class="text-cape-palliser-700 dark:text-cape-palliser-300 mt-2">
+				<p class="text-cape-palliser-700 mt-2">
 					Top players by horses, herd size, and scorpions
 				</p>
 			</div>
@@ -67,7 +66,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 								) in props.mostHorses"
 								:key="user.id"
 								:href="`/u/${user.id}`"
-								class="border-cape-palliser-200 dark:border-cape-palliser-700 hover:bg-shakespeare-200 dark:hover:bg-shakespeare-200 flex items-center gap-3 border p-4 no-underline transition-colors">
+								class="border-cape-palliser-200 hover:bg-shakespeare-200 flex items-center gap-3 border p-4 no-underline transition-colors">
 								<span
 									class="text-cape-palliser-500 shrink-0 text-sm font-medium">
 									#{{ index + 1 }}
@@ -79,7 +78,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 										:src="user.avatar"
 										:alt="user.name" />
 									<AvatarFallback
-										class="bg-shakespeare-200 text-shakespeare-700 dark:bg-shakespeare-800 dark:text-shakespeare-200">
+										class="bg-shakespeare-200 text-shakespeare-700">
 										{{ getInitials(user.name) }}
 									</AvatarFallback>
 								</Avatar>
@@ -95,7 +94,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 						</div>
 						<p
 							v-else
-							class="text-cape-palliser-600 dark:text-cape-palliser-400 py-8 text-center text-sm">
+							class="text-cape-palliser-600 py-8 text-center text-sm">
 							No data yet
 						</p>
 					</CardContent>
@@ -114,7 +113,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 									herd, index
 								) in props.largestHerds"
 								:key="herd.id"
-								class="border-cape-palliser-200 dark:border-cape-palliser-700 flex items-center gap-3 border p-4">
+								class="border-cape-palliser-200 flex items-center gap-3 border p-4">
 								<span
 									class="text-cape-palliser-500 shrink-0 text-sm font-medium">
 									#{{ index + 1 }}
@@ -136,7 +135,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 						</div>
 						<p
 							v-else
-							class="text-cape-palliser-600 dark:text-cape-palliser-400 py-8 text-center text-sm">
+							class="text-cape-palliser-600 py-8 text-center text-sm">
 							No data yet
 						</p>
 					</CardContent>
@@ -156,7 +155,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 								) in props.mostScorpions"
 								:key="user.id"
 								:href="`/u/${user.id}`"
-								class="border-cape-palliser-200 dark:border-cape-palliser-700 hover:bg-shakespeare-200 dark:hover:bg-shakespeare-200 flex items-center gap-3 border p-4 no-underline transition-colors">
+								class="border-cape-palliser-200 hover:bg-shakespeare-200 flex items-center gap-3 border p-4 no-underline transition-colors">
 								<span
 									class="text-cape-palliser-500 shrink-0 text-sm font-medium">
 									#{{ index + 1 }}
@@ -168,7 +167,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 										:src="user.avatar"
 										:alt="user.name" />
 									<AvatarFallback
-										class="bg-shakespeare-200 text-shakespeare-700 dark:bg-shakespeare-800 dark:text-shakespeare-200">
+										class="bg-shakespeare-200 text-shakespeare-700">
 										{{ getInitials(user.name) }}
 									</AvatarFallback>
 								</Avatar>
@@ -184,7 +183,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 						</div>
 						<p
 							v-else
-							class="text-cape-palliser-600 dark:text-cape-palliser-400 py-8 text-center text-sm">
+							class="text-cape-palliser-600 py-8 text-center text-sm">
 							No data yet
 						</p>
 					</CardContent>

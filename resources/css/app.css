@@ -5,10 +5,14 @@
 @tailwind components;
 @tailwind utilities;
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
+@source '../views/vendor/pagination/*.blade.php';
 
-/* @custom-variant dark (&:is(.dark *)); */
+/*
+ * Light mode only. No dark variant is registered, and compiled views under
+ * storage/ are deliberately not scanned: that glob pulled Laravel's own
+ * exception-renderer blades into the build, and they carry a dark theme of
+ * their own. See reference/LIGHT-MODE-AUDIT.md and ROADMAP [012].
+ */
 
 @theme {
 	--color-shakespeare-50: #eefafd;
@@ -88,9 +92,10 @@
 	@apply m-auto max-w-[1080px];
 }
 
-/* a:not(:is(nav *)) {
-	@apply underline;
-} */
+/* Content links need a non-colour cue: markdown links inherit body colour. */
+.box a {
+	@apply text-shakespeare-700 underline;
+}
 
 .hero-img {
 	background-image: url('/images/home-hero-spring.jpg');
@@ -102,17 +107,22 @@
 h1 {
 	@apply text-cape-palliser-500 font-amaranth text-5xl font-bold;
 }
+/*
+ * Heading colours are the darker end of each ramp for contrast. The 400/500
+ * shades this used to carry measured 1.8-2.5:1 against both page backgrounds,
+ * which fails WCAG AA even at large-text sizes. See reference/LIGHT-MODE-AUDIT.md.
+ */
 h2 {
-	@apply text-shakespeare-400 font-amaranth text-2xl font-bold;
+	@apply text-shakespeare-700 font-amaranth text-2xl font-bold;
 }
 h3 {
-	@apply text-shakespeare-400 font-amaranth text-lg font-bold;
+	@apply text-shakespeare-700 font-amaranth text-lg font-bold;
 }
 h4 {
-	@apply text-new-orleans-500 font-amaranth text-2xl font-bold;
+	@apply text-new-orleans-800 font-amaranth text-2xl font-bold;
 }
 h5 {
-	@apply text-new-orleans-500 font-amaranth text-lg font-bold;
+	@apply text-new-orleans-800 font-amaranth text-lg font-bold;
 }
 
 @theme inline {

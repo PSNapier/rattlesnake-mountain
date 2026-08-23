@@ -223,7 +223,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 					</div>
 					<div
 						v-else
-						class="prose prose-sm max-w-none dark:prose-invert">
+						class="prose prose-sm max-w-none">
 						<div
 							v-if="renderedBio"
 							v-html="renderedBio"></div>

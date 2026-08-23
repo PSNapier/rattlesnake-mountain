@@ -1,5 +1,49 @@
 # Roadmap Done
 
+## [012] Light Mode Only and Legibility Pass
+
+**Status:** `done`
+**Depends On:** none
+
+### Goal
+
+The site is light-mode only (no dark theme / appearance variants), with a per-page pass for contrast/legibility, plus landing cleanup of obsolete ToyHouse / admin-account CTAs where still present.
+
+### Scope
+
+- Remove or disable dark-mode theme switching; force light appearance
+- Strip or neutralize problematic `dark:` usage that assumes a dual theme (prefer light-readable defaults)
+- Per-page legibility check (text/background contrast)
+- Landing: remove or replace obsolete links (ref doc: ToyHouse + rattlesnake-admin; Home still promotes `@rattlesnakeadmin`)
+- NOT in scope: full visual redesign / brand refresh; WYSIWYG CMS
+
+### Technical Notes
+
+- Full write-up in [`reference/LIGHT-MODE-AUDIT.md`](reference/LIGHT-MODE-AUDIT.md): what was removed, the contrast measurements, and the per-page list
+- The `dark:` classes were **not** inert. `app.css` had the custom dark variant commented out, which reads as "already off", but Tailwind v4 then falls back to its built-in variant compiling to `@media (prefers-color-scheme: dark)`. Every one was live for visitors whose OS was set to dark
+- Two `@source` globs fed non-app CSS into the build: compiled views under `storage/` (Laravel's exception-renderer, with its own theme switcher) and the vendor paginator. The storage glob is gone; the paginator views were published to `resources/views/vendor/pagination/`, stripped, and the glob repointed there
+- Removed: `initializeTheme()`, `useAppearance.ts`, `AppearanceTabs.vue`, `HandleAppearance` middleware, and the `appearance` cookie exemption. The built stylesheet now has zero `dark:` utilities and zero `prefers-color-scheme` queries
+- Contrast fixes: `h2`/`h3` `shakespeare-400` → `700` (was 1.79:1, fails at any size), `h4`/`h5` `new-orleans-500` → `800` (was 1.99:1), body `cape-palliser-600` → `700`, and markdown links in `.box` get colour plus an underline
+- Deleted `resources/js/pages/Home.vue`, an unrouted duplicate of `Welcome.vue` that still carried the obsolete `@rattlesnakeadmin` CTA. Deep links to that DeviantArt account in `useLinkDictionary` are resource links (lineart, map, design guide), not the promotional CTA, so they stay
+- The settings tab is relabelled **Avatar** since the theme switcher is gone. The route stays `/settings/appearance` and keeps its route names, so existing links and bookmarks still work
+- Accepted: white on `shakespeare-500` buttons measures 3.64:1, below AA for the `text-sm` labels used. Fixing it means changing the primary brand surface site-wide, which is a client decision, not a bug fix
+- Accepted: contrast was computed from palette tokens, not sampled from screenshots, so stacked translucent surfaces (dialog overlays, `/50` hover states) are not covered
+- Pre-existing, untouched: 18 files under `resources/` fail `prettier --check`, and `eslint` reports 2 errors, both predating this work
+
+### Acceptance Criteria
+
+- [x] No user-facing dark/theme toggle; app renders consistently in light mode
+- [x] Documented list of pages checked for contrast issues; critical failures fixed
+- [x] Obsolete ToyHouse / rattlesnake-admin promotional links removed or replaced per product decision
+- [x] Smoke test: key public + auth pages render without theme flash to dark
+
+### Tests
+
+- [x] `tests/Feature/LightModeTest.php::it_renders_key_pages_without_a_theme_toggle`
+- [x] `tests/Feature/LightModeTest.php::it_omits_obsolete_toyhouse_and_admin_account_links_from_home`
+
+---
+
 ## [006] Player Trading
 
 **Status:** `done`

@@ -21,10 +21,10 @@ const acceptCookies = () => {
 <template>
 	<div
 		v-if="showBanner"
-		class="fixed right-0 bottom-0 left-0 z-50 border-t border-gray-200 bg-white p-4 shadow-lg sm:right-4 sm:bottom-4 sm:left-4 sm:max-w-lg sm:rounded-lg sm:border dark:border-gray-800 dark:bg-gray-900">
+		class="fixed right-0 bottom-0 left-0 z-50 border-t border-gray-200 bg-white p-4 shadow-lg sm:right-4 sm:bottom-4 sm:left-4 sm:max-w-lg sm:rounded-lg sm:border">
 		<div class="flex items-start gap-4">
 			<div class="flex-1">
-				<p class="text-sm text-gray-700 dark:text-gray-300">
+				<p class="text-sm text-gray-700">
 					We use essential cookies to provide site functionality.
 					By continuing to use this site, you consent to our use
 					of cookies. See our

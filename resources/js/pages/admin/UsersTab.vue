@@ -201,17 +201,17 @@ function confirmDelete() {
 								<div class="flex gap-1">
 									<span
 										v-if="user.banned_at"
-										class="inline-flex items-center rounded-full border border-red-300 px-2.5 py-0.5 text-xs font-medium text-red-700 dark:border-red-700 dark:text-red-300">
+										class="inline-flex items-center rounded-full border border-red-300 px-2.5 py-0.5 text-xs font-medium text-red-700">
 										Banned
 									</span>
 									<span
 										v-if="user.frozen_at"
-										class="inline-flex items-center rounded-full border border-sky-300 px-2.5 py-0.5 text-xs font-medium text-sky-700 dark:border-sky-700 dark:text-sky-300">
+										class="inline-flex items-center rounded-full border border-sky-300 px-2.5 py-0.5 text-xs font-medium text-sky-700">
 										Frozen
 									</span>
 									<span
 										v-if="!user.banned_at && !user.frozen_at"
-										class="inline-flex items-center rounded-full border border-gray-200 px-2.5 py-0.5 text-xs text-cape-palliser-500 dark:border-gray-600">
+										class="inline-flex items-center rounded-full border border-gray-200 px-2.5 py-0.5 text-xs text-cape-palliser-500">
 										—
 									</span>
 								</div>

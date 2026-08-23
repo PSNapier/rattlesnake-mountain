@@ -48,8 +48,8 @@ const submit = () => {
 			<div class="flex flex-col space-y-6">
 				<div
 					v-if="user.is_frozen"
-					class="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
-					<p class="mb-2 text-sm text-amber-800 dark:text-amber-200">
+					class="rounded-lg border border-amber-200 bg-amber-50 p-4">
+					<p class="mb-2 text-sm text-amber-800">
 						Your account is frozen. You can unfreeze it at any time to resume participation.
 					</p>
 					<Link
@@ -115,7 +115,7 @@ const submit = () => {
 								:href="route('verification.send')"
 								method="post"
 								as="button"
-								class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+								class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current!"
 							>
 								Click here to resend the verification email.
 							</Link>

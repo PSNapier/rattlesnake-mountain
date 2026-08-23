@@ -104,7 +104,7 @@ const navMenu = computed<NavMenuItem[]>(() => page.props.navMenu ?? []);
 									:src="auth.user.avatar"
 									:alt="auth.user.name" />
 								<AvatarFallback
-									class="rounded-lg bg-neutral-200 font-semibold text-black dark:bg-neutral-700 dark:text-white">
+									class="rounded-lg bg-neutral-200 font-semibold text-black">
 									{{ getInitials(auth.user.name) }}
 								</AvatarFallback>
 							</Avatar>
@@ -170,7 +170,7 @@ const navMenu = computed<NavMenuItem[]>(() => page.props.navMenu ?? []);
 									:src="auth.user.avatar"
 									:alt="auth.user.name" />
 								<AvatarFallback
-									class="rounded-lg bg-neutral-200 text-xs font-semibold text-black dark:bg-neutral-700 dark:text-white">
+									class="rounded-lg bg-neutral-200 text-xs font-semibold text-black">
 									{{ getInitials(auth.user.name) }}
 								</AvatarFallback>
 							</Avatar>

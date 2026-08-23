@@ -273,9 +273,9 @@ onMounted(() => {
 
 			<div
 				v-if="(page.props.flash as any)?.success"
-				class="mb-4 rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
+				class="mb-4 rounded-lg bg-green-50 p-4">
 				<p
-					class="text-sm font-medium text-green-800 dark:text-green-200">
+					class="text-sm font-medium text-green-800">
 					{{ (page.props.flash as any)?.success }}
 				</p>
 			</div>

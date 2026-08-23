@@ -13,7 +13,7 @@ import SettingsLayout from '@/layouts/settings/Layout.vue';
 
 const breadcrumbItems: BreadcrumbItem[] = [
 	{
-		title: 'Appearance settings',
+		title: 'Avatar settings',
 		href: '/settings/appearance',
 	},
 ];
@@ -266,13 +266,13 @@ const deleteAvatar = async (): Promise<void> => {
 
 <template>
 	<AppLayout :breadcrumbs="breadcrumbItems">
-		<Head title="Appearance settings" />
+		<Head title="Avatar settings" />
 
 		<SettingsLayout>
 			<div class="space-y-6">
 				<HeadingSmall
-					title="Appearance settings"
-					description="Update your account's appearance settings" />
+					title="Avatar settings"
+					description="Choose the picture shown beside your name" />
 
 				<div class="space-y-6">
 					<div class="space-y-4">

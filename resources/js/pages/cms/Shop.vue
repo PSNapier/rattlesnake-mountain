@@ -111,13 +111,13 @@ const purchase = (listingId: number): void => {
 
 			<div
 				v-if="(page.props.flash as any)?.success"
-				class="rounded-lg bg-green-50 p-4 text-sm text-green-800 dark:bg-green-900/20 dark:text-green-200">
+				class="rounded-lg bg-green-50 p-4 text-sm text-green-800">
 				{{ (page.props.flash as any)?.success }}
 			</div>
 
 			<div
 				v-if="(page.props.errors as any)?.purchase"
-				class="rounded-lg bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-200">
+				class="rounded-lg bg-red-50 p-4 text-sm text-red-800">
 				{{ (page.props.errors as any)?.purchase }}
 			</div>
 

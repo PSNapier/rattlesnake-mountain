@@ -35,11 +35,11 @@ const breadcrumbs: BreadcrumbItem[] = [
 			<!-- Header -->
 			<div>
 				<h1
-					class="text-cape-palliser-950 dark:text-cape-palliser-50 text-3xl font-bold">
+					class="text-cape-palliser-950 text-3xl font-bold">
 					All Users
 				</h1>
 				<p
-					class="text-cape-palliser-700 dark:text-cape-palliser-300 mt-2">
+					class="text-cape-palliser-700 mt-2">
 					Browse all players and their collections
 				</p>
 			</div>
@@ -58,13 +58,13 @@ const breadcrumbs: BreadcrumbItem[] = [
 							v-for="user in props.users"
 							:key="user.id"
 							:href="`/u/${user.id}`"
-							class="border-cape-palliser-200 dark:border-cape-palliser-700 hover:bg-shakespeare-200 dark:hover:bg-shakespeare-200 flex items-center gap-3 border p-4 no-underline transition-colors">
+							class="border-cape-palliser-200 hover:bg-shakespeare-200 flex items-center gap-3 border p-4 no-underline transition-colors">
 							<Avatar class="h-10 w-10 rounded-md">
 								<AvatarImage
 									v-if="user.avatar"
 									:src="user.avatar"
 									:alt="user.name" />
-								<AvatarFallback class="bg-shakespeare-200 text-shakespeare-700 dark:bg-shakespeare-800 dark:text-shakespeare-200">
+								<AvatarFallback class="bg-shakespeare-200 text-shakespeare-700">
 									{{ getInitials(user.name) }}
 								</AvatarFallback>
 							</Avatar>
@@ -76,7 +76,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 					</div>
 					<p
 						v-else
-						class="text-cape-palliser-600 dark:text-cape-palliser-400 py-8 text-center text-sm">
+						class="text-cape-palliser-600 py-8 text-center text-sm">
 						No users found
 					</p>
 				</CardContent>

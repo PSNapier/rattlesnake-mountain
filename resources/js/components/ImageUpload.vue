@@ -347,7 +347,7 @@ onBeforeUnmount(() => {
 			@dragover="handleDragOver"
 			@dragleave="handleDragLeave"
 			@drop="handleDrop"
-			class="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center transition-colors hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500">
+			class="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center transition-colors hover:border-gray-400">
 			<div class="space-y-4">
 				<div class="mx-auto h-12 w-12 text-gray-400">
 					<svg
@@ -363,10 +363,10 @@ onBeforeUnmount(() => {
 				</div>
 				<div>
 					<p
-						class="text-lg font-medium text-gray-900 dark:text-white">
+						class="text-lg font-medium text-gray-900">
 						{{ dragDropText }}
 					</p>
-					<p class="text-sm text-gray-500 dark:text-gray-400">
+					<p class="text-sm text-gray-500">
 						or
 					</p>
 					<Button
@@ -377,7 +377,7 @@ onBeforeUnmount(() => {
 						{{ browseButtonText }}
 					</Button>
 				</div>
-				<p class="text-xs text-gray-500 dark:text-gray-400">
+				<p class="text-xs text-gray-500">
 					{{ fileTypeHint }}
 				</p>
 			</div>

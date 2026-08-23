@@ -154,43 +154,6 @@ Players can equip/dequip items on horses (and use consumables where `uses_per_un
 
 ---
 
-## [012] Light Mode Only and Legibility Pass
-
-**Status:** `next`
-**Depends On:** none
-
-### Goal
-
-The site is light-mode only (no dark theme / appearance variants), with a per-page pass for contrast/legibility, plus landing cleanup of obsolete ToyHouse / admin-account CTAs where still present.
-
-### Scope
-
-- Remove or disable dark-mode theme switching; force light appearance
-- Strip or neutralize problematic `dark:` usage that assumes a dual theme (prefer light-readable defaults)
-- Per-page legibility check (text/background contrast)
-- Landing: remove or replace obsolete links (ref doc: ToyHouse + rattlesnake-admin; Home still promotes `@rattlesnakeadmin`)
-- NOT in scope: full visual redesign / brand refresh; WYSIWYG CMS
-
-### Technical Notes
-
-- Settings Appearance currently mixes avatar + appearance: [`resources/js/pages/settings/Appearance.vue`](resources/js/pages/settings/Appearance.vue)
-- Widespread `dark:` classes in Vue components — audit systematically
-- Home CTAs: [`resources/js/pages/Welcome.vue`](resources/js/pages/Welcome.vue)
-
-### Acceptance Criteria
-
-- [ ] No user-facing dark/theme toggle; app renders consistently in light mode
-- [ ] Documented list of pages checked for contrast issues; critical failures fixed
-- [ ] Obsolete ToyHouse / rattlesnake-admin promotional links removed or replaced per product decision
-- [ ] Smoke test: key public + auth pages render without theme flash to dark
-
-### Tests
-
-- [ ] `tests/Feature/LightModeTest.php::it_renders_key_pages_without_a_theme_toggle`
-- [ ] `tests/Feature/LightModeTest.php::it_omits_obsolete_toyhouse_and_admin_account_links_from_home`
-
----
-
 ## [014] Client Spec Gathering (Activities and Seasonal)
 
 **Status:** `next`

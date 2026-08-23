@@ -47,15 +47,17 @@ const props = withDefaults(defineProps<Props>(), {
 
 const page = usePage();
 const auth = computed(() => page.props.auth);
-const unreadCount = computed(() => (page.props as { unreadMessageCount?: number }).unreadMessageCount ?? 0);
+const unreadCount = computed(
+	() =>
+		(page.props as { unreadMessageCount?: number }).unreadMessageCount ??
+		0,
+);
 
 const isCurrentRoute = computed(() => (url: string) => page.url === url);
 
 const activeItemStyles = computed(
 	() => (url: string) =>
-		isCurrentRoute.value(url)
-			? 'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100'
-			: '',
+		isCurrentRoute.value(url) ? 'text-neutral-900' : '',
 );
 
 const mainNavItems: NavItem[] = [
@@ -104,7 +106,7 @@ const rightNavItems: NavItem[] = [
 							<SheetHeader
 								class="flex justify-start text-left">
 								<AppLogoIcon
-									class="size-6 fill-current text-black dark:text-white" />
+									class="size-6 fill-current text-black" />
 							</SheetHeader>
 							<div
 								class="flex h-full flex-1 flex-col justify-between space-y-4 py-6">
@@ -180,7 +182,7 @@ const rightNavItems: NavItem[] = [
 								</Link>
 								<div
 									v-if="isCurrentRoute(item.href)"
-									class="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"></div>
+									class="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black"></div>
 							</NavigationMenuItem>
 						</NavigationMenuList>
 					</NavigationMenu>
@@ -249,7 +251,7 @@ const rightNavItems: NavItem[] = [
 							<EnvelopeIcon class="size-6 opacity-80" />
 							<span
 								v-if="unreadCount > 0"
-								class="bg-red-500 absolute -bottom-1 -right-1 flex size-3.5 items-center justify-center rounded-full text-[10px] font-bold text-white">
+								class="absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
 								{{
 									unreadCount > 99
 										? '99+'
@@ -272,7 +274,7 @@ const rightNavItems: NavItem[] = [
 										:src="auth.user.avatar"
 										:alt="auth.user.name" />
 									<AvatarFallback
-										class="rounded-lg bg-neutral-200 font-semibold text-black dark:bg-neutral-700 dark:text-white">
+										class="rounded-lg bg-neutral-200 font-semibold text-black">
 										{{
 											getInitials(
 												auth.user?.name,

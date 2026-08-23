@@ -137,20 +137,13 @@ function cycleBackground() {
 
 	<div class="bg-cape-palliser-500">
 		<div
-			class="max-container col-span-3 grid grid-cols-1 gap-4 p-4 py-8 text-center lg:grid-cols-3">
+			class="max-container col-span-3 grid grid-cols-1 gap-4 p-4 py-8 text-center lg:grid-cols-2">
 			<LandingLinkBox
 				title="@Rattlesnake-Mountain"
 				href="https://www.deviantart.com/rattlesnake-mountain"
 				imageSrc="/images/group-logo.png"
 				imageAlt="DeviantArt Group logo"
 				description="Find our DeviantArt Group." />
-
-			<LandingLinkBox
-				title="@rattlesnakeadmin"
-				href="https://www.deviantart.com/rattlesnakeadmin"
-				imageSrc="/images/admin-logo.png"
-				imageAlt="Admin account logo"
-				description="This account handles all imports and their information." />
 
 			<LandingLinkBox
 				title="@discord"
