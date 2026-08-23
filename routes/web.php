@@ -23,6 +23,7 @@ use App\Http\Controllers\RedeemCreamPearlVoucherController;
 use App\Http\Controllers\RedeemVoucherController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\StaticPageController;
+use App\Http\Controllers\TradeController;
 use App\Models\Announcement;
 use App\Models\Herd;
 use App\Models\Horse;
@@ -172,6 +173,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/breeding-slot-transfers/{transfer}/accept', [BreedingSlotTransferController::class, 'accept'])->name('breeding-slot-transfers.accept');
     Route::post('/breeding-slot-transfers/{transfer}/decline', [BreedingSlotTransferController::class, 'decline'])->name('breeding-slot-transfers.decline');
     Route::post('/breeding-slot-transfers/{transfer}/cancel', [BreedingSlotTransferController::class, 'cancel'])->name('breeding-slot-transfers.cancel');
+
+    Route::get('/trades', [TradeController::class, 'index'])->name('trades.index');
+    Route::post('/trades', [TradeController::class, 'store'])->name('trades.store');
+    Route::post('/trades/{trade}/accept', [TradeController::class, 'accept'])->name('trades.accept');
+    Route::post('/trades/{trade}/decline', [TradeController::class, 'decline'])->name('trades.decline');
+    Route::post('/trades/{trade}/cancel', [TradeController::class, 'cancel'])->name('trades.cancel');
 
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
     Route::post('/inventory/redeem-voucher', RedeemVoucherController::class)

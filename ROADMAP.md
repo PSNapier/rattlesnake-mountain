@@ -2,45 +2,6 @@
 
 <!-- Next task number: [025] -->
 
-## [006] Player Trading
-
-**Status:** `next`
-**Depends On:** none
-
-### Goal
-
-Players can offer and accept simple item transfers using the existing `user_items` inventory, replacing Discord `#trading-post` for basic trades.
-
-### Scope
-
-- Offer create / accept / decline / cancel between two users
-- Atomic quantity transfer with max_count enforcement
-- Basic trade history for both parties
-- NOT in scope: horse trading, auction house, Scorpion-only shop (already exists), escrow disputes UI beyond cancel/decline
-
-### Technical Notes
-
-- Inventory: `Item` + `user_items` pivot; [`InventoryController`](app/Http/Controllers/InventoryController.php)
-- New models likely: `Trade` / `TradeItem` (or equivalent)
-- Security: authorize ownership, prevent negative qty races, rate-limit offers
-
-### Acceptance Criteria
-
-- [ ] User A can offer items to User B; B can accept or decline
-- [ ] Accept moves quantities atomically; inventories never go negative
-- [ ] Cancel works for open offers; accepted trades immutable
-- [ ] Pest tests cover happy path, insufficient qty, and unauthorized accept
-
-### Tests
-
-- [ ] `tests/Feature/TradeTest.php::it_creates_an_offer_between_two_users`
-- [ ] `tests/Feature/TradeTest.php::it_transfers_quantities_atomically_on_accept`
-- [ ] `tests/Feature/TradeTest.php::it_rejects_an_offer_exceeding_owned_quantity`
-- [ ] `tests/Feature/TradeTest.php::it_forbids_a_third_party_from_accepting`
-- [ ] `tests/Feature/TradeTest.php::it_cancels_open_offers_and_freezes_accepted_trades`
-
----
-
 ## [008] Design Upload Terms and Graveyard Option
 
 **Status:** `next`

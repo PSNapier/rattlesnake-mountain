@@ -9,6 +9,7 @@ import {
 import type { User } from '@/types';
 import { Link, router } from '@inertiajs/vue3';
 import {
+	ArrowLeftRight,
 	Crown,
 	Heart,
 	Home,
@@ -102,6 +103,16 @@ defineProps<Props>();
 				as="button">
 				<Package class="mr-2 h-4 w-4" />
 				My Inventory
+			</Link>
+		</DropdownMenuItem>
+		<DropdownMenuItem :as-child="true">
+			<Link
+				class="block w-full"
+				:href="route('trades.index')"
+				prefetch
+				as="button">
+				<ArrowLeftRight class="mr-2 h-4 w-4" />
+				My Trades
 			</Link>
 		</DropdownMenuItem>
 		<DropdownMenuItem :as-child="true">

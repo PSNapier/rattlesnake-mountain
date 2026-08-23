@@ -1,5 +1,56 @@
 # Roadmap Done
 
+## [006] Player Trading
+
+**Status:** `done`
+**Depends On:** none
+
+### Goal
+
+Players can offer and accept simple item transfers using the existing `user_items` inventory, replacing Discord `#trading-post` for basic trades.
+
+### Scope
+
+- Offer create / accept / decline / cancel between two users
+- Atomic quantity transfer with max_count enforcement
+- Basic trade history for both parties
+- NOT in scope: horse trading, auction house, Scorpion-only shop (already exists), escrow disputes UI beyond cancel/decline
+
+### Technical Notes
+
+- `Trade` + `TradeItem` over the existing `user_items` pivot. Offers are one-way: the sender gives, the recipient accepts. No escrow, so nothing leaves the sender's inventory until accept
+- [`TradeService`](app/Services/TradeService.php) holds the transfer. Every inventory row the trade touches is created at zero and locked in one globally consistent `(item_id, user_id)` order before any arithmetic. Per-trade sender-then-recipient ordering deadlocks the moment two players trade the same item in opposite directions
+- Rows are created before they are locked on purpose: locking a row that does not exist takes only a gap lock, and gap locks disappear under `READ COMMITTED`, which would let two first-time credits to the same player overwrite each other
+- Accept re-checks holdings, `is_active`, and recipient `max_count`, because an offer can sit open while the world changes underneath it
+- Reachable from the user menu ("My Trades"). The recipient field is a name search fed by a `recipients` prop, since players never see each other's numeric ids
+- Accepted: the deadlock ordering and the `READ COMMITTED` insert race are argued from the lock protocol, not covered by a test. Pest cannot deterministically interleave two transactions here
+- Accepted: the `recipients` list is unbounded and loads every non-banned player on each page view, matching the existing `/users` route. Worth revisiting as a search endpoint when the player count grows
+- Accepted: trade history is offset-paginated with no pruning, so deep pages get slower for heavy traders
+
+### Acceptance Criteria
+
+- [x] User A can offer items to User B; B can accept or decline
+- [x] Accept moves quantities atomically; inventories never go negative
+- [x] Cancel works for open offers; accepted trades immutable
+- [x] Pest tests cover happy path, insufficient qty, and unauthorized accept
+
+### Tests
+
+- [x] `tests/Feature/TradeTest.php::it_creates_an_offer_between_two_users`
+- [x] `tests/Feature/TradeTest.php::it_transfers_quantities_atomically_on_accept`
+- [x] `tests/Feature/TradeTest.php::it_rejects_an_offer_exceeding_owned_quantity`
+- [x] `tests/Feature/TradeTest.php::it_forbids_a_third_party_from_accepting`
+- [x] `tests/Feature/TradeTest.php::it_cancels_open_offers_and_freezes_accepted_trades`
+- [x] `tests/Feature/TradeTest.php::it_rejects_an_accept_that_would_exceed_the_recipient_max_count`
+- [x] `tests/Feature/TradeTest.php::it_refuses_to_accept_an_item_retired_after_the_offer`
+- [x] `tests/Feature/TradeTest.php::it_refuses_to_accept_a_trade_whose_items_were_deleted`
+- [x] `tests/Feature/TradeTest.php::it_forbids_a_banned_user_from_acting_on_an_open_trade`
+- [x] `tests/Feature/TradeTest.php::it_counts_rejected_offers_against_the_rate_limit`
+- [x] `tests/Feature/TradeTest.php::it_credits_a_recipient_who_has_never_held_the_item`
+- [x] `tests/Feature/TradeTest.php::it_offers_to_a_recipient_picked_by_name`
+
+---
+
 ## [013] Coming Soon Placeholders for Deferred Gameplay
 
 **Status:** `done`
