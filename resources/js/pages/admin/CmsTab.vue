@@ -30,6 +30,7 @@ interface CmsPage {
 	hero_description: string | null;
 	content: Record<string, string[]>;
 	images: CmsImage[];
+	coming_soon: boolean;
 	sort_order: number;
 }
 
@@ -200,6 +201,7 @@ watch(linkedPage, (page) => {
 const pageForm = ref({
 	description: '',
 	hero_description: '',
+	comingSoon: false,
 	contentJson: '{}',
 	imagesJson: '[]',
 });
@@ -211,6 +213,7 @@ watch(
 			pageForm.value = {
 				description: page.description ?? '',
 				hero_description: page.hero_description ?? '',
+				comingSoon: Boolean(page.coming_soon),
 				contentJson: JSON.stringify(page.content ?? {}, null, 2),
 				imagesJson: JSON.stringify(page.images ?? [], null, 2),
 			};
@@ -236,6 +239,7 @@ function openMenuEdit(
 		pageForm.value = {
 			description: page.description ?? '',
 			hero_description: page.hero_description ?? '',
+			comingSoon: Boolean(page.coming_soon),
 			contentJson: JSON.stringify(page.content ?? {}, null, 2),
 			imagesJson: JSON.stringify(page.images ?? [], null, 2),
 		};
@@ -244,6 +248,7 @@ function openMenuEdit(
 		pageForm.value = {
 			description: '',
 			hero_description: '',
+			comingSoon: false,
 			contentJson: '{}',
 			imagesJson: '[]',
 		};
@@ -262,6 +267,7 @@ function openMenuAdd(parentId: number | null) {
 	pageForm.value = {
 		description: '',
 		hero_description: '',
+		comingSoon: false,
 		contentJson: '{}',
 		imagesJson: '[]',
 	};
@@ -281,6 +287,7 @@ function closeMenuDialog() {
 		pageForm.value = {
 			description: '',
 			hero_description: '',
+			comingSoon: false,
 			contentJson: '{}',
 			imagesJson: '[]',
 		};
@@ -314,6 +321,7 @@ function saveMenuItem() {
 			hero_title: menuItemForm.value.label,
 			description: pageForm.value.description || null,
 			hero_description: pageForm.value.hero_description || null,
+			coming_soon: pageForm.value.comingSoon,
 			content,
 			images,
 		};
@@ -533,6 +541,20 @@ function deleteMenuItem(id: number) {
 							v-model="pageForm.hero_description"
 							rows="2"
 							class="border-input mt-1 w-full rounded-md border px-3 py-2 text-sm" />
+					</div>
+					<div class="flex items-start gap-2">
+						<input
+							id="coming_soon"
+							v-model="pageForm.comingSoon"
+							type="checkbox"
+							class="border-input mt-1 h-4 w-4 rounded border" />
+						<Label
+							for="coming_soon"
+							class="font-normal">
+							Coming Soon — show a banner saying this
+							feature is not in-app yet. Use it for rules
+							pages whose play loop still runs on Discord.
+						</Label>
 					</div>
 					<div>
 						<Label for="contentJson">Content (JSON)</Label>

@@ -17,6 +17,7 @@ interface CmsPage {
 		description: string | null;
 	};
 	images: CmsImage[];
+	coming_soon: boolean;
 	content: Record<string, string[]>;
 }
 
@@ -29,6 +30,6 @@ defineProps<{
 	<DynamicInfo
 		:hero="page.hero"
 		:images="page.images"
+		:coming-soon="page.coming_soon"
 		:content="page.content" />
 </template>
-

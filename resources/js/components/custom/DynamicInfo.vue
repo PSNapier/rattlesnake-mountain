@@ -4,11 +4,15 @@ import markdownit from 'markdown-it';
 
 const md = markdownit();
 
-defineProps<{
-	hero: { title: string; description: string };
-	images: { name: string; link: string | false; path: string }[];
-	content: Record<string, string[]>;
-}>();
+withDefaults(
+	defineProps<{
+		hero: { title: string; description: string };
+		images: { name: string; link: string | false; path: string }[];
+		content: Record<string, string[]>;
+		comingSoon?: boolean;
+	}>(),
+	{ comingSoon: false },
+);
 </script>
 
 <template>
@@ -19,6 +23,29 @@ defineProps<{
 			<h1>{{ hero.title }}</h1>
 			<p>{{ hero.description }}</p>
 		</template>
+
+		<!-- Deferred feature notice: the page below is rules documentation, not a
+		     playable in-app system yet. -->
+		<div
+			v-if="comingSoon"
+			class="max-container p-4 pb-0">
+			<div
+				class="border-new-orleans-500 bg-new-orleans-50 text-cape-palliser-950 rounded-xl border p-4">
+				<p class="font-bold">Coming Soon</p>
+				<p>
+					This part of the game has not moved onto the site yet.
+					The rules below are here to read, but play still runs
+					through our
+					<a
+						href="https://discord.gg/rArZNnkCfE"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="text-shakespeare-500 underline">
+						Discord </a
+					>. Nothing on this page submits a turn.
+				</p>
+			</div>
+		</div>
 
 		<!-- Main content for this page -->
 		<div

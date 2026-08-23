@@ -230,40 +230,6 @@ The site is light-mode only (no dark theme / appearance variants), with a per-pa
 
 ---
 
-## [013] Coming Soon Placeholders for Deferred Gameplay
-
-**Status:** `next`
-**Depends On:** none
-
-### Goal
-
-Activities/story progression and seasonal events clearly show Coming Soon in-app so players are not sent into incomplete Discord-only flows as if they were finished product features.
-
-### Scope
-
-- Coming Soon treatment on story-progression / activities entry points and seasonal/wildlife event UX as agreed
-- Keep lore readable where it is documentation; distinguish “rules docs” vs “playable feature”
-- NOT in scope: building the systems ([015], [016]); removing CMS lore content
-
-### Technical Notes
-
-- CMS pages already exist for story-progression, wildlife, PvP — prefer banner/slot over deleting content
-- Align copy with post-MVP freezer items
-
-### Acceptance Criteria
-
-- [ ] Primary play entry points for activities and seasonal events show Coming Soon
-- [ ] No dead “submit play” CTA that posts nowhere
-- [ ] Lightweight test or snapshot asserting Coming Soon presence on those routes
-
-### Tests
-
-- [ ] `tests/Feature/ComingSoonTest.php::it_shows_coming_soon_on_activity_entry_points`
-- [ ] `tests/Feature/ComingSoonTest.php::it_shows_coming_soon_on_seasonal_event_entry_points`
-- [ ] `tests/Feature/ComingSoonTest.php::it_exposes_no_submit_play_cta_on_those_routes`
-
----
-
 ## [014] Client Spec Gathering (Activities and Seasonal)
 
 **Status:** `next`

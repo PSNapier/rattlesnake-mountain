@@ -71,7 +71,7 @@ class DashboardController extends Controller
         }
 
         if ($user->can('admin.cms')) {
-            $props['cmsPages'] = CmsPage::orderBy('sort_order')->get(['id', 'slug', 'title', 'description', 'hero_title', 'hero_description', 'content', 'images', 'sort_order']);
+            $props['cmsPages'] = CmsPage::orderBy('sort_order')->get(['id', 'slug', 'title', 'description', 'hero_title', 'hero_description', 'content', 'images', 'coming_soon', 'sort_order']);
             $props['menuItems'] = MenuItem::with('children')->whereNull('parent_id')->orderBy('sort_order')->get()
                 ->map(fn (MenuItem $item) => [
                     'id' => $item->id,

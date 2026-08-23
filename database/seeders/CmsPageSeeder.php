@@ -8,6 +8,29 @@ use Illuminate\Database\Seeder;
 class CmsPageSeeder extends Seeder
 {
     /**
+     * Play loops that are still Discord-only. These pages remain readable as
+     * rules documentation, but carry a Coming Soon banner so nobody reads them
+     * as a shipped in-app feature.
+     *
+     * Canonical for fresh installs. The add_coming_soon_to_cms_pages migration
+     * carries a frozen copy for databases seeded before the column existed;
+     * after that backfill the flag is data, edited from the admin CMS tab, so
+     * the two lists are not expected to track each other forever.
+     *
+     * Reference pages stay unflagged even when they mention Discord: herd-unity
+     * and lifespans describe mechanics rather than offering a play action, and
+     * breeding-foaling is in-app as of [005].
+     *
+     * @var list<string>
+     */
+    private const COMING_SOON_SLUGS = [
+        'story-progression',
+        'player-vs-player',
+        'claiming-npcs',
+        'wildlife',
+    ];
+
+    /**
      * Run the database seeds.
      */
     public function run(): void
@@ -573,6 +596,8 @@ class CmsPageSeeder extends Seeder
         ];
 
         foreach ($pages as $page) {
+            $page['coming_soon'] = in_array($page['slug'], self::COMING_SOON_SLUGS, true);
+
             CmsPage::create($page);
         }
     }

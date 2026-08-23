@@ -14,11 +14,13 @@ class CmsPage extends Model
         'hero_description',
         'content',
         'images',
+        'coming_soon',
         'sort_order',
     ];
 
     protected $casts = [
         'content' => 'array',
         'images' => 'array',
+        'coming_soon' => 'boolean',
     ];
 }

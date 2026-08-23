@@ -29,6 +29,7 @@ class StaticPageController extends Controller
                     'description' => $page->hero_description,
                 ],
                 'images' => $page->images ?? [],
+                'coming_soon' => (bool) $page->coming_soon,
                 'content' => $page->content ?? [],
             ],
         ]);

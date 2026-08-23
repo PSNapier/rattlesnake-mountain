@@ -1,5 +1,44 @@
 # Roadmap Done
 
+## [013] Coming Soon Placeholders for Deferred Gameplay
+
+**Status:** `done`
+**Depends On:** none
+
+### Goal
+
+Activities/story progression and seasonal events clearly show Coming Soon in-app so players are not sent into incomplete Discord-only flows as if they were finished product features.
+
+### Scope
+
+- Coming Soon treatment on story-progression / activities entry points and seasonal/wildlife event UX as agreed
+- Keep lore readable where it is documentation; distinguish “rules docs” vs “playable feature”
+- NOT in scope: building the systems ([015], [016]); removing CMS lore content
+
+### Technical Notes
+
+- Implemented as a `coming_soon` boolean on `cms_pages`, rendered as a banner above the content in [`DynamicInfo.vue`](resources/js/components/custom/DynamicInfo.vue). No CMS content was deleted
+- Flagged: `story-progression`, `player-vs-player`, `claiming-npcs` (claiming is gated on story-progression rolls), `wildlife` (seasonal hub). Not flagged: `herd-unity` and `lifespans` describe mechanics rather than offering a play action, and `breeding-foaling` shipped in-app with [005]
+- Staff can clear the banner from the admin CMS tab when a feature ships, so no deploy is needed. `CmsPageSeeder` holds the list for fresh installs; the migration carries a frozen copy for existing databases
+- Accepted: the Pest tests assert the server sends `coming_soon`, not that the banner paints. There is no component-test harness in the repo, so a regression that dropped the `v-if` in `DynamicInfo.vue` would not be caught
+- Accepted: the migration backfill matches on slug and silently updates zero rows if an environment renamed a page before migrating. Recoverable from the admin CMS tab
+
+### Acceptance Criteria
+
+- [x] Primary play entry points for activities and seasonal events show Coming Soon
+- [x] No dead “submit play” CTA that posts nowhere
+- [x] Lightweight test or snapshot asserting Coming Soon presence on those routes
+
+### Tests
+
+- [x] `tests/Feature/ComingSoonTest.php::it_shows_coming_soon_on_activity_entry_points`
+- [x] `tests/Feature/ComingSoonTest.php::it_shows_coming_soon_on_seasonal_event_entry_points`
+- [x] `tests/Feature/ComingSoonTest.php::it_exposes_no_submit_play_cta_on_those_routes`
+- [x] `tests/Feature/ComingSoonTest.php::it_leaves_reference_pages_without_a_coming_soon_banner`
+- [x] `tests/Feature/ComingSoonTest.php::it_lets_staff_clear_a_coming_soon_banner_once_the_feature_ships`
+
+---
+
 ## [007] Announcements System
 
 **Status:** `done`

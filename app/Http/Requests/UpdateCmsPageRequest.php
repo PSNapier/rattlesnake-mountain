@@ -29,6 +29,7 @@ class UpdateCmsPageRequest extends FormRequest
             'content' => ['required', 'array'],
             'content.*' => ['array'],
             'content.*.*' => ['string'],
+            'coming_soon' => ['nullable', 'boolean'],
             'images' => ['nullable', 'array'],
             'images.*.name' => ['required_with:images', 'string', 'max:255'],
             'images.*.link' => ['nullable', 'string', 'max:2048'],
