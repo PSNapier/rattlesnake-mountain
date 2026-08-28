@@ -1,5 +1,50 @@
 # Roadmap Done
 
+## [025] Playwright MCP for Agent-Driven Browser Verification
+
+**Status:** `done`
+**Depends On:** none
+
+### Goal
+
+Coding agents working in this repo can drive the real app in a browser to verify a change rendered correctly, instead of relying on Pest feature assertions that never exercise Inertia or the compiled front end. This is tooling for manual verification, not a committed test suite.
+
+### Scope
+
+- Playwright MCP server registered in a committed project `.mcp.json`
+- Convention documented in `CLAUDE.md`: base URL, headless default, screenshot destination, login procedure
+- `PLAYWRIGHT_TEST_EMAIL` / `PLAYWRIGHT_TEST_PASSWORD` added to `.env` and `.env.example` (example values only in the committed file)
+- `storage/screenshots` created and gitignored
+- NOT in scope: a committed Playwright test suite, `@playwright/test` as a project dependency, CI wiring, visual regression baselines, seeded or isolated test databases, a local impersonation login route
+
+### Technical Notes
+
+- Decisions came from a grill session on 2026-08-28. Explicitly rejected: a committed e2e suite, CI execution, screenshot diffing, per-test fixtures, and a `storageState` session file. This item is a config change plus documented conventions, deliberately.
+- Runs against the live Herd site using the working dev MySQL database (`rattlesnake_mountain`). No isolation, no rollback. Accepted risk: an agent clicking through admin, lifecycle, or breeding flows mutates real dev data.
+- Base URL is `https://rattlesnake-mountain.test`, not the `http://` value of `APP_URL`: Herd 301s plain HTTP to HTTPS with a self-signed certificate, so `.mcp.json` passes `--ignore-https-errors`.
+- The agent logs in through the real login form each session. No session file is persisted (`--isolated`).
+- Local `.env` holds a real dev account's credentials; `.env.example` carries placeholders only. `.env` stays gitignored.
+- `storage/screenshots` is kept in the repo with a self-ignoring `.gitignore` (`*` plus `!.gitignore`), the same pattern Laravel uses elsewhere, so a fresh clone has the directory but never tracks its contents.
+- This repo had no `CLAUDE.md` before this item. One was created for the conventions.
+- `DEV_PASSWORD` is a staging-only gate to keep staging off the public web. It is not enabled locally and plays no part in this setup.
+- Item [020] (local vs CI test discrepancies) stays unaffected: nothing here runs in CI.
+
+### Acceptance Criteria
+
+- [x] `.mcp.json` registers the Playwright MCP server and is committed
+- [x] A fresh agent session in this repo has browser tools available without extra setup — verified by launching the server with the exact `.mcp.json` args and running an MCP handshake: it reports `Playwright 1.63.0-alpha-2026-08-05` and lists the `browser_*` tools
+- [x] Agent can log in and reach an authenticated page reading credentials from `.env`, with no credentials pasted into the prompt
+- [x] Screenshots land in `storage/screenshots` and that path is gitignored
+- [x] Browser runs headless by default
+- [x] `CLAUDE.md` documents the base URL, the login sequence, and the screenshot path
+- [x] `.env.example` lists the two new variables with placeholder values
+
+### Tests
+
+- [x] No automated tests. This is agent tooling with no application code. Verified out of session with a throwaway headless script driving the same flow the MCP server will: navigated `https://rattlesnake-mountain.test/login`, filled the two `PLAYWRIGHT_TEST_*` values read from `.env`, landed on `/dashboard`, wrote a screenshot into `storage/screenshots`, and confirmed `git status` stayed clean.
+
+---
+
 ## [012] Light Mode Only and Legibility Pass
 
 **Status:** `done`

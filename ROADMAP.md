@@ -1,6 +1,6 @@
 # Roadmap
 
-<!-- Next task number: [025] -->
+<!-- Next task number: [026] -->
 
 ## [008] Design Upload Terms and Graveyard Option
 
