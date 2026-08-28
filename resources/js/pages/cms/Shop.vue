@@ -220,7 +220,7 @@ const purchase = (listingId: number): void => {
 						'rounded-md border px-3 py-1.5 text-sm',
 						link.active
 							? 'border-shakespeare-500 bg-shakespeare-500 text-white'
-							: 'border-shakespeare-300 text-shakespeare-700',
+							: 'border-shakespeare-300 text-shakespeare-400',
 						!link.url ? 'pointer-events-none opacity-50' : '',
 					]">
 					<span v-html="link.label" />

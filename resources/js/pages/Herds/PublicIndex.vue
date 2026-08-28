@@ -61,7 +61,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 				<div class="mt-4 flex justify-center gap-4">
 					<Link
 						:href="route('users.horses', props.user.id)"
-						class="text-shakespeare-500 hover:text-shakespeare-700">
+						class="text-shakespeare-500 hover:text-shakespeare-400">
 						View {{ props.user.name }}'s Horses
 					</Link>
 				</div>

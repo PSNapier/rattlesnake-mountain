@@ -596,7 +596,7 @@ const rejectBreeding = (id: number): void => {
 										: '',
 								]">
 								<td class="text-cape-palliser-700 px-4 py-3 text-sm">
-									<span class="inline-flex items-center rounded-full bg-shakespeare-50 px-2.5 py-0.5 text-xs font-medium text-shakespeare-700">
+									<span class="inline-flex items-center rounded-full bg-shakespeare-50 px-2.5 py-0.5 text-xs font-medium text-shakespeare-400">
 										Horse
 									</span>
 								</td>

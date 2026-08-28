@@ -64,7 +64,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 									v-if="user.avatar"
 									:src="user.avatar"
 									:alt="user.name" />
-								<AvatarFallback class="bg-shakespeare-200 text-shakespeare-700">
+								<AvatarFallback class="bg-shakespeare-200 text-shakespeare-400">
 									{{ getInitials(user.name) }}
 								</AvatarFallback>
 							</Avatar>

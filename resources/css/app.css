@@ -94,7 +94,7 @@
 
 /* Content links need a non-colour cue: markdown links inherit body colour. */
 .box a {
-	@apply text-shakespeare-700 underline;
+	@apply text-shakespeare-400 underline;
 }
 
 .hero-img {
@@ -113,10 +113,10 @@ h1 {
  * which fails WCAG AA even at large-text sizes. See reference/LIGHT-MODE-AUDIT.md.
  */
 h2 {
-	@apply text-shakespeare-700 font-amaranth text-2xl font-bold;
+	@apply text-shakespeare-400 font-amaranth text-2xl font-bold;
 }
 h3 {
-	@apply text-shakespeare-700 font-amaranth text-lg font-bold;
+	@apply text-shakespeare-400 font-amaranth text-lg font-bold;
 }
 h4 {
 	@apply text-new-orleans-800 font-amaranth text-2xl font-bold;

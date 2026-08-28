@@ -243,7 +243,7 @@ const formatDate = (value: string | null): string =>
 								}}
 							</span>
 							<span
-								class="text-shakespeare-700 text-sm font-semibold">
+								class="text-shakespeare-400 text-sm font-semibold">
 								{{ statusLabel(trade.status) }}
 								<span
 									class="text-cape-palliser-700 font-normal">

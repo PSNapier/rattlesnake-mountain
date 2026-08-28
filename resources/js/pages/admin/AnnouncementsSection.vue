@@ -194,7 +194,7 @@ const statusLabel = (announcement: Announcement): string => {
 					class="border-shakespeare-200 space-y-3 rounded-lg border p-4">
 					<div class="flex items-center justify-between gap-2">
 						<span
-							class="text-shakespeare-700 text-sm font-semibold">
+							class="text-shakespeare-400 text-sm font-semibold">
 							{{ statusLabel(announcement) }}
 						</span>
 						<span

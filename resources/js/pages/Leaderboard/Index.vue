@@ -78,7 +78,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 										:src="user.avatar"
 										:alt="user.name" />
 									<AvatarFallback
-										class="bg-shakespeare-200 text-shakespeare-700">
+										class="bg-shakespeare-200 text-shakespeare-400">
 										{{ getInitials(user.name) }}
 									</AvatarFallback>
 								</Avatar>
@@ -124,7 +124,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 								</span>
 								<Link
 									:href="`/u/${herd.owner.id}`"
-									class="text-shakespeare-500 hover:text-shakespeare-700 hover:underline">
+									class="text-shakespeare-500 hover:text-shakespeare-400 hover:underline">
 									{{ herd.owner.name }}
 								</Link>
 								<span
@@ -167,7 +167,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 										:src="user.avatar"
 										:alt="user.name" />
 									<AvatarFallback
-										class="bg-shakespeare-200 text-shakespeare-700">
+										class="bg-shakespeare-200 text-shakespeare-400">
 										{{ getInitials(user.name) }}
 									</AvatarFallback>
 								</Avatar>

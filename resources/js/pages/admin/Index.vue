@@ -289,7 +289,7 @@ onMounted(() => {
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
 						activeTab === 'submissions'
 							? 'bg-shakespeare-500 text-white shadow-xs'
-							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700 border',
+							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-400 border',
 					]">
 					<span class="text-base">Submissions</span>
 				</button>
@@ -300,7 +300,7 @@ onMounted(() => {
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
 						activeTab === 'rollers'
 							? 'bg-shakespeare-500 text-white shadow-xs'
-							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700 border',
+							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-400 border',
 					]">
 					<span class="text-base">Rollers</span>
 				</button>
@@ -311,7 +311,7 @@ onMounted(() => {
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
 						activeTab === 'users'
 							? 'bg-shakespeare-500 text-white shadow-xs'
-							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700 border',
+							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-400 border',
 					]">
 					<span class="text-base">Users</span>
 				</button>
@@ -322,7 +322,7 @@ onMounted(() => {
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
 						activeTab === 'items'
 							? 'bg-shakespeare-500 text-white shadow-xs'
-							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700 border',
+							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-400 border',
 					]">
 					<span class="text-base">Items</span>
 				</button>
@@ -333,7 +333,7 @@ onMounted(() => {
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
 						activeTab === 'shop'
 							? 'bg-shakespeare-500 text-white shadow-xs'
-							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700 border',
+							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-400 border',
 					]">
 					<span class="text-base">Shop</span>
 				</button>
@@ -344,7 +344,7 @@ onMounted(() => {
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
 						activeTab === 'lifecycle'
 							? 'bg-shakespeare-500 text-white shadow-xs'
-							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700 border',
+							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-400 border',
 					]">
 					<span class="text-base">Lifecycle</span>
 				</button>
@@ -355,7 +355,7 @@ onMounted(() => {
 						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
 						activeTab === 'cms'
 							? 'bg-shakespeare-500 text-white shadow-xs'
-							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-700 border',
+							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-400 border',
 					]">
 					<span class="text-base">CMS</span>
 				</button>
