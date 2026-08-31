@@ -4,11 +4,11 @@ Laravel 12 + Inertia + Vue 3 + Tailwind, MySQL. Development on Windows (Herd), p
 
 ## Browser verification (Playwright MCP)
 
-Pest feature tests never exercise Inertia or the compiled front end. When a change is visual or depends on client-side behaviour, verify it in a real browser with the Playwright MCP server registered in `.mcp.json`. This is manual verification tooling, not a committed test suite.
+Pest feature tests never exercise Inertia or the compiled front end. When a change is visual or depends on client-side behaviour, verify it in a real browser with the Playwright MCP server, which is installed globally in the user's Claude Code configuration rather than in this repo. This is manual verification tooling, not a committed test suite.
 
-- **Base URL:** `https://rattlesnake-mountain.test`. Always navigate to absolute URLs on that host. Herd redirects plain HTTP to HTTPS and serves a self-signed certificate, so `.mcp.json` passes `--ignore-https-errors`.
-- **Headless by default.** `.mcp.json` passes `--headless`. Do not switch to headed mode unless the user asks.
-- **Screenshots:** `storage/screenshots`. The MCP server is configured with `--output-dir storage/screenshots`; save screenshots there and nowhere else. The directory ignores its own contents, so `git status` stays clean.
+- **Base URL:** `https://rattlesnake-mountain.test`. Always navigate to absolute URLs on that host. Herd redirects plain HTTP to HTTPS and serves a self-signed certificate, so the server needs `--ignore-https-errors`.
+- **Headless by default.** Do not switch to headed mode unless the user asks.
+- **Screenshots:** `storage/screenshots`. Save screenshots there and nowhere else, passing the path explicitly if the global server has a different output directory. The directory ignores its own contents, so `git status` stays clean.
 - **Credentials:** read `PLAYWRIGHT_TEST_EMAIL` and `PLAYWRIGHT_TEST_PASSWORD` from `.env`. Never ask the user to paste credentials into the prompt, and never write a credential into a file, a commit, or a screenshot caption.
 
 ### Login sequence
