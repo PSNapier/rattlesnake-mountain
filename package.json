@@ -7,7 +7,16 @@
 		"dev": "vite",
 		"format": "prettier --write resources/",
 		"format:check": "prettier --check resources/",
-		"lint": "eslint . --fix"
+		"lint": "eslint . --fix",
+		"prepare": "husky"
+	},
+	"lint-staged": {
+		"resources/**/*.{js,jsx,ts,tsx,vue,css,json,md,yml,yaml}": [
+			"prettier --write"
+		],
+		"resources/**/*.{js,jsx,ts,tsx,vue}": [
+			"eslint --fix --no-warn-ignored"
+		]
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.19.0",
@@ -17,6 +26,8 @@
 		"eslint": "^9.27.0",
 		"eslint-config-prettier": "^10.1.5",
 		"eslint-plugin-vue": "^9.33.0",
+		"husky": "^9.1.7",
+		"lint-staged": "^17.5.0",
 		"prettier": "^3.5.3",
 		"prettier-plugin-multiline-arrays": "^4.0.3",
 		"prettier-plugin-organize-imports": "^4.1.0",
