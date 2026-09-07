@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\MenuItem;
+use App\Support\UploadLimit;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -81,6 +82,11 @@ class HandleInertiaRequests extends Middleware
                 ]) : null,
             ],
             'unreadMessageCount' => $unreadCount,
+            'uploads' => [
+                'maxKilobytes' => UploadLimit::kilobytesFor($user),
+                'maxBytes' => UploadLimit::bytesFor($user),
+                'maxMegabytes' => UploadLimit::megabytesFor($user),
+            ],
             'navMenu' => $navMenu,
             'ziggy' => [
                 ...(new Ziggy)->toArray(),

@@ -23,8 +23,7 @@ const submit = () => {
 <template>
 	<AuthLayout
 		title="Confirm your password"
-		description="This is a secure area of the application. Please confirm your password before continuing."
-	>
+		description="This is a secure area of the application. Please confirm your password before continuing.">
 		<Head title="Confirm password" />
 
 		<form @submit.prevent="submit">
@@ -38,8 +37,7 @@ const submit = () => {
 						v-model="form.password"
 						required
 						autocomplete="current-password"
-						autofocus
-					/>
+						autofocus />
 
 					<InputError :message="form.errors.password" />
 				</div>
@@ -47,12 +45,10 @@ const submit = () => {
 				<div class="flex items-center">
 					<Button
 						class="w-full"
-						:disabled="form.processing"
-					>
+						:disabled="form.processing">
 						<LoaderCircle
 							v-if="form.processing"
-							class="h-4 w-4 animate-spin"
-						/>
+							class="h-4 w-4 animate-spin" />
 						Confirm Password
 					</Button>
 				</div>

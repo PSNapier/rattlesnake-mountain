@@ -13,6 +13,3 @@ declare module 'vite/client' {
 		) => Record<string, () => Promise<T>>;
 	}
 }
-
-
-

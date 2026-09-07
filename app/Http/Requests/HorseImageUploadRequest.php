@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Support\UploadLimit;
 use Illuminate\Foundation\Http\FormRequest;
 
 class HorseImageUploadRequest extends FormRequest
@@ -13,7 +14,7 @@ class HorseImageUploadRequest extends FormRequest
 
     public function rules(): array
     {
-        $maxSize = $this->user()?->isStaff() ? 10240 : 2048; // 10MB for staff, 2MB for users
+        $maxSize = UploadLimit::kilobytesFor($this->user());
 
         return [
             'image' => 'required|image|mimes:png,jpg,jpeg|max:'.$maxSize,
@@ -22,7 +23,7 @@ class HorseImageUploadRequest extends FormRequest
 
     public function messages(): array
     {
-        $maxSizeMB = $this->user()?->isStaff() ? 10 : 2;
+        $maxSizeMB = UploadLimit::megabytesFor($this->user());
 
         return [
             'image.required' => 'Please select an image to upload.',

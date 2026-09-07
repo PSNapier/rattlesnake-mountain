@@ -29,7 +29,10 @@ interface ShopListing {
 }
 
 /** Editable row: nullable text fields coerced to string for form controls. */
-type ShopListingEditable = Omit<ShopListing, 'shop_flavor_text' | 'shop_description' | 'image_path'> & {
+type ShopListingEditable = Omit<
+	ShopListing,
+	'shop_flavor_text' | 'shop_description' | 'image_path'
+> & {
 	shop_flavor_text: string;
 	shop_description: string;
 	image_path: string;
@@ -53,7 +56,9 @@ const createForm = reactive({
 const editableRows = reactive<Record<number, ShopListingEditable>>({});
 
 const availableItems = computed(() => {
-	const assignedItemIds = new Set(props.shopListings.map((listing) => listing.item_id));
+	const assignedItemIds = new Set(
+		props.shopListings.map((listing) => listing.item_id),
+	);
 
 	return props.items
 		.filter((item) => item.is_active && !assignedItemIds.has(item.id))
@@ -195,14 +200,38 @@ const removeListing = (listing: ShopListing): void => {
 				<table class="w-full border-collapse">
 					<thead>
 						<tr class="border-b border-gray-200">
-							<th class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">Item</th>
-							<th class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">Price</th>
-							<th class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">Order</th>
-							<th class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">Visible</th>
-							<th class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">Image</th>
-							<th class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">Flavor</th>
-							<th class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">Description</th>
-							<th class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">Actions</th>
+							<th
+								class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">
+								Item
+							</th>
+							<th
+								class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">
+								Price
+							</th>
+							<th
+								class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">
+								Order
+							</th>
+							<th
+								class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">
+								Visible
+							</th>
+							<th
+								class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">
+								Image
+							</th>
+							<th
+								class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">
+								Flavor
+							</th>
+							<th
+								class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">
+								Description
+							</th>
+							<th
+								class="text-cape-palliser-950 px-3 py-3 text-left text-sm font-semibold">
+								Actions
+							</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -210,42 +239,61 @@ const removeListing = (listing: ShopListing): void => {
 							v-for="listing in props.shopListings"
 							:key="listing.id"
 							class="border-b border-gray-200 align-top">
-							<td class="px-3 py-3 text-sm font-medium text-cape-palliser-950">
+							<td
+								class="text-cape-palliser-950 px-3 py-3 text-sm font-medium">
 								{{ listing.item_name }}
 							</td>
 							<td class="px-3 py-3">
 								<Input
-									v-model.number="getRowState(listing).scorpion_price"
+									v-model.number="
+										getRowState(listing)
+											.scorpion_price
+									"
 									type="number"
 									min="0" />
 							</td>
 							<td class="px-3 py-3">
 								<Input
-									v-model.number="getRowState(listing).sort_order"
+									v-model.number="
+										getRowState(listing)
+											.sort_order
+									"
 									type="number"
 									min="0" />
 							</td>
 							<td class="px-3 py-3 text-center">
 								<input
-									v-model="getRowState(listing).visible_in_shop"
+									v-model="
+										getRowState(listing)
+											.visible_in_shop
+									"
 									type="checkbox"
 									class="h-4 w-4 rounded border-gray-300" />
 							</td>
 							<td class="px-3 py-3">
 								<Input
-									v-model="getRowState(listing).image_path"
+									v-model="
+										getRowState(listing)
+											.image_path
+									"
 									type="text"
 									placeholder="/images/shop/example.png" />
 							</td>
 							<td class="px-3 py-3">
 								<textarea
-									v-model="getRowState(listing).shop_flavor_text"
+									v-model="
+										getRowState(listing)
+											.shop_flavor_text
+									"
 									rows="2"
 									class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex w-56 min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm" />
 							</td>
 							<td class="px-3 py-3">
 								<textarea
-									v-model="getRowState(listing).shop_description"
+									v-model="
+										getRowState(listing)
+											.shop_description
+									"
 									rows="3"
 									class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex w-72 min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm" />
 							</td>
@@ -253,13 +301,17 @@ const removeListing = (listing: ShopListing): void => {
 								<div class="flex gap-2">
 									<Button
 										size="sm"
-										@click="updateListing(listing)">
+										@click="
+											updateListing(listing)
+										">
 										Save
 									</Button>
 									<Button
 										size="sm"
 										variant="destructive"
-										@click="removeListing(listing)">
+										@click="
+											removeListing(listing)
+										">
 										Delete
 									</Button>
 								</div>
@@ -268,7 +320,7 @@ const removeListing = (listing: ShopListing): void => {
 						<tr v-if="props.shopListings.length === 0">
 							<td
 								colspan="8"
-								class="px-3 py-6 text-center text-sm text-cape-palliser-600">
+								class="text-cape-palliser-600 px-3 py-6 text-center text-sm">
 								No shop listings yet.
 							</td>
 						</tr>

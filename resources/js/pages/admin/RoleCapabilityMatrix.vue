@@ -4,7 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { router, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 
-const matrixRoleOrder = ['user', 'admin', 'designer', 'story_admin', 'game_master'] as const;
+const matrixRoleOrder = [
+	'user',
+	'admin',
+	'designer',
+	'story_admin',
+	'game_master',
+] as const;
 
 const roleLabels: Record<string, string> = {
 	user: 'User',
@@ -104,14 +110,16 @@ function saveRoleMatrix(): void {
 		</CardHeader>
 		<CardContent>
 			<p class="text-cape-palliser-600 mb-4 text-sm">
-				Toggle which admin areas each staff role can access. The User role cannot hold
-				capabilities. Admin must keep Users access.
+				Toggle which admin areas each staff role can access. The
+				User role cannot hold capabilities. Admin must keep Users
+				access.
 			</p>
 			<div class="overflow-x-auto">
 				<table class="w-full border-collapse">
 					<thead>
 						<tr class="border-b border-gray-200">
-							<th class="text-cape-palliser-950 px-3 py-2 text-left text-sm font-semibold">
+							<th
+								class="text-cape-palliser-950 px-3 py-2 text-left text-sm font-semibold">
 								Role
 							</th>
 							<th
@@ -127,7 +135,8 @@ function saveRoleMatrix(): void {
 							v-for="role in matrixRoleOrder"
 							:key="role"
 							class="border-b border-gray-200">
-							<td class="text-cape-palliser-950 px-3 py-2 text-sm font-medium">
+							<td
+								class="text-cape-palliser-950 px-3 py-2 text-sm font-medium">
 								{{ roleLabels[role] ?? role }}
 							</td>
 							<td
@@ -136,18 +145,28 @@ function saveRoleMatrix(): void {
 								class="px-3 py-2 text-center">
 								<input
 									type="checkbox"
-									class="h-4 w-4 accent-shakespeare-500"
-									:checked="hasCapability(role, area)"
-									:disabled="isCapabilityLocked(role, area)"
+									class="accent-shakespeare-500 h-4 w-4"
+									:checked="
+										hasCapability(role, area)
+									"
+									:disabled="
+										isCapabilityLocked(role, area)
+									"
 									:aria-label="`${roleLabels[role] ?? role} ${areaLabels[area] ?? area}`"
-									@change="toggleCapability(role, area)" />
+									@change="
+										toggleCapability(role, area)
+									" />
 							</td>
 						</tr>
 					</tbody>
 				</table>
 			</div>
 			<div class="mt-4">
-				<Button type="button" @click="saveRoleMatrix">Save capabilities</Button>
+				<Button
+					type="button"
+					@click="saveRoleMatrix"
+					>Save capabilities</Button
+				>
 			</div>
 		</CardContent>
 	</Card>

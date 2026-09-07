@@ -37,6 +37,13 @@ export interface SharedData extends PageProps {
 	sidebarOpen: boolean;
 	navMenu: NavMenuItem[];
 	unreadMessageCount?: number;
+	uploads: UploadLimits;
+}
+
+export interface UploadLimits {
+	maxKilobytes: number;
+	maxBytes: number;
+	maxMegabytes: number;
 }
 
 export interface User {

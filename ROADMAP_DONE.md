@@ -1,5 +1,176 @@
 # Roadmap Done
 
+## [027] Configurable Staff and Player Upload Size Limits
+
+**Status:** `done`
+**Depends On:** [026], [028]
+**Spec:** none
+
+### Goal
+
+The agreed limits (10 MB for staff, 2 MB for players) hold on every upload path and are defined in exactly one place, so a limit change is a one-line config edit rather than a hunt through five files.
+
+### Scope
+
+- `config/uploads.php` holding staff and player maximums in kilobytes
+- Server-side: `HorseImageUploadRequest` and `AvatarUploadRequest` read the config instead of literals
+- Client-side: limits reach Vue through a shared Inertia prop, replacing the hardcoded `(isStaff ? 10 : 2) * 1024 * 1024` computeds and the literal size hints
+- Error copy and the file-type hint under each upload control state the size that applies to the signed-in user
+- NOT in scope: changing the agreed 10 / 2 values, server-level `upload_max_filesize` on Forge (the client set that on 2026-08-01), rate limiting, image dimension or format rules
+
+### Technical Notes
+
+**User flows:**
+
+- **Staff:** upload controls at `/horses/create`, `/horses/{horse}/edit`, `/breedings`, and `/settings/appearance` accept files up to 10 MB and say so.
+- **Player:** the same four controls cap at 2 MB and say so.
+
+**Details:**
+
+- Current state, before this item:
+  - `HorseImageUploadRequest.php:16` — correct staff/player ternary, but a literal
+  - `AvatarUploadRequest.php:25` — flat `max:2048`, no staff allowance
+  - `Horses/Create.vue:29`, `Horses/Edit.vue:57`, `Breedings/Index.vue:86` — three copies of the same computed
+  - `settings/Appearance.vue:54` — its own inline size check and an "Max 2MB" string, bypassing `ImageUpload.vue` entirely
+  - `ImageUpload.vue:38` — `maxSize` prop defaults to 2 MB with a matching `fileTypeHint` default
+- Avatars gain the staff allowance per the decision of 2026-09-07.
+- Ship the config values to the front end via `HandleInertiaRequests::share`, resolved for the signed-in user, so `ImageUpload.vue` consumers stop computing it themselves.
+- `ImageUpload.vue` already handles a 413 from the server with a "contact support" message. That path stays as the backstop for a PHP-level rejection, which no Laravel validation rule can catch.
+- Local Herd `php.ini` may cap `upload_max_filesize` below 10 MB. If a staff 10 MB upload 413s locally while validation would have allowed it, that is an environment gap, not an application bug. Record the local value in the item when verifying.
+- **Local values, 2026-09-07:** `upload_max_filesize=12M`, `post_max_size=16M`. Both clear the 10 MB staff limit, so there is no environment gap on this machine.
+- **As built, 2026-09-07:** `config/uploads.php` holds `max_kilobytes.staff` and `max_kilobytes.player`. `App\Support\UploadLimit` resolves the figure that applies to a user (`kilobytesFor` / `bytesFor` / `megabytesFor`) and is the only reader of that config. A guest resolves to the player limit.
+- The shared prop is `uploads` on every Inertia response, carrying all three units. `resources/js/composables/useUploadLimit.ts` reads it and also builds the `max NMB` hint fragment. `ImageUpload.vue`'s `maxSize` and `fileTypeHint` props became optional overrides that fall back to the shared value, so `Horses/Create.vue`, `Horses/Edit.vue`, and `Breedings/RequestCard.vue` no longer compute a limit at all, and `Breedings/Index.vue` no longer drills one down.
+- **Closeout note, 2026-09-07:** archived on the user's instruction with the player-account browser pass not run. The staff pass was run and both hints read 10MB. A client-side rejection was also exercised on both paths: a 16.5MB PNG produced "File size must be less than 10MB." from the shared limit, with no request sent.
+- Avatar copy on `settings/Appearance.vue` reads "JPEG, PNG, or WebP. Max NMB." — capitalised, since it follows a full stop, unlike the mid-sentence hint under the horse controls.
+
+### Acceptance Criteria
+
+- [x] Staff can upload a file between 2 MB and 10 MB on every upload path
+      `tests/Feature/UploadLimitTest.php::it_accepts_a_staff_upload_over_the_player_limit`
+- [x] Players are rejected above 2 MB on every upload path, with a message naming 2MB
+      `tests/Feature/UploadLimitTest.php::it_rejects_a_player_upload_over_the_player_limit`
+      `tests/Feature/UploadLimitTest.php::it_names_the_applicable_limit_in_the_error_message`
+- [x] Both staff and players are rejected above 10 MB
+      `tests/Feature/UploadLimitTest.php::it_rejects_any_upload_over_the_staff_limit`
+- [x] Changing `config/uploads.php` changes the enforced limit with no other edit
+      `tests/Feature/UploadLimitTest.php::it_enforces_the_limit_from_config`
+- [x] The limit for the signed-in user is available to Vue as a shared Inertia prop
+      `tests/Feature/UploadLimitTest.php::it_shares_the_resolved_limit_with_inertia`
+- [x] No hardcoded `2048`, `10240`, or `(isStaff ? 10 : 2)` remains in `app` or `resources/js`
+- [x] Each upload control's on-screen size hint matches the limit for the signed-in user, confirmed in a browser as staff: `/horses/create` reads "PNG, JPG, or JPEG files only, max 10MB" and `/settings/appearance` reads "JPEG, PNG, or WebP. Max 10MB." The player pass was not run for want of a non-staff login; both hints derive from the one shared `uploads` prop, whose player and staff values are asserted by `UploadLimitTest::it_shares_the_resolved_limit_with_inertia`
+
+---
+
+## [028] Shared Upload Composable
+
+**Status:** `done`
+**Depends On:** [026]
+**Spec:** none
+
+### Goal
+
+The CSRF refresh, 419 retry, and error-mapping logic duplicated between `ImageUpload.vue` and `settings/Appearance.vue` lives in one composable, so the avatar path gains the 413 handling it currently lacks and a limit or transport change happens once instead of twice.
+
+### Scope
+
+- `useCsrfFetch` composable: CSRF token read, session refresh, single 419 retry, response error mapping
+- `useImageUpload` composable built on it: FormData assembly, file type and size validation, 413 message
+- `ImageUpload.vue` and `Appearance.vue` (both avatar upload and avatar delete) consume the composables
+- Replace `ImageUpload.vue`'s simulated progress bar with the `LoaderCircle` spinner idiom; apply the same spinner to the avatar button
+- NOT in scope: changing `alert()` error reporting, converting `ItemsTab.vue`'s three fetches, the 10/2 limit values or config wiring ([027]), any change to upload endpoints or server behaviour
+
+### Technical Notes
+
+**User flows:**
+
+- **Any user:** upload controls at `/horses/create`, `/horses/{horse}/edit`, `/breedings`, and `/settings/appearance` behave exactly as before, except the progress bar becomes a spinner and a server-level rejection on the avatar path now explains itself instead of showing a bare HTTP status.
+
+**Details:**
+
+- Duplication being removed: `fetchFreshCsrfToken` is byte-for-byte identical at `ImageUpload.vue:153` and `Appearance.vue:66`. `performUpload` / `performAvatarUpload` differ only in URL and form field name. `performAvatarDelete` repeats the same CSRF and 419 block while uploading nothing, which is why the generic `useCsrfFetch` sits underneath rather than a single upload-shaped composable.
+- Only `ImageUpload.vue` handles 413 today. The avatar path lacks it, so the "exceeds server upload limit" message the client hit on 2026-07-31 never appears on the settings page.
+- **Move the fetch, CSRF, and 419 logic verbatim.** No cleanup, no rewrite, no transport change. The 419 retry cannot be reliably triggered in a browser, so an unchanged diff is the only real evidence it still works. Tidying it is a separate item.
+- XMLHttpRequest was considered for genuine upload progress and rejected on 2026-09-07: it would force a reimplementation of the 419 retry, which is the exact risk the verbatim rule exists to contain.
+- The progress bar is theatre. `ImageUpload.vue:236` ticks a timer to 90% because `fetch` reports no upload progress. It goes, replaced by `LoaderCircle` with `animate-spin`, the idiom already used in `Login.vue` and five other auth pages.
+- `components/ui/progress/` becomes unused after this. Leave it. It is shadcn scaffolding, not this item's code.
+- Size limits are a parameter on `useImageUpload`. Call sites keep today's literals so [027] has one seam to change.
+- Composables go in `resources/js/composables/`, alongside `useInitials`, `useLinkDictionary`, and `useRules`.
+- `Dashboard.vue` is a third consumer of this pattern but is deleted by [026], hence the dependency.
+- **As built, 2026-09-07:** `useCsrfFetch` exposes `csrfFetch(url, { method, body })` and `resolveErrorMessage(response, { action, fileSizeMB })`. `useImageUpload` exposes `validateFile` and `uploadFile`. `performAvatarDelete` collapsed into a `csrfFetch` call with a DELETE method and no body. Sharing `resolveErrorMessage` is what gives the avatar path its 413 message.
+- `resolveErrorMessage` drops the original's second 413/419 check inside the JSON-parse `catch`. The early returns above it made that branch unreachable in both files, so observable behaviour is unchanged.
+- **Closeout note, 2026-09-07:** archived on the user's instruction with two criteria left unchecked, both marked DEFERRED above: the by-hand avatar upload/delete pass, and the 413 message check that needs a local `php.ini` change. What was verified in a browser: horse image upload from `/horses/create` (by the user), both pages rendering with no console errors, the spinner in place of the progress bar, and an oversized file rejected client-side on both the horse and avatar paths with the existing alert.
+- Repo-wide `npm run lint` and `npm run format:check` did **not** pass before this item and still do not: `Horses/Edit.vue:96` carries a pre-existing `'_sex' is assigned a value but never used`, and roughly fifty untouched files fail Prettier. Every file this item touched passes both. Cleaning the rest is a separate item.
+
+```mermaid
+flowchart TD
+    A[useCsrfFetch] -->|CSRF, 419 retry, error mapping| B[useImageUpload]
+    A --> C[Appearance.vue: deleteAvatar]
+    B --> D[ImageUpload.vue]
+    B --> E[Appearance.vue: uploadAvatar]
+    D --> F["/horses/create, /horses/edit, /breedings"]
+```
+
+### Acceptance Criteria
+
+- [x] Horse image upload works from `/horses/create`, verified in a browser by the user. `/horses/{horse}/edit` and `/breedings` were not exercised by hand; all three render the same `ImageUpload.vue` against the same `POST /horses/upload-image` endpoint, and all three routes were confirmed present
+- [ ] Avatar upload and avatar delete work from `/settings/appearance`, verified in a browser — DEFERRED, not exercised by hand. The page renders, the controls are present, and the upload endpoint is covered by `UploadLimitTest`, but no avatar was written or deleted through the browser
+- [x] Oversized file is rejected client-side on both paths with the existing alert
+- [ ] Avatar path shows the "exceeds server upload limit" message on a 413 — DEFERRED, needs a local `php.ini` change and a PHP restart. The message now reaches that path in code: `Appearance.vue` maps errors through the shared `resolveErrorMessage`, which returns the 413 copy
+- [x] No CSRF, retry, or upload transport code remains in `ImageUpload.vue` or `Appearance.vue`
+- [x] CSRF and 419 retry logic is unchanged from the original, confirmed by reading the diff
+- [x] Spinner replaces the progress bar in `ImageUpload.vue` and the avatar button, matching the auth pages
+- [x] `npm run lint` and `npm run format:check` pass for every file this item touched. Repo-wide they do not, and did not before this item either: `Horses/Edit.vue:96` carries a pre-existing unused-variable error and roughly fifty untouched files fail Prettier. Out of scope here
+
+---
+
+## [026] Remove Orphaned Character Images System
+
+**Status:** `done`
+**Depends On:** none
+**Spec:** none
+
+### Goal
+
+The `character_images` subsystem is unreachable dead code: no route renders the only page that uses it. Remove it entirely so the codebase stops carrying a second, divergent image pipeline that confuses every upload change made after it.
+
+### Scope
+
+- Delete `CharacterImage` model, controller, form request, factory, and feature test
+- Delete `Dashboard.vue` (its sole consumer) and the `characterImages` relation on `User`
+- Remove the three `character-images` routes and the `model:prune` schedule entry in `routes/console.php`
+- Migration dropping the `character_images` table
+- Delete any stored files under `storage/app/public/character-images`
+- NOT in scope: horse images, avatars, or the upload size limits themselves (that is [027])
+
+### Technical Notes
+
+**User flows:**
+
+- No actor reaches this system today. `CharacterImageController::index()` renders the `Dashboard` page, but the `dashboard` route (`routes/web.php:35`) is a closure rendering `Users/Index` and passes no `characterImages` prop. `Dashboard.vue` is therefore never served, and it is the only page containing the character-image gallery and its upload box.
+
+**Details:**
+
+- Introduced `2025_09_03_222043_create_character_images_table.php`, before horses had their own upload path. Superseded by `POST /horses/upload-image`, which is the live system.
+- "Character" here meant a user's persona image, not a horse. It is per-user (`user_id`), with no `horse_id` or `herd_id`.
+- Files to remove: `app/Models/CharacterImage.php`, `app/Http/Controllers/CharacterImageController.php`, `app/Http/Requests/CharacterImageUploadRequest.php`, `database/factories/CharacterImageFactory.php`, `tests/Feature/CharacterImageTest.php`, `resources/js/pages/Dashboard.vue`
+- Routes to remove: `character-images.serve` (`routes/web.php:148`), `character-images.store` (`:155`), `character-images.destroy` (`:156`)
+- `routes/console.php` imports `CharacterImage` for a daily `model:prune`. Both the import and the `Schedule::command` block go.
+- `AppSidebar.vue:13` has a "Dashboard" nav entry, but it targets the `dashboard` route rendering `Users/Index`. Leave it alone.
+- **Data check before dropping:** the working `rattlesnake_mountain` dev database may hold rows and files from early testing. Confirm the table is empty or the contents are disposable before writing the drop migration. Per the client agreement of 2026-07-28 the database is no longer wiped, so this is a real destructive migration.
+- **Data check result, 2026-09-07:** `character_images` held 0 rows. `storage/app/public/character-images` held 4 orphaned `.webp` files with no matching rows, so nothing referenced them. Both removed. The drop migration is `2026_09_07_000001_drop_character_images_table.php`; it ran against the dev database and `Schema::hasTable` now reports the table gone.
+- `tests/Feature/FileServePathTraversalTest.php` also asserted path traversal on the `character-images` serve route. That case went with the route; the `avatars` and `horse-images` cases stay.
+- **Closeout note, 2026-09-07:** archived on the user's instruction with the by-hand browser criterion only partly exercised. Confirmed: the user uploaded a horse image locally, and `/dashboard` still renders (it serves `Users/Index`, never the deleted `Dashboard.vue`). Not exercised by hand: an avatar upload. Pest suite green at 281 tests.
+
+### Acceptance Criteria
+
+- [x] `character_images` table dropped by a migration that runs clean on the dev database
+- [x] No reference to `CharacterImage`, `character-images`, or `characterImages` remains anywhere in `app`, `routes`, `resources`, `database`, or `tests`
+- [x] Scheduled task list no longer includes the character image prune, confirmed with `php artisan schedule:list`
+- [x] Full Pest suite green after removal
+- [x] Horse image upload still works in a browser, confirmed by hand by the user on the local site. The avatar path was not exercised by hand; it shares no code with the removed system, and `UploadLimitTest` covers its endpoint
+
+---
+
 ## [025] Playwright MCP for Agent-Driven Browser Verification
 
 **Status:** `done`

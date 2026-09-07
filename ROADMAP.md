@@ -1,6 +1,6 @@
 # Roadmap
 
-<!-- Next task number: [026] -->
+<!-- Next task number: [032] -->
 
 ## [008] Design Upload Terms and Graveyard Option
 
@@ -504,3 +504,167 @@ Deterministic genotype → phenotype mapping reused by breeding results and the 
 - [ ] `tests/Feature/BreedingTest.php::it_uses_the_shared_reader_for_foal_phenotypes`
 - [ ] `tests/Feature/AdminHorseRandomizerTest.php::it_uses_the_shared_reader_for_coat_labels`
 
+
+---
+
+## [029] Designer High-Priority Submission Flag
+
+**Status:** `next`
+**Depends On:** none
+**Spec:** none
+
+### Goal
+
+Designers can mark a design submission as high priority when they upload it, and submissions-capable staff can raise or clear that flag in the review queue, so urgent designs are visible at a glance instead of found by scrolling.
+
+### Scope
+
+- `design_priority` capability area added to the role matrix, seeded on for Designer and Admin
+- "High priority" checkbox on `/horses/create` and `/horses/{horse}/edit`, rendered only for roles holding the capability, default unchecked
+- Boolean on `horses`, persisted through approval
+- Badge on flagged rows in the admin Submissions tab, plus a priority dropdown beside the existing status filter
+- Staff route to raise or clear the flag on a queued submission, gated on `admin.submissions`
+- NOT in scope: the designer NPC flag ([030]); auto-flagging derived from submitter role; changing the queue default sort; notifications
+
+### Technical Notes
+
+**User flows:**
+
+- **Designer:** "High priority" checkbox on the horse form at `/horses/create` and `/horses/{horse}/edit`. Ticking it marks the submission for fast review.
+- **Player:** the same two forms, with no checkbox. Nothing changes.
+- **Staff (review):** Submissions tab at `/admin`. Flagged rows carry a "High priority" badge, a priority dropdown sits beside the status filter, and each row can be raised or cleared.
+- **Admin:** role matrix at `/admin`. A `design_priority` column, togglable per staff role.
+
+**Details:**
+
+- `Role::areas()` (`app/Models/Role.php:18`) is a hardcoded seven-entry list, and `RoleCapabilityService::sync` intersects any submitted matrix against it (`app/Services/RoleCapabilityService.php:61`), so an area missing from that list is silently dropped on save. The new area goes there and into `Role::defaultCapabilities()` for Admin and Designer.
+- `app/Providers/AppServiceProvider.php:46` mints an `admin.{area}` gate for every area, so `admin.design_priority` will exist. Nothing routes on it. The form uses the capability as a field-visibility check, not a route gate. Accepted.
+- A new area does not produce a phantom admin tab: `resources/js/pages/admin/Index.vue:225` gates tab rendering on a fixed `ALL_TABS` list. It does need an `areaLabels` entry and a `DEFAULT_CAPABILITY_AREAS` entry in `resources/js/pages/admin/RoleCapabilityMatrix.vue` (`:27`, `:142`), or the matrix renders the raw slug.
+- Existing `role_capabilities` rows need a seed migration for the new area. The [021] migration is the pattern.
+- `statusFilter` is a single-select `Status | 'all'` ref (`resources/js/pages/admin/SubmissionsTab.vue:122`). Priority is a second independent ref, not another option in that dropdown, so "pending AND high priority" stays expressible. The filter chain at `:240` gains one clause.
+- The flag persists through approval, so the approved filter still shows what was fast-tracked. No write on approve.
+- Staff writes go through a new route beside `archive` / `unarchive` in `SubmissionController` and log to `AdminSubmissionLog` the way archive does (`:33`), which needs a new `AdminAction` case.
+
+### Acceptance Criteria
+
+- [ ] Roles holding `design_priority` see the checkbox on create and edit; players do not
+      `tests/Feature/DesignPriorityFlagTest.php::it_shows_the_priority_checkbox_to_capable_roles`
+      `tests/Feature/DesignPriorityFlagTest.php::it_hides_the_priority_checkbox_from_players`
+- [ ] Submitting with the box ticked stores the flag, and a player posting the field cannot set it
+      `tests/Feature/DesignPriorityFlagTest.php::it_stores_the_flag_from_a_capable_submitter`
+      `tests/Feature/DesignPriorityFlagTest.php::it_ignores_the_field_from_an_uncapable_submitter`
+- [ ] Submissions-capable staff can raise and clear the flag on a queued submission; others cannot
+      `tests/Feature/DesignPriorityFlagTest.php::it_lets_staff_raise_and_clear_the_flag`
+      `tests/Feature/DesignPriorityFlagTest.php::it_forbids_non_staff_from_changing_the_flag`
+- [ ] The flag survives approval and is still visible under the approved filter
+      `tests/Feature/DesignPriorityFlagTest.php::it_keeps_the_flag_after_approval`
+- [ ] `design_priority` is seeded on for Designer and Admin, and toggling it in the matrix changes who sees the checkbox
+      `tests/Feature/Admin/RoleCapabilityMatrixTest.php::it_seeds_design_priority_for_designer_and_admin`
+      `tests/Feature/DesignPriorityFlagTest.php::it_respects_a_matrix_toggle_of_design_priority`
+- [ ] Priority dropdown combines with the status filter rather than replacing it, confirmed in a browser as staff
+- [ ] Flagged rows read "High priority" in the Submissions tab, confirmed in a browser
+
+---
+
+## [030] Designer NPC Design Flag
+
+**Status:** `freezer`
+**Depends On:** [029]
+**Spec:** none
+
+### Goal
+
+A designer uploading a design meant to become an NPC, rather than one of their own characters, can say so at upload, so the reviewer does not have to ask and the approved horse lands in the correct ownership state.
+
+### Scope
+
+- `design_npc` capability area, seeded on for Designer and Admin, editable from the role matrix
+- "Intended as an NPC" checkbox on `/horses/create` and `/horses/{horse}/edit`, default unchecked, visible only to roles holding the capability
+- The stored intent shown to the reviewer in the Submissions tab
+- What approval does with that intent: open, awaiting client
+- NOT in scope: the priority flag ([029]); re-deriving `is_npc` for horses already in the database; the claimable roller ([010])
+
+### Technical Notes
+
+**Blocked:** the client has not confirmed what approving an NPC-flagged design should do to ownership. Asked 2026-09-07. Nothing beyond the capability plumbing can be specified until that lands.
+
+**User flows:**
+
+- **Designer:** "Intended as an NPC" checkbox on the horse form at `/horses/create` and `/horses/{horse}/edit`.
+- **Staff (review):** Submissions tab at `/admin`. The row shows the designer NPC intent before the reviewer approves.
+
+**Details:**
+
+- `is_npc` is derived, not declared. `Horse::syncNpcFlagsFromOwner` (`app/Models/Horse.php:167`) sets it purely from Sanctuary ownership and runs on every save where `owner_id` is dirty (`:71`). It also sets `is_claimable`, which is the pool [010] draws from. A checkbox writing `is_npc` directly would be overwritten by the next ownership change.
+- Three behaviours went to the client: assign the horse to the Sanctuary user on approval and let the existing logic derive both flags; store the intent as an advisory label and have a human reassign ownership; or decouple `is_npc` from ownership entirely. The first needs no change to the invariant. The third would mean rewriting `syncNpcFlagsFromOwner` and auditing `app/Services/LifecycleAgingService.php` (`:136`, `:257`), which reads `is_npc` to decide death proposals.
+- Approval under the first option is a real giveaway of a designer's work, which is why the checkbox is capability-gated and defaults off.
+- Capability plumbing mirrors [029]: `Role::areas()`, `defaultCapabilities()`, a `role_capabilities` seed migration, and an `areaLabels` entry in `RoleCapabilityMatrix.vue`. Two separate areas by decision of 2026-09-07, so priority-flagging can be granted without NPC-donation rights.
+
+### Acceptance Criteria
+
+- [ ] Client has confirmed what approval does to ownership, and the answer is recorded in Technical Notes
+- [ ] Roles holding `design_npc` see the checkbox on create and edit; players never do
+      `tests/Feature/DesignNpcFlagTest.php::it_shows_the_npc_checkbox_to_capable_roles`
+      `tests/Feature/DesignNpcFlagTest.php::it_hides_the_npc_checkbox_from_players`
+- [ ] Submitting with the box ticked stores the intent and surfaces it to the reviewer
+      `tests/Feature/DesignNpcFlagTest.php::it_stores_and_surfaces_the_npc_intent`
+- [ ] Approving an NPC-flagged design produces the confirmed ownership state, with `is_npc` and `is_claimable` consistent with it
+      `tests/Feature/DesignNpcFlagTest.php::it_applies_the_confirmed_ownership_state_on_approval`
+- [ ] An unflagged design approves exactly as it does today
+      `tests/Feature/DesignNpcFlagTest.php::it_leaves_unflagged_approvals_unchanged`
+- [ ] `design_npc` is seeded on for Designer and Admin
+      `tests/Feature/Admin/RoleCapabilityMatrixTest.php::it_seeds_design_npc_for_designer_and_admin`
+
+
+---
+
+## [031] Repo-Wide Lint and Format Compliance
+
+**Status:** `done`
+**Depends On:** none
+**Spec:** none
+
+### Goal
+
+`npm run format:check`, `npx eslint .`, and `./vendor/bin/pint --test` all pass on a clean checkout, and a pre-commit hook keeps them passing.
+
+### Scope
+
+- Remove the stray VS Code key from `.prettierrc` that Prettier rejects on every run
+- Reformat the 50 Prettier-noncompliant files under `resources/`
+- Clear the 2 ESLint errors
+- Clear the 9 Pint style issues
+- Add a pre-commit hook that formats staged files
+- NOT in scope: changing any Prettier, ESLint, or Pint rule to make a violation disappear, other than the `_`-prefix unused-vars convention below
+- NOT in scope: CI. Nothing in this repo runs in CI and this item does not change that
+
+### Technical Notes
+
+**Details:**
+
+- `.prettierrc:18` carries `"terminal.integrated.defaultLocation": "editor"`, a VS Code setting pasted into the Prettier config. It is the sole cause of the `[warn] Ignored unknown option` line printed once per file. Delete the line. It changes no formatting, only the noise.
+- Prettier reports 50 files. The formatting itself is mechanical (`npm run format`), but with `tabWidth: 5` and `singleAttributePerLine: true` the diff is large. Run it on a clean tree so the reformat is its own commit, separate from the in-flight upload-limit work.
+- ESLint errors are two distinct kinds, and only one is a code change:
+  - `resources/js/pages/Horses/Edit.vue:96` — `const { sex: _sex, ...rest } = data` is a deliberate destructure-discard, correctly named with the `_` convention. The code is right and the config is wrong. Set `varsIgnorePattern`/`argsIgnorePattern` to `^_` on `@typescript-eslint/no-unused-vars` in `eslint.config.js`.
+  - `resources/js/pages/admin/Index.vue:216` — a `canManageRoleMatrix` computed shadows the prop of the same name declared at `:185`. Vue resolves the setup binding over the prop, so `:381` gets the computed, which is the intent, but the collision is silent and fragile. Rename the computed (`showRoleMatrix`) rather than suppressing the rule.
+- Pint: 9 files, all trivial (`single_blank_line_at_eof`, `array_indentation`, `indentation_type`, `no_unused_imports`, and a `line_ending` in `database/seeders/LocalOnly.php` — a CRLF artifact of Windows development). `./vendor/bin/pint` fixes all of them. Note the shell: `./vendor/bin/pint` fails under Git Bash with `env: 'php': No such file or directory`, so run it from PowerShell.
+- Guard: Husky plus lint-staged, running Prettier and ESLint on staged `resources/**` files and Pint on staged `*.php`. This is the only thing in the item that prevents a repeat. Without it the cleanup is a chore that recurs.
+
+**As built (2026-09-07):**
+
+- PHP runs from `.husky/pre-commit` directly, not through lint-staged. lint-staged spawns tasks without a shell, and Windows cannot exec the `.sh` wrapper that a Pint task would need. The hook is already running under `sh`, so it invokes Pint itself and re-stages what Pint rewrote.
+- Resolving `php` in the hook needed a second pass. Herd installs `php.bat`, which carries no executable bit, so `command -v php.bat` fails under the POSIX-mode `sh` git runs hooks with, even though `php.bat -v` executes fine there. The hook probes by execution rather than lookup, and tries the plain `php` name first so Linux and macOS are unaffected.
+- The hook excludes `*.blade.php` from the Pint pass. Pint is a PHP formatter and mangles Blade directives.
+- ESLint gained `no-unused-vars` ignore patterns for `^_` (vars, args, caught errors, destructured array) plus `ignoreRestSiblings`. `_sex` in `Horses/Edit.vue` is untouched, as intended.
+- Criterion 4 was verified twice: first by staging two deliberately misformatted probe files, running `.husky/pre-commit`, and reading the staged blobs back with `git show :<path>` (both came back formatted, probes then removed), and again by the two real commits below, where the hook ran end to end over 57 files.
+- No behavioural change confirmed by the full suite (281 passed, 1638 assertions) and a clean `npm run build`.
+- The renamed `showRoleMatrix` binding was verified in the browser: logged in, opened the "Users" tab at `/admin`, and confirmed the "Role capabilities" panel still renders. Screenshot at `storage/screenshots/031-role-matrix-verified.png`. `vue-tsc` also reports no error for the binding, though it does report two pre-existing `admin/Index.vue` errors on `:cms-pages` and `:menu-items` that are present unchanged on `HEAD`.
+- Delivered on branch `chore/lint-format-compliance` as two commits off `0592dc4`: `chore(lint)` for the config fixes, the `showRoleMatrix` rename and the hook, then `style:` for the reformat alone. The split was made safe by proving which files were formatting-only, reformatting each file's `HEAD` version and comparing it to the working copy. 49 of 50 matched exactly; only `admin/Index.vue` differed, and only because of the rename, so it went in the first commit.
+
+### Acceptance Criteria
+
+- [x] `npm run format:check` exits 0 with no `Ignored unknown option` warnings
+- [x] `npx eslint .` exits 0, with `_sex` still present in `Horses/Edit.vue` and the `admin/Index.vue` computed renamed
+- [x] `./vendor/bin/pint --test` exits 0
+- [x] Committing a deliberately misformatted `resources/` file and a misformatted PHP file leaves both formatted in the resulting commit
+- [x] The reformat lands as its own commit, containing no behavioural change

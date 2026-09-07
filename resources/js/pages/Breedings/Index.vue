@@ -1,14 +1,14 @@
 <script setup lang="ts">
+import SearchSelect from '@/components/SearchSelect.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
-import SearchSelect from '@/components/SearchSelect.vue';
-import RequestCard from '@/pages/Breedings/RequestCard.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem, type SharedData } from '@/types';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import RequestCard from '@/pages/Breedings/RequestCard.vue';
+import { type BreadcrumbItem } from '@/types';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 
 interface HorseOption {
@@ -78,12 +78,6 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const page = usePage<SharedData>();
-const isStaff = computed(() => {
-	const role = page.props.auth.user?.role;
-	return !!role && role !== 'user';
-});
-const maxFileSize = computed(() => (isStaff.value ? 10 : 2) * 1024 * 1024);
 
 const breadcrumbs: BreadcrumbItem[] = [
 	{ title: 'Breeding', href: '/breedings' },
@@ -131,8 +125,12 @@ const slotGroups = computed<SlotHorseGroup[]>(() => {
 	}
 
 	for (const group of groups.values()) {
-		group.availableCount = group.slots.filter((slot) => slot.status === 'available').length;
-		group.reservedCount = group.slots.filter((slot) => slot.status !== 'available').length;
+		group.availableCount = group.slots.filter(
+			(slot) => slot.status === 'available',
+		).length;
+		group.reservedCount = group.slots.filter(
+			(slot) => slot.status !== 'available',
+		).length;
 	}
 
 	return Array.from(groups.values());
@@ -151,7 +149,10 @@ const paginatedSlotGroups = computed(() => {
 });
 
 const slotPageNumbers = computed(() =>
-	Array.from({ length: slotGroupsTotalPages.value }, (_, index) => index + 1),
+	Array.from(
+		{ length: slotGroupsTotalPages.value },
+		(_, index) => index + 1,
+	),
 );
 
 watch(slotGroupsTotalPages, (totalPages) => {
@@ -185,15 +186,27 @@ const submitTransfer = (): void => {
 };
 
 const acceptTransfer = (id: number): void => {
-	router.post(route('breeding-slot-transfers.accept', id), {}, { preserveScroll: true });
+	router.post(
+		route('breeding-slot-transfers.accept', id),
+		{},
+		{ preserveScroll: true },
+	);
 };
 
 const declineTransfer = (id: number): void => {
-	router.post(route('breeding-slot-transfers.decline', id), {}, { preserveScroll: true });
+	router.post(
+		route('breeding-slot-transfers.decline', id),
+		{},
+		{ preserveScroll: true },
+	);
 };
 
 const cancelTransfer = (id: number): void => {
-	router.post(route('breeding-slot-transfers.cancel', id), {}, { preserveScroll: true });
+	router.post(
+		route('breeding-slot-transfers.cancel', id),
+		{},
+		{ preserveScroll: true },
+	);
 };
 </script>
 
@@ -206,7 +219,8 @@ const cancelTransfer = (id: number): void => {
 				<div>
 					<h1 class="text-3xl font-bold">Breeding</h1>
 					<p class="text-gray-600">
-						Submit breeding requests, manage slots, and create foals from staff rolls.
+						Submit breeding requests, manage slots, and create
+						foals from staff rolls.
 					</p>
 				</div>
 				<Link :href="route('horses.index')">
@@ -251,7 +265,9 @@ const cancelTransfer = (id: number): void => {
 							</div>
 						</div>
 						<div>
-							<Label for="evidence_url">Art / Story URL</Label>
+							<Label for="evidence_url"
+								>Art / Story URL</Label
+							>
 							<Input
 								id="evidence_url"
 								v-model="requestForm.evidence_url"
@@ -280,7 +296,11 @@ const cancelTransfer = (id: number): void => {
 						<Button
 							type="submit"
 							:disabled="requestForm.processing">
-							{{ requestForm.processing ? 'Submitting…' : 'Submit Request' }}
+							{{
+								requestForm.processing
+									? 'Submitting…'
+									: 'Submit Request'
+							}}
 						</Button>
 					</form>
 				</CardContent>
@@ -301,8 +321,9 @@ const cancelTransfer = (id: number): void => {
 						:key="item.id"
 						:request="item"
 						:herds="props.herds"
-						:phenotype-placeholder="props.phenotypePlaceholder"
-						:max-file-size="maxFileSize" />
+						:phenotype-placeholder="
+							props.phenotypePlaceholder
+						" />
 				</CardContent>
 			</Card>
 
@@ -322,12 +343,18 @@ const cancelTransfer = (id: number): void => {
 						class="flex items-center justify-between rounded border p-3 text-sm">
 						<p class="font-medium">
 							<Link
-								:href="route('horses.show', group.horseId)"
+								:href="
+									route('horses.show', group.horseId)
+								"
 								class="hover:underline">
 								{{ group.horseName }}
 							</Link>
 							- {{ group.slots.length }}
-							{{ group.slots.length === 1 ? 'slot' : 'slots' }}
+							{{
+								group.slots.length === 1
+									? 'slot'
+									: 'slots'
+							}}
 						</p>
 						<p
 							v-if="group.reservedCount > 0"
@@ -344,7 +371,9 @@ const cancelTransfer = (id: number): void => {
 							:class="[
 								'rounded-md border px-3 py-1.5 text-sm',
 								'border-cape-palliser-500 text-cape-palliser-700',
-								slotsPage === 1 ? 'pointer-events-none opacity-50' : '',
+								slotsPage === 1
+									? 'pointer-events-none opacity-50'
+									: '',
 							]"
 							@click="slotsPage--">
 							« Previous
@@ -364,11 +393,15 @@ const cancelTransfer = (id: number): void => {
 						</button>
 						<button
 							type="button"
-							:disabled="slotsPage === slotGroupsTotalPages"
+							:disabled="
+								slotsPage === slotGroupsTotalPages
+							"
 							:class="[
 								'rounded-md border px-3 py-1.5 text-sm',
 								'border-cape-palliser-500 text-cape-palliser-700',
-								slotsPage === slotGroupsTotalPages ? 'pointer-events-none opacity-50' : '',
+								slotsPage === slotGroupsTotalPages
+									? 'pointer-events-none opacity-50'
+									: '',
 							]"
 							@click="slotsPage++">
 							Next »
@@ -385,9 +418,16 @@ const cancelTransfer = (id: number): void => {
 								id="breeding_slot_id"
 								v-model="transferForm.breeding_slot_id"
 								:options="[
-									{ value: null, label: 'Select available slot' },
+									{
+										value: null,
+										label: 'Select available slot',
+									},
 									...props.slots
-										.filter((slot) => slot.status === 'available')
+										.filter(
+											(slot) =>
+												slot.status ===
+												'available',
+										)
 										.map((slot) => ({
 											value: slot.id,
 											label: `${slot.horse?.name} #${slot.sequence}`,
@@ -395,7 +435,9 @@ const cancelTransfer = (id: number): void => {
 								]" />
 						</div>
 						<div>
-							<Label for="to_user_id">Recipient user ID</Label>
+							<Label for="to_user_id"
+								>Recipient user ID</Label
+							>
 							<Input
 								id="to_user_id"
 								v-model.number="transferForm.to_user_id"
@@ -429,7 +471,9 @@ const cancelTransfer = (id: number): void => {
 				</CardHeader>
 				<CardContent class="space-y-6">
 					<div class="space-y-3">
-						<p class="text-sm font-medium text-gray-700">Incoming</p>
+						<p class="text-sm font-medium text-gray-700">
+							Incoming
+						</p>
 						<div
 							v-if="props.incomingTransfers.length === 0"
 							class="text-sm text-gray-500">
@@ -441,20 +485,25 @@ const cancelTransfer = (id: number): void => {
 							class="flex items-center justify-between gap-2 rounded border p-3">
 							<div class="text-sm">
 								<p class="font-medium">
-									{{ transfer.slot?.horse?.name }} from
+									{{ transfer.slot?.horse?.name }}
+									from
 									{{ transfer.from_user?.name }}
 								</p>
 							</div>
 							<div class="flex gap-2">
 								<Button
 									size="sm"
-									@click="acceptTransfer(transfer.id)">
+									@click="
+										acceptTransfer(transfer.id)
+									">
 									Accept
 								</Button>
 								<Button
 									size="sm"
 									variant="outline"
-									@click="declineTransfer(transfer.id)">
+									@click="
+										declineTransfer(transfer.id)
+									">
 									Decline
 								</Button>
 							</div>
@@ -462,7 +511,9 @@ const cancelTransfer = (id: number): void => {
 					</div>
 
 					<div class="space-y-3 border-t pt-4">
-						<p class="text-sm font-medium text-gray-700">Outgoing</p>
+						<p class="text-sm font-medium text-gray-700">
+							Outgoing
+						</p>
 						<div
 							v-if="props.outgoingTransfers.length === 0"
 							class="text-sm text-gray-500">

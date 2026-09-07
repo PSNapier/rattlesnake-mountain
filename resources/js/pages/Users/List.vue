@@ -34,12 +34,10 @@ const breadcrumbs: BreadcrumbItem[] = [
 		<div class="mx-auto max-w-4xl space-y-6">
 			<!-- Header -->
 			<div>
-				<h1
-					class="text-cape-palliser-950 text-3xl font-bold">
+				<h1 class="text-cape-palliser-950 text-3xl font-bold">
 					All Users
 				</h1>
-				<p
-					class="text-cape-palliser-700 mt-2">
+				<p class="text-cape-palliser-700 mt-2">
 					Browse all players and their collections
 				</p>
 			</div>
@@ -64,7 +62,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 									v-if="user.avatar"
 									:src="user.avatar"
 									:alt="user.name" />
-								<AvatarFallback class="bg-shakespeare-200 text-shakespeare-400">
+								<AvatarFallback
+									class="bg-shakespeare-200 text-shakespeare-400">
 									{{ getInitials(user.name) }}
 								</AvatarFallback>
 							</Avatar>

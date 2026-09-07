@@ -32,8 +32,10 @@ const query = ref('');
 const open = ref(false);
 const root = ref<HTMLElement | null>(null);
 
-const selectedOption = computed(() =>
-	props.options.find((option) => option.value === props.modelValue) ?? null,
+const selectedOption = computed(
+	() =>
+		props.options.find((option) => option.value === props.modelValue) ??
+		null,
 );
 
 watch(
@@ -62,7 +64,11 @@ const filteredOptions = computed(() => {
 	}
 
 	return props.options
-		.filter((option) => option.value !== null && option.label.toLowerCase().includes(needle))
+		.filter(
+			(option) =>
+				option.value !== null &&
+				option.label.toLowerCase().includes(needle),
+		)
 		.slice(0, props.maxResults);
 });
 
@@ -81,7 +87,11 @@ function onQueryUpdate(value: string | number): void {
 	query.value = String(value);
 	open.value = true;
 
-	if (props.modelValue !== null && props.modelValue !== undefined && props.modelValue !== '') {
+	if (
+		props.modelValue !== null &&
+		props.modelValue !== undefined &&
+		props.modelValue !== ''
+	) {
 		emit('update:modelValue', null);
 	}
 }
@@ -104,7 +114,11 @@ function handleClickOutside(event: Event): void {
 		open.value = false;
 		if (selectedOption.value) {
 			query.value = selectedOption.value.label;
-		} else if (props.modelValue === null || props.modelValue === undefined || props.modelValue === '') {
+		} else if (
+			props.modelValue === null ||
+			props.modelValue === undefined ||
+			props.modelValue === ''
+		) {
 			query.value = '';
 		}
 	}
@@ -134,7 +148,11 @@ onUnmounted(() => {
 				@focus="onFocus"
 				@update:model-value="onQueryUpdate" />
 			<button
-				v-if="modelValue !== null && modelValue !== undefined && modelValue !== ''"
+				v-if="
+					modelValue !== null &&
+					modelValue !== undefined &&
+					modelValue !== ''
+				"
 				type="button"
 				class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
 				aria-label="Clear selection"
@@ -145,7 +163,7 @@ onUnmounted(() => {
 
 		<div
 			v-if="showResults"
-			class="border-input bg-cape-palliser-50 text-foreground absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border py-1 shadow-lg">
+			class="border-input bg-cape-palliser-50 text-foreground absolute right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border py-1 shadow-lg">
 			<button
 				v-for="option in filteredOptions"
 				:key="String(option.value)"
@@ -161,7 +179,11 @@ onUnmounted(() => {
 			</p>
 		</div>
 		<p
-			v-else-if="open && query.trim().length > 0 && query.trim().length < minChars"
+			v-else-if="
+				open &&
+				query.trim().length > 0 &&
+				query.trim().length < minChars
+			"
 			class="text-muted-foreground mt-1 text-xs">
 			Type at least {{ minChars }} characters to search.
 		</p>

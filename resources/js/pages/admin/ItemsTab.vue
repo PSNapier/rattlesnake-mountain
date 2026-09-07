@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
 	Dialog,
 	DialogContent,
@@ -66,7 +61,7 @@ const hasUnsavedChanges = computed(() => {
 	if (originalInventory.value.length === 0) {
 		return false;
 	}
-	
+
 	// Create maps for comparison
 	const originalMap = new Map(
 		originalInventory.value.map((item) => [item.id, item.quantity]),
@@ -74,21 +69,21 @@ const hasUnsavedChanges = computed(() => {
 	const currentMap = new Map(
 		userInventory.value.map((item) => [item.id, item.quantity]),
 	);
-	
+
 	// Check if any quantities differ
 	for (const [id, quantity] of currentMap) {
 		if (originalMap.get(id) !== quantity) {
 			return true;
 		}
 	}
-	
+
 	// Check if any original items are missing
 	for (const [id, quantity] of originalMap) {
 		if (currentMap.get(id) !== quantity) {
 			return true;
 		}
 	}
-	
+
 	return false;
 });
 
@@ -144,27 +139,25 @@ const selectUser = async (user: User): Promise<void> => {
 		clearTimeout(searchTimeout);
 		searchTimeout = null;
 	}
-	
+
 	// Clear blur timeout
 	if (blurTimeout) {
 		clearTimeout(blurTimeout);
 		blurTimeout = null;
 	}
-	
+
 	// Hide suggestions immediately
 	showSuggestions.value = false;
 	userSuggestions.value = [];
-	
+
 	// Set selected user and search query
 	selectedUser.value = user;
 	userSearchQuery.value = user.name;
-	
+
 	// Load full inventory (first time load)
 	isLoadingInventory.value = true;
 	try {
-		const response = await fetch(
-			route('admin.users.inventory', user.id),
-		);
+		const response = await fetch(route('admin.users.inventory', user.id));
 		const data = await response.json();
 		// Deep clone for both working and original copies
 		userInventory.value = JSON.parse(JSON.stringify(data.inventory));
@@ -178,7 +171,6 @@ const selectUser = async (user: User): Promise<void> => {
 	}
 };
 
-
 let blurTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const handleInputBlur = (): void => {
@@ -187,7 +179,10 @@ const handleInputBlur = (): void => {
 	// but we add a delay just in case
 	blurTimeout = setTimeout(() => {
 		// Only hide if no user is selected or if search query doesn't match selected user
-		if (!selectedUser.value || userSearchQuery.value !== selectedUser.value.name) {
+		if (
+			!selectedUser.value ||
+			userSearchQuery.value !== selectedUser.value.name
+		) {
 			showSuggestions.value = false;
 		}
 	}, 200);
@@ -226,10 +221,7 @@ const resetToOriginal = (): void => {
 	userInventory.value = JSON.parse(JSON.stringify(originalInventory.value));
 };
 
-const updateLocalItemQuantity = (
-	itemId: number,
-	quantity: number,
-): void => {
+const updateLocalItemQuantity = (itemId: number, quantity: number): void => {
 	// Update local inventory only (no server call)
 	const item = userInventory.value.find((i) => i.id === itemId);
 	if (item) {
@@ -243,7 +235,7 @@ const saveChanges = async (): Promise<void> => {
 	}
 
 	isSaving.value = true;
-	
+
 	try {
 		// Get all items that have changed
 		const changes = userInventory.value
@@ -259,16 +251,17 @@ const saveChanges = async (): Promise<void> => {
 			}));
 
 		// Send all changes sequentially using fetch
-		const csrfToken = document
-			.querySelector('meta[name="csrf-token"]')
-			?.getAttribute('content') || '';
+		const csrfToken =
+			document
+				.querySelector('meta[name="csrf-token"]')
+				?.getAttribute('content') || '';
 
 		const errors: string[] = [];
 		for (const change of changes) {
 			try {
 				// Build URL manually to avoid route helper issues
 				const url = `/admin/users/${selectedUser.value!.id}/items`;
-				
+
 				if (!csrfToken) {
 					throw new Error('CSRF token not found');
 				}
@@ -304,7 +297,9 @@ const saveChanges = async (): Promise<void> => {
 						if (errorData.message) {
 							errorMessage = errorData.message;
 						} else if (errorData.errors) {
-							const errorMessages = Object.values(errorData.errors)
+							const errorMessages = Object.values(
+								errorData.errors,
+							)
 								.flat()
 								.join(', ');
 							if (errorMessages) {
@@ -327,7 +322,9 @@ const saveChanges = async (): Promise<void> => {
 				console.error('Error updating item:', error);
 				errors.push(
 					`Network error updating item ${change.item_id}: ${
-						error instanceof Error ? error.message : 'Unknown error'
+						error instanceof Error
+							? error.message
+							: 'Unknown error'
 					}`,
 				);
 			}
@@ -344,22 +341,20 @@ const saveChanges = async (): Promise<void> => {
 	} catch (error) {
 		console.error('Error saving changes:', error);
 		const errorMessage =
-			error instanceof Error ? error.message : 'Failed to save changes. Please try again.';
+			error instanceof Error
+				? error.message
+				: 'Failed to save changes. Please try again.';
 		alert(errorMessage);
 	} finally {
 		isSaving.value = false;
 	}
 };
 
-
 const removeItemFromUser = (itemId: number): void => {
 	updateLocalItemQuantity(itemId, 0);
 };
 
-const reduceItemQuantity = (
-	itemId: number,
-	currentQuantity: number,
-): void => {
+const reduceItemQuantity = (itemId: number, currentQuantity: number): void => {
 	const newQuantity = Math.max(0, currentQuantity - 1);
 	updateLocalItemQuantity(itemId, newQuantity);
 };
@@ -373,10 +368,7 @@ const increaseItemQuantity = (
 	updateLocalItemQuantity(itemId, newQuantity);
 };
 
-const addItemToUser = (
-	itemId: number,
-	quantity: number,
-): void => {
+const addItemToUser = (itemId: number, quantity: number): void => {
 	if (!selectedUser.value || !itemId || !quantity) {
 		return;
 	}
@@ -387,16 +379,13 @@ const addItemToUser = (
 	);
 
 	// Find the max_count for this item
-	const itemMaxCount = activeItems.value.find(
-		(item) => item.id === itemId,
-	)?.max_count || 999;
+	const itemMaxCount =
+		activeItems.value.find((item) => item.id === itemId)?.max_count ||
+		999;
 
 	// Calculate new quantity: add to existing or use new quantity, capped at max_count
 	const currentQuantity = existingItem?.quantity || 0;
-	const newQuantity = Math.min(
-		currentQuantity + quantity,
-		itemMaxCount,
-	);
+	const newQuantity = Math.min(currentQuantity + quantity, itemMaxCount);
 
 	updateLocalItemQuantity(itemId, newQuantity);
 	// Reset form
@@ -477,7 +466,7 @@ const handleUpdateItem = (): void => {
 						class="mt-1 w-full"
 						@focus="
 							userSuggestions.length > 0 &&
-								userSearchQuery.length >= 2
+							userSearchQuery.length >= 2
 								? (showSuggestions = true)
 								: null
 						"
@@ -485,7 +474,9 @@ const handleUpdateItem = (): void => {
 						@keydown="handleInputKeydown" />
 					<!-- Suggestions Dropdown -->
 					<div
-						v-if="showSuggestions && userSuggestions.length > 0"
+						v-if="
+							showSuggestions && userSuggestions.length > 0
+						"
 						class="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
 						<div
 							v-for="user in userSuggestions"
@@ -493,7 +484,9 @@ const handleUpdateItem = (): void => {
 							class="cursor-pointer px-4 py-2 hover:bg-gray-100"
 							@mousedown.prevent
 							@click="handleSuggestionClick(user)">
-							<div class="font-medium">{{ user.name }}</div>
+							<div class="font-medium">
+								{{ user.name }}
+							</div>
 						</div>
 					</div>
 				</div>
@@ -501,7 +494,7 @@ const handleUpdateItem = (): void => {
 				<!-- Selected User Info -->
 				<div
 					v-if="selectedUser"
-					class="ml-2 mt-4 mb-2 font-semibold text-3xl">
+					class="mt-4 mb-2 ml-2 text-3xl font-semibold">
 					{{ selectedUser.name }}'s Inventory
 				</div>
 
@@ -518,19 +511,24 @@ const handleUpdateItem = (): void => {
 						<table class="w-full border-collapse">
 							<thead>
 								<tr class="border-b border-gray-200">
-									<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+									<th
+										class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
 										Item Name
 									</th>
-									<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+									<th
+										class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
 										Description
 									</th>
-									<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+									<th
+										class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
 										Quantity
 									</th>
-									<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+									<th
+										class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
 										Max Count
 									</th>
-									<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+									<th
+										class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
 										Actions
 									</th>
 								</tr>
@@ -540,25 +538,31 @@ const handleUpdateItem = (): void => {
 									v-for="item in userInventory"
 									:key="item.id"
 									class="border-b border-gray-200 hover:bg-gray-50">
-									<td class="text-cape-palliser-950 px-4 py-3 text-sm font-medium">
+									<td
+										class="text-cape-palliser-950 px-4 py-3 text-sm font-medium">
 										{{ item.name }}
 									</td>
-									<td class="text-cape-palliser-700 px-4 py-3 text-sm">
+									<td
+										class="text-cape-palliser-700 px-4 py-3 text-sm">
 										{{ item.description || '—' }}
 									</td>
-									<td class="text-cape-palliser-700 px-4 py-3 text-sm">
+									<td
+										class="text-cape-palliser-700 px-4 py-3 text-sm">
 										{{ item.quantity }}
 									</td>
-									<td class="text-cape-palliser-700 px-4 py-3 text-sm">
+									<td
+										class="text-cape-palliser-700 px-4 py-3 text-sm">
 										{{ item.max_count }}
 									</td>
 									<td class="px-4 py-3 text-sm">
-										<div class="flex items-center gap-2">
+										<div
+											class="flex items-center gap-2">
 											<Button
 												variant="outline"
 												size="sm"
 												:disabled="
-													item.quantity <= 0 ||
+													item.quantity <=
+														0 ||
 													isSaving
 												"
 												@click="
@@ -590,10 +594,15 @@ const handleUpdateItem = (): void => {
 												variant="destructive"
 												size="sm"
 												:disabled="
-													item.quantity <= 0 ||
+													item.quantity <=
+														0 ||
 													isSaving
 												"
-												@click="removeItemFromUser(item.id)">
+												@click="
+													removeItemFromUser(
+														item.id,
+													)
+												">
 												Remove
 											</Button>
 										</div>
@@ -609,8 +618,10 @@ const handleUpdateItem = (): void => {
 						<div class="flex gap-2">
 							<select
 								v-model.number="newItemId"
-								class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm">
-								<option :value="0">Select an item...</option>
+								class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex min-w-0 flex-1 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm">
+								<option :value="0">
+									Select an item...
+								</option>
 								<option
 									v-for="item in activeItems"
 									:key="item.id"
@@ -675,9 +686,15 @@ const handleUpdateItem = (): void => {
 							<Button
 								variant="default"
 								size="sm"
-								:disabled="!hasUnsavedChanges || isSaving"
+								:disabled="
+									!hasUnsavedChanges || isSaving
+								"
 								@click="saveChanges">
-								{{ isSaving ? 'Saving...' : 'Save Changes' }}
+								{{
+									isSaving
+										? 'Saving...'
+										: 'Save Changes'
+								}}
 							</Button>
 						</div>
 					</div>
@@ -698,22 +715,28 @@ const handleUpdateItem = (): void => {
 				<table class="w-full border-collapse">
 					<thead>
 						<tr class="border-b border-gray-200">
-							<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+							<th
+								class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
 								Name
 							</th>
-							<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+							<th
+								class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
 								Max Count
 							</th>
-							<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+							<th
+								class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
 								Uses / unit
 							</th>
-							<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+							<th
+								class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
 								Description
 							</th>
-							<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+							<th
+								class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
 								Status
 							</th>
-							<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold"></th>
+							<th
+								class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold"></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -730,16 +753,20 @@ const handleUpdateItem = (): void => {
 							v-for="item in props.items"
 							:key="item.id"
 							class="border-b border-gray-200 hover:bg-gray-50">
-							<td class="text-cape-palliser-950 px-4 py-3 text-sm">
+							<td
+								class="text-cape-palliser-950 px-4 py-3 text-sm">
 								{{ item.name }}
 							</td>
-							<td class="text-cape-palliser-700 px-4 py-3 text-sm">
+							<td
+								class="text-cape-palliser-700 px-4 py-3 text-sm">
 								{{ item.max_count }}
 							</td>
-							<td class="text-cape-palliser-700 px-4 py-3 text-sm">
+							<td
+								class="text-cape-palliser-700 px-4 py-3 text-sm">
 								{{ item.uses_per_unit }}
 							</td>
-							<td class="text-cape-palliser-700 px-4 py-3 text-sm">
+							<td
+								class="text-cape-palliser-700 px-4 py-3 text-sm">
 								{{ item.description || '—' }}
 							</td>
 							<td class="px-4 py-3 text-sm">
@@ -750,7 +777,11 @@ const handleUpdateItem = (): void => {
 											? 'bg-green-100 text-green-800'
 											: 'bg-gray-100 text-gray-800',
 									]">
-									{{ item.is_active ? 'Active' : 'Inactive' }}
+									{{
+										item.is_active
+											? 'Active'
+											: 'Inactive'
+									}}
 								</span>
 							</td>
 							<td class="px-4 py-3 text-sm">
@@ -840,9 +871,7 @@ const handleUpdateItem = (): void => {
 					@click="closeEditItemModal">
 					Cancel
 				</Button>
-				<Button @click="handleUpdateItem">
-					Save Changes
-				</Button>
+				<Button @click="handleUpdateItem"> Save Changes </Button>
 			</DialogFooter>
 		</DialogContent>
 	</Dialog>

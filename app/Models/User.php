@@ -113,11 +113,6 @@ class User extends Authenticatable implements MustVerifyEmail
         return $user;
     }
 
-    public function characterImages(): HasMany
-    {
-        return $this->hasMany(CharacterImage::class);
-    }
-
     public function herds(): HasMany
     {
         return $this->hasMany(Herd::class, 'owner_id');

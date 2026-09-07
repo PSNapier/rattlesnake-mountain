@@ -213,13 +213,15 @@ const props = withDefaults(defineProps<Props>(), {
 });
 const page = usePage();
 
-const canManageRoleMatrix = computed(() => {
-	const props = page.props as {
+const showRoleMatrix = computed(() => {
+	const pageProps = page.props as {
 		canManageRoleMatrix?: boolean;
 		auth?: { user?: { is_admin?: boolean; role?: string } };
 	};
 
-	return Boolean(props.canManageRoleMatrix || props.auth?.user?.is_admin);
+	return Boolean(
+		pageProps.canManageRoleMatrix || pageProps.auth?.user?.is_admin,
+	);
 });
 
 const canAccess = (tab: AdminTab): boolean =>
@@ -274,8 +276,7 @@ onMounted(() => {
 			<div
 				v-if="(page.props.flash as any)?.success"
 				class="mb-4 rounded-lg bg-green-50 p-4">
-				<p
-					class="text-sm font-medium text-green-800">
+				<p class="text-sm font-medium text-green-800">
 					{{ (page.props.flash as any)?.success }}
 				</p>
 			</div>
@@ -378,7 +379,7 @@ onMounted(() => {
 			<div
 				v-if="activeTab === 'users' && canAccess('users')"
 				class="space-y-6">
-				<RoleCapabilityMatrix v-if="canManageRoleMatrix" />
+				<RoleCapabilityMatrix v-if="showRoleMatrix" />
 
 				<UsersTab
 					v-if="props.users"
