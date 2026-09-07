@@ -205,7 +205,8 @@ const deleteAvatar = async (): Promise<void> => {
 								</div>
 								<p
 									class="text-muted-foreground text-xs">
-									JPEG, PNG, or WebP. Max {{ maxMegabytes }}MB.
+									JPEG, PNG, or WebP. Max
+									{{ maxMegabytes }}MB.
 								</p>
 							</div>
 						</div>

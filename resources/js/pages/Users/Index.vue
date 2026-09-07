@@ -6,9 +6,9 @@ import { useInitials } from '@/composables/useInitials';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem, type SharedData, type User } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { Edit2, Save, X } from 'lucide-vue-next';
 import markdownit from 'markdown-it';
 import { computed, ref } from 'vue';
-import { Edit2, Save, X } from 'lucide-vue-next';
 
 interface ProfileUser {
 	id: number;
@@ -89,7 +89,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 						v-if="props.user.avatar"
 						:src="props.user.avatar"
 						:alt="props.user.name" />
-					<AvatarFallback class="bg-gray-200 text-gray-600 text-2xl font-bold">
+					<AvatarFallback
+						class="bg-gray-200 text-2xl font-bold text-gray-600">
 						{{ getInitials(props.user.name) }}
 					</AvatarFallback>
 				</Avatar>
@@ -100,7 +101,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 			</div>
 
 			<!-- Collection Stats -->
-			<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+			<div
+				class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 				<Card>
 					<CardHeader>
 						<CardTitle
@@ -163,14 +165,23 @@ const breadcrumbs: BreadcrumbItem[] = [
 								View your inventory of collected items.
 							</span>
 							<span v-else>
-								View {{ props.user.name }}'s inventory of
-								collected items.
+								View {{ props.user.name }}'s inventory
+								of collected items.
 							</span>
 						</p>
 						<Link
-							:href="isOwnProfile ? route('inventory.index') : route('users.inventory', props.user.id)"
+							:href="
+								isOwnProfile
+									? route('inventory.index')
+									: route(
+											'users.inventory',
+											props.user.id,
+										)
+							"
 							class="block">
-							<Button class="w-full">View Inventory</Button>
+							<Button class="w-full"
+								>View Inventory</Button
+							>
 						</Link>
 					</CardContent>
 				</Card>
@@ -192,12 +203,14 @@ const breadcrumbs: BreadcrumbItem[] = [
 					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<div v-if="isEditing && isOwnProfile" class="space-y-4">
+					<div
+						v-if="isEditing && isOwnProfile"
+						class="space-y-4">
 						<textarea
 							v-model="form.bio"
 							rows="8"
 							placeholder="Write about yourself... (Markdown supported, URLs not allowed)"
-							class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 min-h-[200px] flex w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm" />
+							class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex min-h-[200px] w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm" />
 						<div
 							v-if="form.errors.bio"
 							class="text-sm text-red-600">

@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
 	Dialog,
 	DialogContent,
@@ -10,6 +8,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
@@ -89,7 +89,9 @@ const isBreedingResult = computed(
 );
 const isPending = computed(() => props.message.status === 'pending');
 const hasAdminEdits = computed(
-	() => props.message.admin_edits !== null && props.message.admin_edits !== undefined,
+	() =>
+		props.message.admin_edits !== null &&
+		props.message.admin_edits !== undefined,
 );
 
 const formatDate = (dateString: string): string => {
@@ -121,11 +123,15 @@ const submitComment = (): void => {
 };
 
 const acceptEdits = (): void => {
-	router.post(route('inbox.accept', props.message.id), {}, {
-		onSuccess: () => {
-			router.reload();
+	router.post(
+		route('inbox.accept', props.message.id),
+		{},
+		{
+			onSuccess: () => {
+				router.reload();
+			},
 		},
-	});
+	);
 };
 
 const declineEdits = (): void => {
@@ -163,14 +169,19 @@ const formatEditedAge = (): string => {
 	}
 
 	const hasYears = edits.age_years !== null && edits.age_years !== undefined;
-	const hasMonths = edits.age_months !== null && edits.age_months !== undefined;
+	const hasMonths =
+		edits.age_months !== null && edits.age_months !== undefined;
 
 	if (!hasYears && !hasMonths) {
 		return props.message.horse.formatted_age ?? '—';
 	}
 
-	const years = Number(hasYears ? edits.age_years : props.message.horse.age_years ?? 0);
-	const months = Number(hasMonths ? edits.age_months : props.message.horse.age_months ?? 0);
+	const years = Number(
+		hasYears ? edits.age_years : (props.message.horse.age_years ?? 0),
+	);
+	const months = Number(
+		hasMonths ? edits.age_months : (props.message.horse.age_months ?? 0),
+	);
 	const yearLabel = years === 1 ? '1 year' : `${years} years`;
 	const monthLabel = months === 1 ? '1 month' : `${months} months`;
 
@@ -193,7 +204,8 @@ const formatEditedAge = (): string => {
 			<Card>
 				<CardHeader>
 					<CardTitle>{{ message.subject }}</CardTitle>
-					<div class="mt-2 flex items-center gap-4 text-sm text-gray-600">
+					<div
+						class="mt-2 flex items-center gap-4 text-sm text-gray-600">
 						<p>From: {{ message.admin?.name ?? 'Staff' }}</p>
 						<p>•</p>
 						<p>{{ formatDate(message.created_at) }}</p>
@@ -204,14 +216,17 @@ const formatEditedAge = (): string => {
 									? 'bg-yellow-100 text-yellow-800'
 									: message.status === 'accepted'
 										? 'bg-green-100 text-green-800'
-										: message.status === 'informational'
+										: message.status ===
+											  'informational'
 											? 'bg-blue-100 text-blue-800'
 											: 'bg-red-100 text-red-800',
 							]">
 							{{
 								message.status === 'informational'
 									? 'Notice'
-									: message.status.charAt(0).toUpperCase() +
+									: message.status
+											.charAt(0)
+											.toUpperCase() +
 										message.status.slice(1)
 							}}
 						</span>
@@ -254,15 +269,19 @@ const formatEditedAge = (): string => {
 									<Link
 										:href="
 											message.horse.is_edit &&
-											message.horse.public_horse_id
+											message.horse
+												.public_horse_id
 												? route(
 														'horses.show',
-														message.horse
+														message
+															.horse
 															.public_horse_id,
 													)
 												: route(
 														'horses.show',
-														message.horse.id,
+														message
+															.horse
+															.id,
 													)
 										"
 										class="text-shakespeare-600 hover:underline">
@@ -293,25 +312,30 @@ const formatEditedAge = (): string => {
 						<div
 							v-if="hasAdminEdits && message.horse"
 							class="rounded-md border border-yellow-200 bg-yellow-50 p-4">
-							<h3 class="mb-4 text-sm font-semibold text-yellow-900">
+							<h3
+								class="mb-4 text-sm font-semibold text-yellow-900">
 								Admin Edits
 							</h3>
 							<div class="grid grid-cols-2 gap-4 text-sm">
 								<div>
-									<Label class="text-xs text-gray-500">
+									<Label
+										class="text-xs text-gray-500">
 										Original Name
 									</Label>
-									<p class="mt-1">{{ message.horse.name }}</p>
+									<p class="mt-1">
+										{{ message.horse.name }}
+									</p>
 								</div>
 								<div>
-									<Label class="text-xs text-gray-500">
+									<Label
+										class="text-xs text-gray-500">
 										Edited Name
 									</Label>
 									<p
 										:class="[
 											'mt-1',
 											getFieldValue('name') !==
-												message.horse.name
+											message.horse.name
 												? 'font-semibold text-red-600'
 												: '',
 										]">
@@ -319,22 +343,30 @@ const formatEditedAge = (): string => {
 									</p>
 								</div>
 								<div>
-									<Label class="text-xs text-gray-500">
+									<Label
+										class="text-xs text-gray-500">
 										Original Age
 									</Label>
 									<p class="mt-1">
-										{{ message.horse.formatted_age ?? '—' }}
+										{{
+											message.horse
+												.formatted_age ??
+											'—'
+										}}
 									</p>
 								</div>
 								<div>
-									<Label class="text-xs text-gray-500">
+									<Label
+										class="text-xs text-gray-500">
 										Edited Age
 									</Label>
 									<p
 										:class="[
 											'mt-1',
 											formatEditedAge() !==
-												(message.horse.formatted_age ?? '')
+											(message.horse
+												.formatted_age ??
+												'')
 												? 'font-semibold text-red-600'
 												: '',
 										]">
@@ -342,22 +374,27 @@ const formatEditedAge = (): string => {
 									</p>
 								</div>
 								<div>
-									<Label class="text-xs text-gray-500">
+									<Label
+										class="text-xs text-gray-500">
 										Original Geno
 									</Label>
 									<p class="mt-1 font-mono text-xs">
-										{{ message.horse.geno ?? '—' }}
+										{{
+											message.horse.geno ?? '—'
+										}}
 									</p>
 								</div>
 								<div>
-									<Label class="text-xs text-gray-500">
+									<Label
+										class="text-xs text-gray-500">
 										Edited Geno
 									</Label>
 									<p
 										:class="[
 											'mt-1 font-mono text-xs',
 											getFieldValue('geno') !==
-												(message.horse.geno ?? '')
+											(message.horse.geno ??
+												'')
 												? 'font-semibold text-red-600'
 												: '',
 										]">
@@ -365,26 +402,38 @@ const formatEditedAge = (): string => {
 									</p>
 								</div>
 								<div>
-									<Label class="text-xs text-gray-500">
+									<Label
+										class="text-xs text-gray-500">
 										Original Design Link
 									</Label>
-									<p class="mt-1 break-all text-xs">
-										{{ message.horse.design_link ?? '—' }}
+									<p class="mt-1 text-xs break-all">
+										{{
+											message.horse
+												.design_link ?? '—'
+										}}
 									</p>
 								</div>
 								<div>
-									<Label class="text-xs text-gray-500">
+									<Label
+										class="text-xs text-gray-500">
 										Edited Design Link
 									</Label>
 									<p
 										:class="[
-											'mt-1 break-all text-xs',
-											getFieldValue('design_link') !==
-												(message.horse.design_link ?? '')
+											'mt-1 text-xs break-all',
+											getFieldValue(
+												'design_link',
+											) !==
+											(message.horse
+												.design_link ?? '')
 												? 'font-semibold text-red-600'
 												: '',
 										]">
-										{{ getFieldValue('design_link') }}
+										{{
+											getFieldValue(
+												'design_link',
+											)
+										}}
 									</p>
 								</div>
 							</div>
@@ -419,22 +468,37 @@ const formatEditedAge = (): string => {
 											? 'border-blue-200 bg-blue-50'
 											: 'border-gray-200 bg-gray-50',
 									]">
-									<div class="flex items-start justify-between">
+									<div
+										class="flex items-start justify-between">
 										<div class="flex-1">
-											<p class="text-sm font-medium">
-												{{ comment.user.name }}
+											<p
+												class="text-sm font-medium">
+												{{
+													comment.user
+														.name
+												}}
 												<span
-													v-if="comment.user.is_staff"
+													v-if="
+														comment
+															.user
+															.is_staff
+													"
 													class="text-xs text-blue-600">
 													(Staff)
 												</span>
 											</p>
-											<p class="mt-1 text-sm text-gray-700">
+											<p
+												class="mt-1 text-sm text-gray-700">
 												{{ comment.body }}
 											</p>
 										</div>
-										<p class="text-cape-palliser-500 ml-4 text-xs">
-											{{ formatDate(comment.created_at) }}
+										<p
+											class="text-cape-palliser-500 ml-4 text-xs">
+											{{
+												formatDate(
+													comment.created_at,
+												)
+											}}
 										</p>
 									</div>
 								</div>
@@ -442,16 +506,22 @@ const formatEditedAge = (): string => {
 
 							<!-- Add Comment Form -->
 							<div class="space-y-2">
-								<Label for="comment">Add a comment</Label>
+								<Label for="comment"
+									>Add a comment</Label
+								>
 								<div class="flex gap-2">
 									<Input
 										id="comment"
 										v-model="commentBody"
 										type="text"
 										placeholder="Type your comment..."
-										@keyup.enter="submitComment" />
+										@keyup.enter="
+											submitComment
+										" />
 									<Button
-										:disabled="!commentBody.trim()"
+										:disabled="
+											!commentBody.trim()
+										"
 										@click="submitComment">
 										Send
 									</Button>

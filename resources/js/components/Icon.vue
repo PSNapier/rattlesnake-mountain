@@ -31,6 +31,5 @@ const icon = computed(() => {
 		:class="className"
 		:size="size"
 		:stroke-width="strokeWidth"
-		:color="color"
-	/>
+		:color="color" />
 </template>

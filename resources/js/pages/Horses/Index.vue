@@ -118,7 +118,8 @@ const canEditHorse = (horse: Horse): boolean => {
 					<CardContent>
 						<div class="space-y-2">
 							<p class="text-sm text-gray-600">
-								<strong>Age:</strong> {{ horse.formatted_age }}
+								<strong>Age:</strong>
+								{{ horse.formatted_age }}
 							</p>
 							<p class="text-sm text-gray-600">
 								<strong>Geno:</strong> {{ horse.geno }}

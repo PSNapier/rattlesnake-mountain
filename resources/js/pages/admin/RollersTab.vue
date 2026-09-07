@@ -4,8 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
-import { Copy, Dices } from 'lucide-vue-next';
 import { router, useForm, usePage } from '@inertiajs/vue3';
+import { Copy, Dices } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 
 interface HorseRollResult {
@@ -80,18 +80,22 @@ watch(
 const rollHorse = (): void => {
 	isRolling.value = true;
 	result.value = null;
-	router.post(route('admin.rollers.horse-randomizer.roll'), {
-		age_min: ageMin.value,
-		age_max: ageMax.value,
-		benefit_double_up_threshold: benefitDoubleUp.value,
-		detriment_double_up_threshold: detrimentDoubleUp.value,
-		healthy_roll_min: healthyRollMin.value,
-	}, {
-		preserveScroll: true,
-		onFinish: () => {
-			isRolling.value = false;
+	router.post(
+		route('admin.rollers.horse-randomizer.roll'),
+		{
+			age_min: ageMin.value,
+			age_max: ageMax.value,
+			benefit_double_up_threshold: benefitDoubleUp.value,
+			detriment_double_up_threshold: detrimentDoubleUp.value,
+			healthy_roll_min: healthyRollMin.value,
 		},
-	});
+		{
+			preserveScroll: true,
+			onFinish: () => {
+				isRolling.value = false;
+			},
+		},
+	);
 };
 
 const formatForCopy = (): string => {
@@ -137,11 +141,17 @@ const copyToClipboard = async (): Promise<void> => {
 };
 
 const setSex = (horseId: number, sex: string): void => {
-	router.put(route('admin.horses.sex.update', horseId), { sex }, { preserveScroll: true });
+	router.put(
+		route('admin.horses.sex.update', horseId),
+		{ sex },
+		{ preserveScroll: true },
+	);
 };
 
 const grantSlot = (): void => {
-	grantForm.post(route('admin.breeding-slots.grant'), { preserveScroll: true });
+	grantForm.post(route('admin.breeding-slots.grant'), {
+		preserveScroll: true,
+	});
 };
 </script>
 
@@ -151,13 +161,19 @@ const grantSlot = (): void => {
 			<CardHeader>
 				<CardTitle>Horse Randomizer</CardTitle>
 				<p class="text-cape-palliser-600 mt-1 text-sm">
-					Randomize horses for encounters, NPCs, and other events.
+					Randomize horses for encounters, NPCs, and other
+					events.
 				</p>
 			</CardHeader>
 			<CardContent class="space-y-4">
-				<div class="rounded-md border border-shakespeare-200 bg-shakespeare-50/30 p-4">
-					<p class="mb-3 text-sm font-medium text-cape-palliser-700">Settings</p>
-					<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+				<div
+					class="border-shakespeare-200 bg-shakespeare-50/30 rounded-md border p-4">
+					<p
+						class="text-cape-palliser-700 mb-3 text-sm font-medium">
+						Settings
+					</p>
+					<div
+						class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
 						<div>
 							<Label for="age-min">Age min</Label>
 							<Input
@@ -177,7 +193,9 @@ const grantSlot = (): void => {
 								class="mt-1" />
 						</div>
 						<div>
-							<Label for="benefit-double">Benefit double-up (≤)</Label>
+							<Label for="benefit-double"
+								>Benefit double-up (≤)</Label
+							>
 							<Input
 								id="benefit-double"
 								v-model.number="benefitDoubleUp"
@@ -185,10 +203,15 @@ const grantSlot = (): void => {
 								min="1"
 								max="6"
 								class="mt-1" />
-							<p class="mt-0.5 text-xs text-cape-palliser-500">D6 roll for second benefit</p>
+							<p
+								class="text-cape-palliser-500 mt-0.5 text-xs">
+								D6 roll for second benefit
+							</p>
 						</div>
 						<div>
-							<Label for="detriment-double">Detriment double-up (≤)</Label>
+							<Label for="detriment-double"
+								>Detriment double-up (≤)</Label
+							>
 							<Input
 								id="detriment-double"
 								v-model.number="detrimentDoubleUp"
@@ -196,10 +219,15 @@ const grantSlot = (): void => {
 								min="1"
 								max="6"
 								class="mt-1" />
-							<p class="mt-0.5 text-xs text-cape-palliser-500">D6 roll for second detriment</p>
+							<p
+								class="text-cape-palliser-500 mt-0.5 text-xs">
+								D6 roll for second detriment
+							</p>
 						</div>
 						<div>
-							<Label for="healthy-roll">Healthy threshold (≥)</Label>
+							<Label for="healthy-roll"
+								>Healthy threshold (≥)</Label
+							>
 							<Input
 								id="healthy-roll"
 								v-model.number="healthyRollMin"
@@ -207,7 +235,10 @@ const grantSlot = (): void => {
 								min="1"
 								max="100"
 								class="mt-1" />
-							<p class="mt-0.5 text-xs text-cape-palliser-500">D100 roll for healthy</p>
+							<p
+								class="text-cape-palliser-500 mt-0.5 text-xs">
+								D100 roll for healthy
+							</p>
 						</div>
 					</div>
 				</div>
@@ -231,21 +262,81 @@ const grantSlot = (): void => {
 
 				<div
 					v-if="result"
-					class="columns-2 gap-8 space-y-1 rounded-md border border-shakespeare-200 bg-shakespeare-50/50 p-4 font-mono text-sm">
-					<div><span class="text-cape-palliser-600">Breed:</span> {{ result.breed }}</div>
-					<div><span class="text-cape-palliser-600">Sex:</span> {{ result.sex }}</div>
-					<div><span class="text-cape-palliser-600">Age:</span> {{ result.age }}</div>
-					<div><span class="text-cape-palliser-600">Social Rank:</span> {{ result.social_rank }}</div>
-					<div><span class="text-cape-palliser-600">Benefits:</span> {{ result.benefits.join(', ') || '—' }}</div>
-					<div><span class="text-cape-palliser-600">Detriments:</span> {{ result.detriments.join(', ') || '—' }}</div>
-					<div><span class="text-cape-palliser-600">Health:</span> {{ result.health_issues }}</div>
-					<div><span class="text-cape-palliser-600">Face:</span> {{ result.face_markings }}</div>
-					<div><span class="text-cape-palliser-600">RF Leg:</span> {{ result.leg_markings.RF }}</div>
-					<div><span class="text-cape-palliser-600">LF Leg:</span> {{ result.leg_markings.LF }}</div>
-					<div><span class="text-cape-palliser-600">RB Leg:</span> {{ result.leg_markings.RB }}</div>
-					<div><span class="text-cape-palliser-600">LB Leg:</span> {{ result.leg_markings.LB }}</div>
-					<div><span class="text-cape-palliser-600">Other:</span> {{ result.other_marks }}</div>
-					<div v-if="result.phenotype"><span class="text-cape-palliser-600">Phenotype:</span> {{ result.phenotype }}</div>
+					class="border-shakespeare-200 bg-shakespeare-50/50 columns-2 gap-8 space-y-1 rounded-md border p-4 font-mono text-sm">
+					<div>
+						<span class="text-cape-palliser-600">Breed:</span>
+						{{ result.breed }}
+					</div>
+					<div>
+						<span class="text-cape-palliser-600">Sex:</span>
+						{{ result.sex }}
+					</div>
+					<div>
+						<span class="text-cape-palliser-600">Age:</span>
+						{{ result.age }}
+					</div>
+					<div>
+						<span class="text-cape-palliser-600"
+							>Social Rank:</span
+						>
+						{{ result.social_rank }}
+					</div>
+					<div>
+						<span class="text-cape-palliser-600"
+							>Benefits:</span
+						>
+						{{ result.benefits.join(', ') || '—' }}
+					</div>
+					<div>
+						<span class="text-cape-palliser-600"
+							>Detriments:</span
+						>
+						{{ result.detriments.join(', ') || '—' }}
+					</div>
+					<div>
+						<span class="text-cape-palliser-600"
+							>Health:</span
+						>
+						{{ result.health_issues }}
+					</div>
+					<div>
+						<span class="text-cape-palliser-600">Face:</span>
+						{{ result.face_markings }}
+					</div>
+					<div>
+						<span class="text-cape-palliser-600"
+							>RF Leg:</span
+						>
+						{{ result.leg_markings.RF }}
+					</div>
+					<div>
+						<span class="text-cape-palliser-600"
+							>LF Leg:</span
+						>
+						{{ result.leg_markings.LF }}
+					</div>
+					<div>
+						<span class="text-cape-palliser-600"
+							>RB Leg:</span
+						>
+						{{ result.leg_markings.RB }}
+					</div>
+					<div>
+						<span class="text-cape-palliser-600"
+							>LB Leg:</span
+						>
+						{{ result.leg_markings.LB }}
+					</div>
+					<div>
+						<span class="text-cape-palliser-600">Other:</span>
+						{{ result.other_marks }}
+					</div>
+					<div v-if="result.phenotype">
+						<span class="text-cape-palliser-600"
+							>Phenotype:</span
+						>
+						{{ result.phenotype }}
+					</div>
 				</div>
 			</CardContent>
 		</Card>
@@ -256,7 +347,8 @@ const grantSlot = (): void => {
 			</CardHeader>
 			<CardContent>
 				<p class="text-cape-palliser-600 text-sm">
-					Manage story progression rolls, checkpoints, and travel events.
+					Manage story progression rolls, checkpoints, and travel
+					events.
 				</p>
 				<p class="text-cape-palliser-500 mt-2 text-xs">
 					Placeholder – coming soon
@@ -268,12 +360,13 @@ const grantSlot = (): void => {
 			<CardHeader>
 				<CardTitle>Breeding Tools</CardTitle>
 				<p class="text-cape-palliser-600 mt-1 text-sm">
-					Backfill sex and grant Sanctuary slots. Pending breeding requests live under Submissions.
+					Backfill sex and grant Sanctuary slots. Pending
+					breeding requests live under Submissions.
 				</p>
 			</CardHeader>
 			<CardContent class="space-y-6">
 				<div class="space-y-3">
-					<p class="text-sm font-medium text-cape-palliser-700">
+					<p class="text-cape-palliser-700 text-sm font-medium">
 						Horses missing sex
 					</p>
 					<div
@@ -287,7 +380,9 @@ const grantSlot = (): void => {
 						class="flex flex-wrap items-center justify-between gap-2 rounded border p-3 text-sm">
 						<div>
 							<p class="font-medium">{{ horse.name }}</p>
-							<p class="font-mono text-xs">{{ horse.geno }}</p>
+							<p class="font-mono text-xs">
+								{{ horse.geno }}
+							</p>
 						</div>
 						<div class="flex gap-2">
 							<Button
@@ -307,7 +402,7 @@ const grantSlot = (): void => {
 				</div>
 
 				<div class="space-y-3 border-t pt-4">
-					<p class="text-sm font-medium text-cape-palliser-700">
+					<p class="text-cape-palliser-700 text-sm font-medium">
 						Grant Sanctuary slot
 					</p>
 					<div class="grid gap-3 md:grid-cols-3">
@@ -316,8 +411,13 @@ const grantSlot = (): void => {
 							<Select
 								v-model="grantForm.breeding_slot_id"
 								:options="[
-									{ value: null, label: 'Select slot' },
-									...(props.sanctuarySlots || []).map((slot) => ({
+									{
+										value: null,
+										label: 'Select slot',
+									},
+									...(
+										props.sanctuarySlots || []
+									).map((slot) => ({
 										value: slot.id,
 										label: `${slot.horse_name} #${slot.sequence}`,
 									})),
@@ -328,8 +428,13 @@ const grantSlot = (): void => {
 							<Select
 								v-model="grantForm.to_user_id"
 								:options="[
-									{ value: null, label: 'Select user' },
-									...(props.grantableUsers || []).map((user) => ({
+									{
+										value: null,
+										label: 'Select user',
+									},
+									...(
+										props.grantableUsers || []
+									).map((user) => ({
 										value: user.id,
 										label: user.name,
 									})),

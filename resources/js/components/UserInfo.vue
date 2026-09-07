@@ -18,7 +18,9 @@ const props = withDefaults(defineProps<Props>(), {
 const { getInitials } = useInitials();
 
 // Compute whether we should show the avatar image
-const hasAvatarImage = computed(() => props.user.avatar && props.user.avatar !== '');
+const hasAvatarImage = computed(
+	() => props.user.avatar && props.user.avatar !== '',
+);
 </script>
 
 <template>
@@ -28,8 +30,7 @@ const hasAvatarImage = computed(() => props.user.avatar && props.user.avatar !==
 		<AvatarImage
 			v-if="hasAvatarImage"
 			:src="user.avatar"
-			:alt="user.name"
-		/>
+			:alt="user.name" />
 		<AvatarFallback class="rounded-lg text-black">
 			{{ getInitials(user.name) }}
 		</AvatarFallback>

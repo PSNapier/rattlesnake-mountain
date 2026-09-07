@@ -115,11 +115,18 @@ const statusLabel = (status: string): string => {
 							: '',
 					]">
 					<CardHeader>
-						<div class="flex items-start justify-between gap-3">
+						<div
+							class="flex items-start justify-between gap-3">
 							<div class="flex-1">
-								<CardTitle class="flex items-center gap-2">
+								<CardTitle
+									class="flex items-center gap-2">
 									<Link
-										:href="route('inbox.show', message.id)"
+										:href="
+											route(
+												'inbox.show',
+												message.id,
+											)
+										"
 										:class="[
 											'hover:text-shakespeare-600',
 											!message.is_read
@@ -130,20 +137,28 @@ const statusLabel = (status: string): string => {
 									</Link>
 									<span
 										v-if="!message.is_read"
-										class="bg-blue-500 size-2 rounded-full"></span>
+										class="size-2 rounded-full bg-blue-500"></span>
 								</CardTitle>
-								<p class="text-cape-palliser-600 mt-1 text-sm">
+								<p
+									class="text-cape-palliser-600 mt-1 text-sm">
 									From:
-									{{ message.admin?.name ?? 'Staff' }}
+									{{
+										message.admin?.name ?? 'Staff'
+									}}
 								</p>
-								<p class="text-cape-palliser-500 mt-1 text-xs">
-									{{ formatDate(message.created_at) }}
+								<p
+									class="text-cape-palliser-500 mt-1 text-xs">
+									{{
+										formatDate(message.created_at)
+									}}
 								</p>
 							</div>
 							<span
 								:class="[
 									'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-									getStatusBadgeClass(message.status),
+									getStatusBadgeClass(
+										message.status,
+									),
 								]">
 								{{ statusLabel(message.status) }}
 							</span>
@@ -168,7 +183,13 @@ const statusLabel = (status: string): string => {
 										View Breeding
 									</Button>
 								</Link>
-								<Link :href="route('inbox.show', message.id)">
+								<Link
+									:href="
+										route(
+											'inbox.show',
+											message.id,
+										)
+									">
 									<Button
 										variant="outline"
 										size="sm">
@@ -186,7 +207,9 @@ const statusLabel = (status: string): string => {
 									v-if="message.horse?.design_link"
 									class="flex-shrink-0">
 									<img
-										:src="message.horse.design_link"
+										:src="
+											message.horse.design_link
+										"
 										:alt="message.horse.name"
 										class="h-16 w-16 rounded border border-gray-200 object-cover" />
 								</div>
@@ -197,23 +220,31 @@ const statusLabel = (status: string): string => {
 										<strong>Horse:</strong>
 										<Link
 											:href="
-												message.horse.is_edit &&
-												message.horse.public_horse_id
+												message.horse
+													.is_edit &&
+												message.horse
+													.public_horse_id
 													? route(
 															'horses.show',
-															message.horse
+															message
+																.horse
 																.public_horse_id,
 														)
 													: route(
 															'horses.show',
-															message.horse.id,
+															message
+																.horse
+																.id,
 														)
 											"
 											class="text-shakespeare-600 hover:underline">
 											{{ message.horse.name }}
 										</Link>
 										<span
-											v-if="message.horse.is_edit"
+											v-if="
+												message.horse
+													.is_edit
+											"
 											class="text-cape-palliser-500 ml-1 text-xs">
 											(Edit)
 										</span>
@@ -226,12 +257,13 @@ const statusLabel = (status: string): string => {
 									<p
 										v-if="message.admin_edits"
 										class="mt-2 text-sm text-yellow-700">
-										⚠️ Admin has made edits that require
-										your review
+										⚠️ Admin has made edits that
+										require your review
 									</p>
 								</div>
 							</div>
-							<div class="flex items-center justify-between">
+							<div
+								class="flex items-center justify-between">
 								<p
 									v-if="message.comment_count > 0"
 									class="text-cape-palliser-500 text-xs">
@@ -241,7 +273,10 @@ const statusLabel = (status: string): string => {
 											? 'comment'
 											: 'comments'
 									}}
-									<span v-if="message.latest_comment_at">
+									<span
+										v-if="
+											message.latest_comment_at
+										">
 										• Last
 										{{
 											formatDate(
@@ -250,7 +285,13 @@ const statusLabel = (status: string): string => {
 										}}
 									</span>
 								</p>
-								<Link :href="route('inbox.show', message.id)">
+								<Link
+									:href="
+										route(
+											'inbox.show',
+											message.id,
+										)
+									">
 									<Button
 										variant="outline"
 										size="sm">

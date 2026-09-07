@@ -12,7 +12,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Link, router } from '@inertiajs/vue3';
-import { ArchiveRestore, ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-vue-next';
+import {
+	ArchiveRestore,
+	ArrowDown,
+	ArrowUp,
+	ArrowUpDown,
+} from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 type Status = 'pending' | 'contacted' | 'approved' | 'archived';
@@ -145,8 +150,10 @@ const initializeAdminForm = (submission: Submission): void => {
 
 	adminForm.value = {
 		name: (adminEdits?.name as string) ?? submission.name ?? '',
-		age_years: (adminEdits?.age_years as number) ?? submission.age_years ?? 0,
-		age_months: (adminEdits?.age_months as number) ?? submission.age_months ?? 0,
+		age_years:
+			(adminEdits?.age_years as number) ?? submission.age_years ?? 0,
+		age_months:
+			(adminEdits?.age_months as number) ?? submission.age_months ?? 0,
 		geno: (adminEdits?.geno as string) ?? submission.geno ?? '',
 		sex: (adminEdits?.sex as string) ?? submission.sex ?? '',
 		herd_id:
@@ -202,21 +209,21 @@ const unifiedRows = computed((): UnifiedRow[] => {
 		submission,
 	}));
 
-	const breedingRows: UnifiedRow[] = (props.breedingRequests?.data || []).map(
-		(breeding) => ({
-			key: `breeding-${breeding.id}`,
-			kind: 'breeding' as const,
-			id: breeding.id,
-			user_id: null,
-			user_name: breeding.requester_name ?? 'Unknown',
-			name: `${breeding.sire_name ?? 'Sire'} × ${breeding.dam_name ?? 'Dam'}`,
-			date_submitted: breeding.created_at ?? '',
-			status: 'pending' as const,
-			last_contact_date: null,
-			last_admin_name: null,
-			breeding,
-		}),
-	);
+	const breedingRows: UnifiedRow[] = (
+		props.breedingRequests?.data || []
+	).map((breeding) => ({
+		key: `breeding-${breeding.id}`,
+		kind: 'breeding' as const,
+		id: breeding.id,
+		user_id: null,
+		user_name: breeding.requester_name ?? 'Unknown',
+		name: `${breeding.sire_name ?? 'Sire'} × ${breeding.dam_name ?? 'Dam'}`,
+		date_submitted: breeding.created_at ?? '',
+		status: 'pending' as const,
+		last_contact_date: null,
+		last_admin_name: null,
+		breeding,
+	}));
 
 	return [...horseRows, ...breedingRows];
 });
@@ -344,9 +351,13 @@ const closeReviewModal = (): void => {
 };
 
 const handleUnarchive = (submission: Submission): void => {
-	router.post(route('admin.horses.unarchive', submission.id), {}, {
-		onSuccess: () => router.reload(),
-	});
+	router.post(
+		route('admin.horses.unarchive', submission.id),
+		{},
+		{
+			onSuccess: () => router.reload(),
+		},
+	);
 };
 
 const handleArchive = (): void => {
@@ -442,11 +453,19 @@ const handleApprove = (): void => {
 };
 
 const rollBreeding = (id: number): void => {
-	router.post(route('admin.breeding-requests.roll', id), {}, { preserveScroll: true });
+	router.post(
+		route('admin.breeding-requests.roll', id),
+		{},
+		{ preserveScroll: true },
+	);
 };
 
 const rejectBreeding = (id: number): void => {
-	router.post(route('admin.breeding-requests.reject', id), {}, { preserveScroll: true });
+	router.post(
+		route('admin.breeding-requests.reject', id),
+		{},
+		{ preserveScroll: true },
+	);
 };
 </script>
 
@@ -514,7 +533,8 @@ const rejectBreeding = (id: number): void => {
 				<table class="w-full border-collapse">
 					<thead>
 						<tr class="border-b border-gray-200">
-							<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+							<th
+								class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
 								Type
 							</th>
 							<th
@@ -543,7 +563,11 @@ const rejectBreeding = (id: number): void => {
 								<div class="flex items-center gap-2">
 									Date Submitted
 									<component
-										:is="getSortIcon('date_submitted')"
+										:is="
+											getSortIcon(
+												'date_submitted',
+											)
+										"
 										class="text-cape-palliser-500 h-4 w-4" />
 								</div>
 							</th>
@@ -559,18 +583,26 @@ const rejectBreeding = (id: number): void => {
 							</th>
 							<th
 								class="text-cape-palliser-950 cursor-pointer px-4 py-3 text-left text-sm font-semibold hover:bg-gray-50"
-								@click="handleSort('last_contact_date')">
+								@click="
+									handleSort('last_contact_date')
+								">
 								<div class="flex items-center gap-2">
 									Last Contact
 									<component
-										:is="getSortIcon('last_contact_date')"
+										:is="
+											getSortIcon(
+												'last_contact_date',
+											)
+										"
 										class="text-cape-palliser-500 h-4 w-4" />
 								</div>
 							</th>
-							<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+							<th
+								class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
 								Last Admin
 							</th>
-							<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold"></th>
+							<th
+								class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold"></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -587,66 +619,114 @@ const rejectBreeding = (id: number): void => {
 							v-for="row in filteredAndSorted"
 							:key="row.key">
 							<tr
-								v-if="row.kind === 'horse' && row.submission"
+								v-if="
+									row.kind === 'horse' &&
+									row.submission
+								"
 								:class="[
 									'border-b border-gray-200 hover:bg-gray-50',
-									row.submission.status === 'approved' ||
-									row.submission.status === 'archived'
+									row.submission.status ===
+										'approved' ||
+									row.submission.status ===
+										'archived'
 										? 'opacity-75'
 										: '',
 								]">
-								<td class="text-cape-palliser-700 px-4 py-3 text-sm">
-									<span class="inline-flex items-center rounded-full bg-shakespeare-50 px-2.5 py-0.5 text-xs font-medium text-shakespeare-400">
+								<td
+									class="text-cape-palliser-700 px-4 py-3 text-sm">
+									<span
+										class="bg-shakespeare-50 text-shakespeare-400 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium">
 										Horse
 									</span>
 								</td>
-								<td class="text-cape-palliser-950 px-4 py-3 text-sm">
+								<td
+									class="text-cape-palliser-950 px-4 py-3 text-sm">
 									<Link
-										:href="route('users.profile', row.submission.user_id)"
+										:href="
+											route(
+												'users.profile',
+												row.submission
+													.user_id,
+											)
+										"
 										class="hover:text-shakespeare-600 hover:underline">
 										{{ row.submission.user_name }}
 									</Link>
 								</td>
-								<td class="text-cape-palliser-950 px-4 py-3 text-sm">
-									<div class="flex items-center gap-3">
+								<td
+									class="text-cape-palliser-950 px-4 py-3 text-sm">
+									<div
+										class="flex items-center gap-3">
 										<div
-											v-if="row.submission.design_link"
+											v-if="
+												row.submission
+													.design_link
+											"
 											class="flex-shrink-0">
 											<img
-												:src="row.submission.design_link"
-												:alt="row.submission.name"
+												:src="
+													row.submission
+														.design_link
+												"
+												:alt="
+													row.submission
+														.name
+												"
 												class="h-12 w-12 rounded border border-gray-200 object-cover" />
 										</div>
 										<Link
 											:href="
-												row.submission.is_edit &&
-												row.submission.public_horse_id
+												row.submission
+													.is_edit &&
+												row.submission
+													.public_horse_id
 													? route(
 															'horses.show',
-															row.submission.public_horse_id,
+															row
+																.submission
+																.public_horse_id,
 														)
-													: route('horses.show', row.submission.id)
+													: route(
+															'horses.show',
+															row
+																.submission
+																.id,
+														)
 											"
 											class="hover:text-shakespeare-600 hover:underline">
 											{{ row.submission.name }}
 											<span
-												v-if="row.submission.is_edit"
+												v-if="
+													row.submission
+														.is_edit
+												"
 												class="text-cape-palliser-500 ml-1 text-xs">
 												(Edit)
 											</span>
 										</Link>
 									</div>
 								</td>
-								<td class="text-cape-palliser-700 px-4 py-3 text-sm">
-									{{ formatDate(row.submission.date_submitted) }}
+								<td
+									class="text-cape-palliser-700 px-4 py-3 text-sm">
+									{{
+										formatDate(
+											row.submission
+												.date_submitted,
+										)
+									}}
 								</td>
 								<td class="px-4 py-3 text-sm">
 									<span
 										:class="[
 											'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-											getStatusBadgeClass(row.submission.status),
-											row.submission.status === 'approved' ||
-											row.submission.status === 'archived'
+											getStatusBadgeClass(
+												row.submission
+													.status,
+											),
+											row.submission.status ===
+												'approved' ||
+											row.submission.status ===
+												'archived'
 												? 'opacity-100'
 												: '',
 										]">
@@ -654,71 +734,141 @@ const rejectBreeding = (id: number): void => {
 											row.submission.status
 												.charAt(0)
 												.toUpperCase() +
-											row.submission.status.slice(1)
+											row.submission.status.slice(
+												1,
+											)
 										}}
 									</span>
 								</td>
-								<td class="text-cape-palliser-700 px-4 py-3 text-sm">
-									{{ formatDate(row.submission.last_contact_date) }}
+								<td
+									class="text-cape-palliser-700 px-4 py-3 text-sm">
+									{{
+										formatDate(
+											row.submission
+												.last_contact_date,
+										)
+									}}
 								</td>
-								<td class="text-cape-palliser-700 px-4 py-3 text-sm">
-									{{ row.submission.last_admin_name || '—' }}
+								<td
+									class="text-cape-palliser-700 px-4 py-3 text-sm">
+									{{
+										row.submission
+											.last_admin_name || '—'
+									}}
 								</td>
-								<td class="flex gap-2 px-4 py-3 text-sm">
+								<td
+									class="flex gap-2 px-4 py-3 text-sm">
 									<Button
-										v-if="row.submission.status !== 'approved' && row.submission.status !== 'archived'"
+										v-if="
+											row.submission.status !==
+												'approved' &&
+											row.submission.status !==
+												'archived'
+										"
 										variant="outline"
 										size="sm"
-										@click="openReviewModal(row.submission)">
+										@click="
+											openReviewModal(
+												row.submission,
+											)
+										">
 										Review
 									</Button>
 									<Button
-										v-if="row.submission.status === 'archived'"
+										v-if="
+											row.submission.status ===
+											'archived'
+										"
 										variant="outline"
 										size="sm"
-										@click="handleUnarchive(row.submission)">
-										<ArchiveRestore class="mr-1 h-4 w-4" />
+										@click="
+											handleUnarchive(
+												row.submission,
+											)
+										">
+										<ArchiveRestore
+											class="mr-1 h-4 w-4" />
 										Unarchive
 									</Button>
 									<Button
-										v-if="row.submission.status === 'archived'"
+										v-if="
+											row.submission.status ===
+											'archived'
+										"
 										variant="outline"
 										size="sm"
-										@click="openReviewModal(row.submission)">
+										@click="
+											openReviewModal(
+												row.submission,
+											)
+										">
 										Review
 									</Button>
 									<span
-										v-if="row.submission.status === 'approved'"
+										v-if="
+											row.submission.status ===
+											'approved'
+										"
 										class="text-cape-palliser-500 text-sm">
 										Approved
 									</span>
 								</td>
 							</tr>
 							<tr
-								v-else-if="row.kind === 'breeding' && row.breeding"
+								v-else-if="
+									row.kind === 'breeding' &&
+									row.breeding
+								"
 								class="border-b border-gray-200 hover:bg-gray-50">
-								<td class="text-cape-palliser-700 px-4 py-3 text-sm">
-									<span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+								<td
+									class="text-cape-palliser-700 px-4 py-3 text-sm">
+									<span
+										class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800">
 										Breeding
 									</span>
 								</td>
-								<td class="text-cape-palliser-950 px-4 py-3 text-sm">
+								<td
+									class="text-cape-palliser-950 px-4 py-3 text-sm">
 									{{ row.breeding.requester_name }}
 								</td>
-								<td class="text-cape-palliser-950 px-4 py-3 text-sm">
+								<td
+									class="text-cape-palliser-950 px-4 py-3 text-sm">
 									<div class="space-y-1">
 										<p class="font-medium">
-											{{ row.breeding.sire_name }}
-											({{ row.breeding.sire_sex }}) ×
-											{{ row.breeding.dam_name }}
-											({{ row.breeding.dam_sex }})
+											{{
+												row.breeding
+													.sire_name
+											}}
+											({{
+												row.breeding
+													.sire_sex
+											}}) ×
+											{{
+												row.breeding
+													.dam_name
+											}}
+											({{
+												row.breeding
+													.dam_sex
+											}})
 										</p>
-										<p class="font-mono text-xs text-cape-palliser-600">
-											{{ row.breeding.sire_geno }} ·
-											{{ row.breeding.dam_geno }}
+										<p
+											class="text-cape-palliser-600 font-mono text-xs">
+											{{
+												row.breeding
+													.sire_geno
+											}}
+											·
+											{{
+												row.breeding
+													.dam_geno
+											}}
 										</p>
 										<a
-											:href="row.breeding.evidence_url"
+											:href="
+												row.breeding
+													.evidence_url
+											"
 											class="text-shakespeare-600 underline"
 											target="_blank"
 											rel="noopener">
@@ -731,34 +881,53 @@ const rejectBreeding = (id: number): void => {
 										</p>
 									</div>
 								</td>
-								<td class="text-cape-palliser-700 px-4 py-3 text-sm">
-									{{ formatDate(row.breeding.created_at ?? null) }}
+								<td
+									class="text-cape-palliser-700 px-4 py-3 text-sm">
+									{{
+										formatDate(
+											row.breeding
+												.created_at ?? null,
+										)
+									}}
 								</td>
 								<td class="px-4 py-3 text-sm">
 									<span
 										:class="[
 											'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-											getStatusBadgeClass('pending'),
+											getStatusBadgeClass(
+												'pending',
+											),
 										]">
 										Pending
 									</span>
 								</td>
-								<td class="text-cape-palliser-700 px-4 py-3 text-sm">
+								<td
+									class="text-cape-palliser-700 px-4 py-3 text-sm">
 									—
 								</td>
-								<td class="text-cape-palliser-700 px-4 py-3 text-sm">
+								<td
+									class="text-cape-palliser-700 px-4 py-3 text-sm">
 									—
 								</td>
-								<td class="flex gap-2 px-4 py-3 text-sm">
+								<td
+									class="flex gap-2 px-4 py-3 text-sm">
 									<Button
 										size="sm"
-										@click="rollBreeding(row.breeding.id)">
+										@click="
+											rollBreeding(
+												row.breeding.id,
+											)
+										">
 										Roll
 									</Button>
 									<Button
 										size="sm"
 										variant="outline"
-										@click="rejectBreeding(row.breeding.id)">
+										@click="
+											rejectBreeding(
+												row.breeding.id,
+											)
+										">
 										Reject
 									</Button>
 								</td>
@@ -800,10 +969,12 @@ const rejectBreeding = (id: number): void => {
 					<div class="space-y-4">
 						<!-- Headers -->
 						<div class="grid grid-cols-2 gap-4">
-							<h3 class="text-sm font-semibold text-gray-700">
+							<h3
+								class="text-sm font-semibold text-gray-700">
 								As Submitted
 							</h3>
-							<h3 class="text-sm font-semibold text-gray-700">
+							<h3
+								class="text-sm font-semibold text-gray-700">
 								Admin Edit
 							</h3>
 						</div>
@@ -811,7 +982,9 @@ const rejectBreeding = (id: number): void => {
 						<!-- Owner Row (read-only on both sides) -->
 						<div class="grid grid-cols-2 gap-4">
 							<div>
-								<Label class="text-xs text-gray-500">Owner</Label>
+								<Label class="text-xs text-gray-500"
+									>Owner</Label
+								>
 								<p class="mt-1 text-sm">
 									<Link
 										:href="
@@ -821,12 +994,16 @@ const rejectBreeding = (id: number): void => {
 											)
 										"
 										class="text-shakespeare-600 hover:underline">
-										{{ currentSubmission.user_name }}
+										{{
+											currentSubmission.user_name
+										}}
 									</Link>
 								</p>
 							</div>
 							<div>
-								<Label class="text-xs text-gray-500">Owner</Label>
+								<Label class="text-xs text-gray-500"
+									>Owner</Label
+								>
 								<p class="mt-1 text-sm text-gray-400">
 									(Not editable)
 								</p>
@@ -842,7 +1019,9 @@ const rejectBreeding = (id: number): void => {
 									: 'border-transparent bg-transparent',
 							]">
 							<div>
-								<Label class="text-xs text-gray-500">Horse Name</Label>
+								<Label class="text-xs text-gray-500"
+									>Horse Name</Label
+								>
 								<p class="mt-1 text-sm">
 									{{ currentSubmission.name }}
 								</p>
@@ -851,7 +1030,8 @@ const rejectBreeding = (id: number): void => {
 								<Label
 									for="admin-name"
 									class="text-xs text-gray-500">
-									Horse Name</Label>
+									Horse Name</Label
+								>
 								<div class="mt-1">
 									<Input
 										id="admin-name"
@@ -866,14 +1046,20 @@ const rejectBreeding = (id: number): void => {
 						<div
 							:class="[
 								'-m-1 grid grid-cols-2 gap-4 rounded border p-3 transition-colors',
-								isFieldChanged('age_years') || isFieldChanged('age_months')
+								isFieldChanged('age_years') ||
+								isFieldChanged('age_months')
 									? 'border-red-200 bg-red-50'
 									: 'border-transparent bg-transparent',
 							]">
 							<div>
-								<Label class="text-xs text-gray-500">Age</Label>
+								<Label class="text-xs text-gray-500"
+									>Age</Label
+								>
 								<p class="mt-1 text-sm">
-									{{ currentSubmission.formatted_age ?? '—' }}
+									{{
+										currentSubmission.formatted_age ??
+										'—'
+									}}
 								</p>
 							</div>
 							<div class="grid grid-cols-2 gap-2">
@@ -881,11 +1067,14 @@ const rejectBreeding = (id: number): void => {
 									<Label
 										for="admin-age-years"
 										class="text-xs text-gray-500">
-										Years</Label>
+										Years</Label
+									>
 									<div class="mt-1">
 										<Input
 											id="admin-age-years"
-											v-model.number="adminForm.age_years"
+											v-model.number="
+												adminForm.age_years
+											"
 											type="number"
 											min="0"
 											max="50"
@@ -896,11 +1085,14 @@ const rejectBreeding = (id: number): void => {
 									<Label
 										for="admin-age-months"
 										class="text-xs text-gray-500">
-										Months</Label>
+										Months</Label
+									>
 									<div class="mt-1">
 										<Input
 											id="admin-age-months"
-											v-model.number="adminForm.age_months"
+											v-model.number="
+												adminForm.age_months
+											"
 											type="number"
 											min="0"
 											max="11"
@@ -919,7 +1111,9 @@ const rejectBreeding = (id: number): void => {
 									: 'border-transparent bg-transparent',
 							]">
 							<div>
-								<Label class="text-xs text-gray-500">Geno</Label>
+								<Label class="text-xs text-gray-500"
+									>Geno</Label
+								>
 								<p class="mt-1 font-mono text-xs">
 									{{ currentSubmission.geno ?? '—' }}
 								</p>
@@ -928,7 +1122,8 @@ const rejectBreeding = (id: number): void => {
 								<Label
 									for="admin-geno"
 									class="text-xs text-gray-500">
-									Geno</Label>
+									Geno</Label
+								>
 								<div class="mt-1">
 									<Input
 										id="admin-geno"
@@ -948,7 +1143,9 @@ const rejectBreeding = (id: number): void => {
 									: 'border-transparent bg-transparent',
 							]">
 							<div>
-								<Label class="text-xs text-gray-500">Sex</Label>
+								<Label class="text-xs text-gray-500"
+									>Sex</Label
+								>
 								<p class="mt-1 text-sm">
 									{{ currentSubmission.sex ?? '—' }}
 								</p>
@@ -957,15 +1154,22 @@ const rejectBreeding = (id: number): void => {
 								<Label
 									for="admin-sex"
 									class="text-xs text-gray-500">
-									Sex</Label>
+									Sex</Label
+								>
 								<div class="mt-1">
 									<select
 										id="admin-sex"
 										v-model="adminForm.sex"
 										class="w-full rounded border px-2 py-1 text-sm">
-										<option value="">Unset</option>
-										<option value="mare">Mare</option>
-										<option value="stallion">Stallion</option>
+										<option value="">
+											Unset
+										</option>
+										<option value="mare">
+											Mare
+										</option>
+										<option value="stallion">
+											Stallion
+										</option>
 									</select>
 								</div>
 							</div>
@@ -980,7 +1184,9 @@ const rejectBreeding = (id: number): void => {
 									: 'border-transparent bg-transparent',
 							]">
 							<div>
-								<Label class="text-xs text-gray-500">Herd</Label>
+								<Label class="text-xs text-gray-500"
+									>Herd</Label
+								>
 								<p class="mt-1 text-sm">
 									{{
 										currentSubmission?.herd_id
@@ -997,7 +1203,8 @@ const rejectBreeding = (id: number): void => {
 								<Label
 									for="admin-herd"
 									class="text-xs text-gray-500">
-									Herd</Label>
+									Herd</Label
+								>
 								<div class="mt-1">
 									<Select
 										id="admin-herd"
@@ -1007,7 +1214,9 @@ const rejectBreeding = (id: number): void => {
 												value: null,
 												label: 'No herd',
 											},
-											...(props.herds || []).map((herd) => ({
+											...(
+												props.herds || []
+											).map((herd) => ({
 												value: herd.id,
 												label: herd.name,
 											})),
@@ -1027,20 +1236,28 @@ const rejectBreeding = (id: number): void => {
 									: 'border-transparent bg-transparent',
 							]">
 							<div>
-								<Label class="text-xs text-gray-500">Design Link</Label>
+								<Label class="text-xs text-gray-500"
+									>Design Link</Label
+								>
 								<p class="mt-1 text-sm break-all">
-									{{ currentSubmission.design_link ?? '—' }}
+									{{
+										currentSubmission.design_link ??
+										'—'
+									}}
 								</p>
 							</div>
 							<div>
 								<Label
 									for="admin-design-link"
 									class="text-xs text-gray-500">
-									Design Link</Label>
+									Design Link</Label
+								>
 								<div class="mt-1">
 									<Input
 										id="admin-design-link"
-										v-model="adminForm.design_link"
+										v-model="
+											adminForm.design_link
+										"
 										type="url"
 										class="w-full text-xs" />
 								</div>
@@ -1050,7 +1267,9 @@ const rejectBreeding = (id: number): void => {
 						<!-- Type Row (read-only) -->
 						<div class="grid grid-cols-2 gap-4">
 							<div>
-								<Label class="text-xs text-gray-500">Type</Label>
+								<Label class="text-xs text-gray-500"
+									>Type</Label
+								>
 								<p class="mt-1 text-sm">
 									{{
 										currentSubmission.is_edit
@@ -1060,7 +1279,9 @@ const rejectBreeding = (id: number): void => {
 								</p>
 							</div>
 							<div>
-								<Label class="text-xs text-gray-500">Type</Label>
+								<Label class="text-xs text-gray-500"
+									>Type</Label
+								>
 								<p class="mt-1 text-sm text-gray-400">
 									(Not editable)
 								</p>
@@ -1070,7 +1291,9 @@ const rejectBreeding = (id: number): void => {
 						<!-- Submitted Row (read-only) -->
 						<div class="grid grid-cols-2 gap-4">
 							<div>
-								<Label class="text-xs text-gray-500">Submitted</Label>
+								<Label class="text-xs text-gray-500"
+									>Submitted</Label
+								>
 								<p class="mt-1 text-sm">
 									{{
 										formatDate(
@@ -1080,7 +1303,9 @@ const rejectBreeding = (id: number): void => {
 								</p>
 							</div>
 							<div>
-								<Label class="text-xs text-gray-500">Submitted</Label>
+								<Label class="text-xs text-gray-500"
+									>Submitted</Label
+								>
 								<p class="mt-1 text-sm text-gray-400">
 									(Not editable)
 								</p>
@@ -1099,7 +1324,8 @@ const rejectBreeding = (id: number): void => {
 										)
 									: route(
 											'horses.show',
-											currentSubmission?.id || 0,
+											currentSubmission?.id ||
+												0,
 										)
 							"
 							target="_blank">
@@ -1143,15 +1369,16 @@ const rejectBreeding = (id: number): void => {
 
 					<!-- Initial Message -->
 					<div
-						v-if="
-							currentSubmission?.message?.initial_message
-						"
+						v-if="currentSubmission?.message?.initial_message"
 						class="rounded-md border border-blue-200 bg-blue-50 p-4">
 						<p class="text-sm font-medium text-gray-700">
 							Initial Message:
 						</p>
 						<p class="mt-1 text-sm text-gray-600">
-							{{ currentSubmission.message.initial_message }}
+							{{
+								currentSubmission.message
+									.initial_message
+							}}
 						</p>
 					</div>
 
@@ -1171,12 +1398,16 @@ const rejectBreeding = (id: number): void => {
 									? 'border-blue-200 bg-blue-50'
 									: 'border-gray-200 bg-gray-50',
 							]">
-							<div class="flex items-start justify-between">
+							<div
+								class="flex items-start justify-between">
 								<div class="flex-1">
 									<p class="text-sm font-medium">
 										{{ comment.user.name }}
 										<span
-											v-if="comment.user.is_staff"
+											v-if="
+												comment.user
+													.is_staff
+											"
 											class="text-xs text-blue-600">
 											(Staff)
 										</span>
@@ -1186,12 +1417,18 @@ const rejectBreeding = (id: number): void => {
 											(Owner)
 										</span>
 									</p>
-									<p class="mt-1 text-sm text-gray-700">
+									<p
+										class="mt-1 text-sm text-gray-700">
 										{{ comment.body }}
 									</p>
 								</div>
-								<p class="text-cape-palliser-500 ml-4 text-xs">
-									{{ formatDateTime(comment.created_at) }}
+								<p
+									class="text-cape-palliser-500 ml-4 text-xs">
+									{{
+										formatDateTime(
+											comment.created_at,
+										)
+									}}
 								</p>
 							</div>
 						</div>
@@ -1221,14 +1458,16 @@ const rejectBreeding = (id: number): void => {
 							</svg>
 						</div>
 						<div class="ml-3">
-							<h3 class="text-sm font-medium text-yellow-800">
+							<h3
+								class="text-sm font-medium text-yellow-800">
 								Edits Require Owner Acceptance
 							</h3>
 							<div class="mt-2 text-sm text-yellow-700">
 								<p>
-									You have made edits to this submission. The
-									owner must accept these changes before the
-									horse can be published. Use "Contact Owner"
+									You have made edits to this
+									submission. The owner must accept
+									these changes before the horse can
+									be published. Use "Contact Owner"
 									to notify them of the edits.
 								</p>
 							</div>

@@ -177,7 +177,9 @@ const submit = () => {
 				</div>
 
 				<div class="grid gap-2">
-					<Label for="password_confirmation">Confirm password</Label>
+					<Label for="password_confirmation"
+						>Confirm password</Label
+					>
 					<Input
 						id="password_confirmation"
 						type="password"
@@ -186,11 +188,14 @@ const submit = () => {
 						autocomplete="new-password"
 						v-model="form.password_confirmation"
 						placeholder="Confirm password" />
-					<InputError :message="form.errors.password_confirmation" />
+					<InputError
+						:message="form.errors.password_confirmation" />
 				</div>
 
 				<div class="relative grid gap-2">
-					<Label for="referrer_search">Were you referred by someone?</Label>
+					<Label for="referrer_search"
+						>Were you referred by someone?</Label
+					>
 					<div class="flex gap-2">
 						<Input
 							id="referrer_search"
@@ -199,7 +204,9 @@ const submit = () => {
 							autocomplete="off"
 							v-model="searchQuery"
 							placeholder="Search username (optional)"
-							@focus="showResults = searchResults.length > 0" />
+							@focus="
+								showResults = searchResults.length > 0
+							" />
 						<Button
 							v-if="selectedReferrer"
 							type="button"
@@ -229,7 +236,11 @@ const submit = () => {
 						</li>
 					</ul>
 					<p
-						v-else-if="showResults && searchQuery.trim().length >= 2 && !searching"
+						v-else-if="
+							showResults &&
+							searchQuery.trim().length >= 2 &&
+							!searching
+						"
 						class="text-muted-foreground text-xs">
 						No matching players found.
 					</p>
@@ -250,7 +261,7 @@ const submit = () => {
 						:tabindex="7" />
 					<Label
 						for="rules_agreed"
-						class="text-muted-foreground block cursor-pointer text-md font-normal">
+						class="text-muted-foreground text-md block cursor-pointer font-normal">
 						By registering, you agree to the site
 						<a
 							:href="route('rules')"

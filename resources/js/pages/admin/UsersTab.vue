@@ -59,7 +59,10 @@ interface Props {
 const props = defineProps<Props>();
 
 const usersData = computed(() => props.users?.data ?? []);
-const usersMeta = computed(() => props.users?.meta ?? { last_page: 1, from: null, to: null, total: 0 });
+const usersMeta = computed(
+	() =>
+		props.users?.meta ?? { last_page: 1, from: null, to: null, total: 0 },
+);
 const usersLinks = computed(() => props.users?.links ?? []);
 
 const searchQuery = ref(props.userSearch);
@@ -81,7 +84,10 @@ function formatDate(value: string | null): string {
 }
 
 function submitSearch() {
-	router.get(route('admin.index'), { user_search: searchQuery.value, page: 1 });
+	router.get(route('admin.index'), {
+		user_search: searchQuery.value,
+		page: 1,
+	});
 }
 
 function goToPage(url: string | null) {
@@ -144,22 +150,28 @@ function confirmDelete() {
 				<table class="w-full border-collapse">
 					<thead>
 						<tr class="border-b border-gray-200">
-							<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+							<th
+								class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
 								Name
 							</th>
-							<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+							<th
+								class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
 								Created
 							</th>
-							<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+							<th
+								class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
 								Last Login
 							</th>
-							<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+							<th
+								class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
 								Role
 							</th>
-							<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+							<th
+								class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
 								Status
 							</th>
-							<th class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
+							<th
+								class="text-cape-palliser-950 px-4 py-3 text-left text-sm font-semibold">
 								Actions
 							</th>
 						</tr>
@@ -178,24 +190,35 @@ function confirmDelete() {
 							v-for="user in usersData"
 							:key="user.id"
 							class="border-b border-gray-200 hover:bg-gray-50">
-							<td class="text-cape-palliser-950 px-4 py-3 text-sm">
+							<td
+								class="text-cape-palliser-950 px-4 py-3 text-sm">
 								<Link
-									:href="route('users.profile', user.id)"
+									:href="
+										route(
+											'users.profile',
+											user.id,
+										)
+									"
 									class="hover:text-shakespeare-600 hover:underline">
 									{{ user.name }}
 								</Link>
 							</td>
-							<td class="text-cape-palliser-700 px-4 py-3 text-sm">
+							<td
+								class="text-cape-palliser-700 px-4 py-3 text-sm">
 								{{ formatDate(user.created_at) }}
 							</td>
-							<td class="text-cape-palliser-700 px-4 py-3 text-sm">
+							<td
+								class="text-cape-palliser-700 px-4 py-3 text-sm">
 								{{ formatDate(user.last_login_at) }}
 							</td>
 							<td class="px-4 py-3">
 								<Select
 									:model-value="user.role"
 									:options="roleOptions"
-									@update:model-value="(v: string) => changeRole(user, v)" />
+									@update:model-value="
+										(v: string) =>
+											changeRole(user, v)
+									" />
 							</td>
 							<td class="px-4 py-3">
 								<div class="flex gap-1">
@@ -210,15 +233,21 @@ function confirmDelete() {
 										Frozen
 									</span>
 									<span
-										v-if="!user.banned_at && !user.frozen_at"
-										class="inline-flex items-center rounded-full border border-gray-200 px-2.5 py-0.5 text-xs text-cape-palliser-500">
+										v-if="
+											!user.banned_at &&
+											!user.frozen_at
+										"
+										class="text-cape-palliser-500 inline-flex items-center rounded-full border border-gray-200 px-2.5 py-0.5 text-xs">
 										—
 									</span>
 								</div>
 							</td>
 							<td class="flex flex-wrap gap-2 px-4 py-3">
 								<Button
-									v-if="!user.frozen_at && !user.banned_at"
+									v-if="
+										!user.frozen_at &&
+										!user.banned_at
+									"
 									variant="outline"
 									size="sm"
 									@click="freezeUser(user)">
@@ -234,7 +263,10 @@ function confirmDelete() {
 									Unfreeze
 								</Button>
 								<Button
-									v-if="!user.banned_at && user.role === 'user'"
+									v-if="
+										!user.banned_at &&
+										user.role === 'user'
+									"
 									variant="outline"
 									size="sm"
 									@click="banUser(user)">
@@ -270,9 +302,13 @@ function confirmDelete() {
 				class="mt-4 flex items-center justify-between border-t border-gray-200 pt-4">
 				<p class="text-cape-palliser-600 text-sm">
 					Showing
-					<span class="font-medium">{{ usersMeta.from ?? 0 }}</span>
+					<span class="font-medium">{{
+						usersMeta.from ?? 0
+					}}</span>
 					to
-					<span class="font-medium">{{ usersMeta.to ?? 0 }}</span>
+					<span class="font-medium">{{
+						usersMeta.to ?? 0
+					}}</span>
 					of
 					<span class="font-medium">{{ usersMeta.total }}</span>
 					users
@@ -303,12 +339,19 @@ function confirmDelete() {
 			<DialogHeader>
 				<DialogTitle>Delete user</DialogTitle>
 			</DialogHeader>
-			<p v-if="deleteDialogUser" class="text-sm text-gray-600">
-				Delete <strong>{{ deleteDialogUser.name }}</strong>? Their herds and horses will be
-				transferred to Sanctuary. This cannot be undone.
+			<p
+				v-if="deleteDialogUser"
+				class="text-sm text-gray-600">
+				Delete <strong>{{ deleteDialogUser.name }}</strong
+				>? Their herds and horses will be transferred to Sanctuary.
+				This cannot be undone.
 			</p>
 			<DialogFooter>
-				<Button variant="outline" @click="closeDeleteDialog">Cancel</Button>
+				<Button
+					variant="outline"
+					@click="closeDeleteDialog"
+					>Cancel</Button
+				>
 				<Button
 					variant="destructive"
 					@click="confirmDelete">

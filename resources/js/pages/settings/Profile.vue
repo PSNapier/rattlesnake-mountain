@@ -50,7 +50,8 @@ const submit = () => {
 					v-if="user.is_frozen"
 					class="rounded-lg border border-amber-200 bg-amber-50 p-4">
 					<p class="mb-2 text-sm text-amber-800">
-						Your account is frozen. You can unfreeze it at any time to resume participation.
+						Your account is frozen. You can unfreeze it at any
+						time to resume participation.
 					</p>
 					<Link
 						:href="route('profile.unfreeze')"
@@ -60,7 +61,9 @@ const submit = () => {
 						Unfreeze account
 					</Link>
 					<p
-						v-if="status === 'Your account has been unfrozen.'"
+						v-if="
+							status === 'Your account has been unfrozen.'
+						"
 						class="mt-2 text-sm font-medium text-green-600">
 						{{ status }}
 					</p>
@@ -68,13 +71,11 @@ const submit = () => {
 
 				<HeadingSmall
 					title="Profile information"
-					description="Update your name and email address"
-				/>
+					description="Update your name and email address" />
 
 				<form
 					@submit.prevent="submit"
-					class="space-y-6"
-				>
+					class="space-y-6">
 					<div class="grid gap-2">
 						<Label for="name">Name</Label>
 						<Input
@@ -83,12 +84,10 @@ const submit = () => {
 							v-model="form.name"
 							required
 							autocomplete="name"
-							placeholder="Full name"
-						/>
+							placeholder="Full name" />
 						<InputError
 							class="mt-2"
-							:message="form.errors.name"
-						/>
+							:message="form.errors.name" />
 					</div>
 
 					<div class="grid gap-2">
@@ -100,12 +99,10 @@ const submit = () => {
 							v-model="form.email"
 							required
 							autocomplete="username"
-							placeholder="Email address"
-						/>
+							placeholder="Email address" />
 						<InputError
 							class="mt-2"
-							:message="form.errors.email"
-						/>
+							:message="form.errors.email" />
 					</div>
 
 					<div v-if="mustVerifyEmail && !user.email_verified_at">
@@ -115,17 +112,17 @@ const submit = () => {
 								:href="route('verification.send')"
 								method="post"
 								as="button"
-								class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current!"
-							>
-								Click here to resend the verification email.
+								class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current!">
+								Click here to resend the verification
+								email.
 							</Link>
 						</p>
 
 						<div
 							v-if="status === 'verification-link-sent'"
-							class="mt-2 text-sm font-medium text-green-600"
-						>
-							A new verification link has been sent to your email address.
+							class="mt-2 text-sm font-medium text-green-600">
+							A new verification link has been sent to your
+							email address.
 						</div>
 					</div>
 
@@ -136,12 +133,10 @@ const submit = () => {
 							enter-active-class="transition ease-in-out"
 							enter-from-class="opacity-0"
 							leave-active-class="transition ease-in-out"
-							leave-to-class="opacity-0"
-						>
+							leave-to-class="opacity-0">
 							<p
 								v-show="form.recentlySuccessful"
-								class="text-sm text-neutral-600"
-							>
+								class="text-sm text-neutral-600">
 								Saved.
 							</p>
 						</Transition>

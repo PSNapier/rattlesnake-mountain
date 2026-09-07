@@ -171,7 +171,8 @@ const purchase = (listingId: number): void => {
 							</p>
 						</div>
 					</CardHeader>
-					<CardContent class="px-4 text-center text-sm sm:text-base">
+					<CardContent
+						class="px-4 text-center text-sm sm:text-base">
 						<p class="text-cape-palliser-700">
 							{{
 								listing.description ||
