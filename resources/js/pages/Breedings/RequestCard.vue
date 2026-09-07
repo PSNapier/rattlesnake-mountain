@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Button } from '@/components/ui/button';
 import ImageUpload from '@/components/ImageUpload.vue';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
@@ -38,7 +38,6 @@ interface Props {
 	request: BreedingRequestRow;
 	herds: Herd[];
 	phenotypePlaceholder: string;
-	maxFileSize: number;
 }
 
 const props = defineProps<Props>();
@@ -53,7 +52,11 @@ const foalForm = useForm({
 });
 
 const cancelRequest = (): void => {
-	router.post(route('breedings.cancel', props.request.id), {}, { preserveScroll: true });
+	router.post(
+		route('breedings.cancel', props.request.id),
+		{},
+		{ preserveScroll: true },
+	);
 };
 
 const createFoal = (): void => {
@@ -71,9 +74,12 @@ const handleImageUploadSuccess = (data: { url: string }): void => {
 		<div class="flex items-start justify-between gap-2">
 			<div>
 				<p class="font-medium">
-					{{ props.request.sire?.name }} × {{ props.request.dam?.name }}
+					{{ props.request.sire?.name }} ×
+					{{ props.request.dam?.name }}
 				</p>
-				<p class="text-sm text-gray-600">Status: {{ props.request.status }}</p>
+				<p class="text-sm text-gray-600">
+					Status: {{ props.request.status }}
+				</p>
 			</div>
 			<Button
 				v-if="props.request.status === 'pending_staff'"
@@ -86,15 +92,21 @@ const handleImageUploadSuccess = (data: { url: string }): void => {
 
 		<div class="grid gap-4 md:grid-cols-2">
 			<div>
-				<p class="text-sm font-medium">Sire: {{ props.request.sire?.name }}</p>
+				<p class="text-sm font-medium">
+					Sire: {{ props.request.sire?.name }}
+				</p>
 				<p class="text-xs text-gray-600">
-					{{ props.request.sire?.sex }} · {{ props.request.sire?.geno }}
+					{{ props.request.sire?.sex }} ·
+					{{ props.request.sire?.geno }}
 				</p>
 			</div>
 			<div>
-				<p class="text-sm font-medium">Dam: {{ props.request.dam?.name }}</p>
+				<p class="text-sm font-medium">
+					Dam: {{ props.request.dam?.name }}
+				</p>
 				<p class="text-xs text-gray-600">
-					{{ props.request.dam?.sex }} · {{ props.request.dam?.geno }}
+					{{ props.request.dam?.sex }} ·
+					{{ props.request.dam?.geno }}
 				</p>
 			</div>
 		</div>
@@ -134,7 +146,10 @@ const handleImageUploadSuccess = (data: { url: string }): void => {
 				<div>
 					<p class="font-mono font-medium">{{ option.geno }}</p>
 					<p class="text-sm text-gray-600">
-						{{ option.phenotype || props.phenotypePlaceholder }}
+						{{
+							option.phenotype ||
+							props.phenotypePlaceholder
+						}}
 					</p>
 				</div>
 			</label>
@@ -167,7 +182,6 @@ const handleImageUploadSuccess = (data: { url: string }): void => {
 				<ImageUpload
 					:upload-url="route('horses.upload-image')"
 					accept="image/png,image/jpeg,image/jpg"
-					:max-size="props.maxFileSize"
 					@success="handleImageUploadSuccess" />
 				<Input
 					v-model="foalForm.design_link"
@@ -176,7 +190,9 @@ const handleImageUploadSuccess = (data: { url: string }): void => {
 					placeholder="Or paste design URL" />
 			</div>
 			<div>
-				<Label :for="`herd_id_${props.request.id}`">Herd (optional)</Label>
+				<Label :for="`herd_id_${props.request.id}`"
+					>Herd (optional)</Label
+				>
 				<Select
 					:id="`herd_id_${props.request.id}`"
 					v-model="foalForm.herd_id"

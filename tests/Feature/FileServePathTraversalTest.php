@@ -9,12 +9,6 @@ it('rejects path traversal attempts on avatars route', function () {
     $response->assertNotFound();
 });
 
-it('rejects path traversal attempts on character-images route', function () {
-    $response = $this->get('/character-images/..%252F..%252F.env');
-
-    $response->assertNotFound();
-});
-
 it('rejects path traversal attempts on horse-images route', function () {
     $response = $this->get('/horse-images/..%252F..%252F.env');
 

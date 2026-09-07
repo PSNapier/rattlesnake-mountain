@@ -1,13 +1,14 @@
 <script setup lang="ts">
+import ImageUpload from '@/components/ImageUpload.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import ImageUpload from '@/components/ImageUpload.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
+import { useUploadLimit } from '@/composables/useUploadLimit';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem, type SharedData } from '@/types';
-import { Head, router, useForm, usePage } from '@inertiajs/vue3';
+import { type BreadcrumbItem } from '@/types';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 interface Herd {
@@ -21,16 +22,9 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const page = usePage<SharedData>();
-const isStaff = computed(() => {
-	const role = page.props.auth.user?.role;
-	return !!role && role !== 'user';
-});
-const maxFileSize = computed(() => (isStaff.value ? 10 : 2) * 1024 * 1024);
-const fileTypeHint = computed(() =>
-	isStaff.value
-		? 'PNG, JPG, or JPEG files only, max 10MB'
-		: 'PNG, JPG, or JPEG files only, max 2MB',
+const { maxBytes: maxFileSize, sizeHint } = useUploadLimit();
+const fileTypeHint = computed(
+	() => `PNG, JPG, or JPEG files only, ${sizeHint.value}`,
 );
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -112,8 +106,14 @@ const handleImageUploadSuccess = (data: { url: string }) => {
 									id="sex"
 									v-model="form.sex"
 									:options="[
-										{ value: 'mare', label: 'Mare' },
-										{ value: 'stallion', label: 'Stallion' },
+										{
+											value: 'mare',
+											label: 'Mare',
+										},
+										{
+											value: 'stallion',
+											label: 'Stallion',
+										},
 									]" />
 								<p
 									v-if="form.errors.sex"
@@ -124,17 +124,22 @@ const handleImageUploadSuccess = (data: { url: string }) => {
 
 							<div class="grid grid-cols-2 gap-4">
 								<div>
-									<Label for="age_years">Age (years)</Label>
+									<Label for="age_years"
+										>Age (years)</Label
+									>
 									<Input
 										id="age_years"
-										v-model.number="form.age_years"
+										v-model.number="
+											form.age_years
+										"
 										type="number"
 										min="0"
 										max="50"
 										placeholder="Years"
 										:class="{
 											'border-red-500':
-												form.errors.age_years,
+												form.errors
+													.age_years,
 										}"
 										required />
 									<p
@@ -144,17 +149,22 @@ const handleImageUploadSuccess = (data: { url: string }) => {
 									</p>
 								</div>
 								<div>
-									<Label for="age_months">Age (months)</Label>
+									<Label for="age_months"
+										>Age (months)</Label
+									>
 									<Input
 										id="age_months"
-										v-model.number="form.age_months"
+										v-model.number="
+											form.age_months
+										"
 										type="number"
 										min="0"
 										max="11"
 										placeholder="Months"
 										:class="{
 											'border-red-500':
-												form.errors.age_months,
+												form.errors
+													.age_months,
 										}"
 										required />
 									<p
@@ -190,12 +200,18 @@ const handleImageUploadSuccess = (data: { url: string }) => {
 								>
 								<div class="space-y-2">
 									<ImageUpload
-										:upload-url="route('horses.upload-image')"
+										:upload-url="
+											route(
+												'horses.upload-image',
+											)
+										"
 										accept="image/png,image/jpeg,image/jpg"
 										:max-size="maxFileSize"
 										drag-drop-text="Drop your horse design image here"
 										:file-type-hint="fileTypeHint"
-										@success="handleImageUploadSuccess" />
+										@success="
+											handleImageUploadSuccess
+										" />
 									<div class="text-sm text-gray-500">
 										Or enter a URL manually:
 									</div>
@@ -206,7 +222,8 @@ const handleImageUploadSuccess = (data: { url: string }) => {
 										placeholder="Enter design image URL"
 										:class="{
 											'border-red-500':
-												form.errors.design_link,
+												form.errors
+													.design_link,
 										}" />
 									<p
 										v-if="form.errors.design_link"
@@ -219,7 +236,7 @@ const handleImageUploadSuccess = (data: { url: string }) => {
 										<img
 											:src="form.design_link"
 											alt="Horse design preview"
-											class="h-32 w-full rounded object-contain border" />
+											class="h-32 w-full rounded border object-contain" />
 									</div>
 								</div>
 							</div>
@@ -263,7 +280,11 @@ const handleImageUploadSuccess = (data: { url: string }) => {
 								<Button
 									type="button"
 									variant="outline"
-									@click="router.visit(route('horses.index'))">
+									@click="
+										router.visit(
+											route('horses.index'),
+										)
+									">
 									Cancel
 								</Button>
 							</div>

@@ -5,8 +5,12 @@ import { computed, ref, watch } from 'vue';
 import HeadingSmall from '@/components/HeadingSmall.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { useCsrfFetch } from '@/composables/useCsrfFetch';
+import { useImageUpload } from '@/composables/useImageUpload';
 import { useInitials } from '@/composables/useInitials';
+import { useUploadLimit } from '@/composables/useUploadLimit';
 import { type BreadcrumbItem, type SharedData, type User } from '@/types';
+import { LoaderCircle } from 'lucide-vue-next';
 
 import AppLayout from '@/layouts/AppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
@@ -21,6 +25,9 @@ const breadcrumbItems: BreadcrumbItem[] = [
 const page = usePage<SharedData>();
 const user = computed(() => page.props.auth.user as User);
 const { getInitials } = useInitials();
+const { csrfFetch, resolveErrorMessage } = useCsrfFetch();
+const { validateFile, uploadFile } = useImageUpload();
+const { maxBytes, maxMegabytes } = useUploadLimit();
 
 const fileInput = ref<HTMLInputElement>();
 const isUploading = ref(false);
@@ -45,128 +52,21 @@ const handleFileSelect = (event: Event): void => {
 	if (target.files && target.files[0]) {
 		const file = target.files[0];
 
-		// Validate file type
-		if (!file.type.startsWith('image/')) {
-			alert('Please select an image file.');
-			return;
+		if (validateFile(file, { maxSize: maxBytes.value })) {
+			uploadAvatar(file);
 		}
-
-		// Validate file size (2MB)
-		if (file.size > 2 * 1024 * 1024) {
-			alert('File size must be less than 2MB.');
-			return;
-		}
-
-		uploadAvatar(file);
 	}
-};
-
-// Helper function to fetch a fresh CSRF token
-const fetchFreshCsrfToken = async (): Promise<string> => {
-	try {
-		// Make a lightweight GET request to refresh the session
-		const response = await fetch(window.location.href, {
-			method: 'GET',
-			credentials: 'same-origin',
-			headers: {
-				Accept: 'text/html',
-				'X-Requested-With': 'XMLHttpRequest',
-			},
-		});
-
-		if (!response.ok) {
-			throw new Error('Failed to refresh session');
-		}
-
-		// Parse the response HTML to extract the new CSRF token
-		const html = await response.text();
-		const parser = new DOMParser();
-		const doc = parser.parseFromString(html, 'text/html');
-		const metaTag = doc.querySelector('meta[name="csrf-token"]');
-		const newToken = metaTag?.getAttribute('content') || '';
-
-		// Update the meta tag in the current document
-		const currentMetaTag = document.querySelector('meta[name="csrf-token"]');
-		if (currentMetaTag && newToken) {
-			currentMetaTag.setAttribute('content', newToken);
-		}
-
-		return newToken;
-	} catch (error) {
-		console.warn('Failed to refresh CSRF token:', error);
-		// Fallback to current meta tag if refresh fails
-		const metaTag = document.querySelector('meta[name="csrf-token"]');
-		return metaTag?.getAttribute('content') || '';
-	}
-};
-
-// Helper function to perform the actual upload
-const performAvatarUpload = async (csrfToken: string, file: File, retry = false): Promise<Response> => {
-	const formData = new FormData();
-	formData.append('avatar', file);
-
-	// Build headers
-	const headers: HeadersInit = {
-		Accept: 'application/json',
-		'X-Requested-With': 'XMLHttpRequest',
-	};
-
-	// Only add CSRF token if we have it
-	if (csrfToken) {
-		headers['X-CSRF-TOKEN'] = csrfToken;
-	}
-
-	const response = await fetch(route('appearance.avatar.upload'), {
-		method: 'POST',
-		body: formData,
-		credentials: 'same-origin',
-		headers,
-	});
-
-	// If we get a 419 and haven't retried yet, fetch fresh token and retry
-	if (response.status === 419 && !retry) {
-		const freshToken = await fetchFreshCsrfToken();
-		return performAvatarUpload(freshToken, file, true);
-	}
-
-	return response;
 };
 
 const uploadAvatar = async (file: File): Promise<void> => {
 	isUploading.value = true;
 
 	try {
-		// Get CSRF token from meta tag right before request
-		const metaTag = document.querySelector('meta[name="csrf-token"]');
-		const csrfToken = metaTag?.getAttribute('content') || '';
-
-		const response = await performAvatarUpload(csrfToken, file);
-
-		if (!response.ok) {
-			// Handle specific error codes
-			if (response.status === 419) {
-				throw new Error('Session expired. Please refresh the page and try again.');
-			}
-
-			// Try to parse JSON error response
-			let errorMessage = `Upload failed (HTTP ${response.status})`;
-			try {
-				const errorData = await response.json();
-				errorMessage = errorData.message || errorMessage;
-			} catch {
-				// Response is not JSON, use status-based message
-				if (response.status === 419) {
-					errorMessage = 'Session expired. Please refresh the page and try again.';
-				}
-			}
-			throw new Error(errorMessage);
-		}
-
-		const result = await response.json();
-
-		if (!result.success) {
-			throw new Error(result.message || 'Upload failed. Please try again.');
-		}
+		const result = await uploadFile({
+			url: route('appearance.avatar.upload'),
+			file,
+			fieldName: 'avatar',
+		});
 
 		// Update local avatar immediately for UI
 		if (result.avatar) {
@@ -182,37 +82,14 @@ const uploadAvatar = async (file: File): Promise<void> => {
 			fileInput.value.value = '';
 		}
 	} catch (error) {
-		alert(error instanceof Error ? error.message : 'Failed to upload avatar. Please try again.');
+		alert(
+			error instanceof Error
+				? error.message
+				: 'Failed to upload avatar. Please try again.',
+		);
 	} finally {
 		isUploading.value = false;
 	}
-};
-
-// Helper function to perform the delete
-const performAvatarDelete = async (csrfToken: string, retry = false): Promise<Response> => {
-	const headers: HeadersInit = {
-		Accept: 'application/json',
-		'X-Requested-With': 'XMLHttpRequest',
-	};
-
-	// Only add CSRF token if we have it
-	if (csrfToken) {
-		headers['X-CSRF-TOKEN'] = csrfToken;
-	}
-
-	const response = await fetch(route('appearance.avatar.delete'), {
-		method: 'DELETE',
-		credentials: 'same-origin',
-		headers,
-	});
-
-	// If we get a 419 and haven't retried yet, fetch fresh token and retry
-	if (response.status === 419 && !retry) {
-		const freshToken = await fetchFreshCsrfToken();
-		return performAvatarDelete(freshToken, true);
-	}
-
-	return response;
 };
 
 const deleteAvatar = async (): Promise<void> => {
@@ -223,42 +100,32 @@ const deleteAvatar = async (): Promise<void> => {
 	isDeleting.value = true;
 
 	try {
-		// Get CSRF token from meta tag right before request
-		const metaTag = document.querySelector('meta[name="csrf-token"]');
-		const csrfToken = metaTag?.getAttribute('content') || '';
-
-		const response = await performAvatarDelete(csrfToken);
+		const response = await csrfFetch(route('appearance.avatar.delete'), {
+			method: 'DELETE',
+		});
 
 		if (!response.ok) {
-			// Handle specific error codes
-			if (response.status === 419) {
-				throw new Error('Session expired. Please refresh the page and try again.');
-			}
-
-			// Try to parse JSON error response
-			let errorMessage = `Delete failed (HTTP ${response.status})`;
-			try {
-				const errorData = await response.json();
-				errorMessage = errorData.message || errorMessage;
-			} catch {
-				// Response is not JSON, use status-based message
-				if (response.status === 419) {
-					errorMessage = 'Session expired. Please refresh the page and try again.';
-				}
-			}
-			throw new Error(errorMessage);
+			throw new Error(
+				await resolveErrorMessage(response, { action: 'Delete' }),
+			);
 		}
 
 		const result = await response.json();
 
 		if (!result.success) {
-			throw new Error(result.message || 'Delete failed. Please try again.');
+			throw new Error(
+				result.message || 'Delete failed. Please try again.',
+			);
 		}
 
 		// Force full page refresh
 		window.location.reload();
 	} catch (error) {
-		alert(error instanceof Error ? error.message : 'Failed to delete avatar. Please try again.');
+		alert(
+			error instanceof Error
+				? error.message
+				: 'Failed to delete avatar. Please try again.',
+		);
 		isDeleting.value = false;
 	}
 };
@@ -279,7 +146,8 @@ const deleteAvatar = async (): Promise<void> => {
 						<div>
 							<h3 class="text-sm font-medium">Avatar</h3>
 							<p class="text-muted-foreground text-sm">
-								Upload a profile picture or use your initials
+								Upload a profile picture or use your
+								initials
 							</p>
 						</div>
 
@@ -310,7 +178,14 @@ const deleteAvatar = async (): Promise<void> => {
 										variant="outline"
 										:disabled="isUploading"
 										@click="fileInput?.click()">
-										{{ isUploading ? 'Uploading...' : 'Upload Avatar' }}
+										<LoaderCircle
+											v-if="isUploading"
+											class="h-4 w-4 animate-spin" />
+										{{
+											isUploading
+												? 'Uploading...'
+												: 'Upload Avatar'
+										}}
 									</Button>
 									<Button
 										v-if="avatar"
@@ -318,11 +193,19 @@ const deleteAvatar = async (): Promise<void> => {
 										variant="destructive"
 										:disabled="isDeleting"
 										@click="deleteAvatar">
-										{{ isDeleting ? 'Deleting...' : 'Delete Avatar' }}
+										<LoaderCircle
+											v-if="isDeleting"
+											class="h-4 w-4 animate-spin" />
+										{{
+											isDeleting
+												? 'Deleting...'
+												: 'Delete Avatar'
+										}}
 									</Button>
 								</div>
-								<p class="text-muted-foreground text-xs">
-									JPEG, PNG, or WebP. Max 2MB.
+								<p
+									class="text-muted-foreground text-xs">
+									JPEG, PNG, or WebP. Max {{ maxMegabytes }}MB.
 								</p>
 							</div>
 						</div>

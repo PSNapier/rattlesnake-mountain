@@ -13,7 +13,6 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AdminRollerController;
 use App\Http\Controllers\BreedingController;
 use App\Http\Controllers\BreedingSlotTransferController;
-use App\Http\Controllers\CharacterImageController;
 use App\Http\Controllers\DevPasswordController;
 use App\Http\Controllers\HerdController;
 use App\Http\Controllers\HorseController;
@@ -144,17 +143,8 @@ $servePublicFile = function (string $subdir, string $filename) {
 // Route to serve avatars (must come before other avatar routes)
 Route::get('/avatars/{filename}', fn (string $filename) => $servePublicFile('avatars', $filename))->name('avatars.serve');
 
-// Route to serve character images (must come before other character-image routes)
-Route::get('/character-images/{filename}', fn (string $filename) => $servePublicFile('character-images', $filename))->name('character-images.serve');
-
 // Route to serve horse images (must come before other horse-image routes)
 Route::get('/horse-images/{filename}', fn (string $filename) => $servePublicFile('horse-images', $filename))->name('horse-images.serve');
-
-// Character Image Routes
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::post('/character-images', [CharacterImageController::class, 'store'])->name('character-images.store')->middleware('rate.limit.uploads');
-    Route::delete('/character-images/{characterImage}', [CharacterImageController::class, 'destroy'])->name('character-images.destroy');
-});
 
 // Herd and Horse Routes
 Route::middleware(['auth', 'verified'])->group(function () {

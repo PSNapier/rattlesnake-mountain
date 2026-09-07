@@ -8,8 +8,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import Progress from '@/components/ui/progress/Progress.vue';
-import { onBeforeUnmount, reactive, ref } from 'vue';
+import { useImageUpload } from '@/composables/useImageUpload';
+import { useUploadLimit } from '@/composables/useUploadLimit';
+import { LoaderCircle } from 'lucide-vue-next';
+import { computed, onBeforeUnmount, reactive, ref } from 'vue';
 
 interface FormField {
 	name: string;
@@ -35,11 +37,11 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
 	accept: 'image/png',
-	maxSize: 2 * 1024 * 1024, // 2MB
+	maxSize: undefined,
 	formFields: () => [],
 	dragDropText: 'Drop your image here',
 	browseButtonText: 'Browse Files',
-	fileTypeHint: 'PNG files only, max 2MB',
+	fileTypeHint: undefined,
 	previewTitle: 'Preview & Confirm Upload',
 	uploadButtonText: 'Upload Image',
 	uploadingButtonText: 'Uploading...',
@@ -51,8 +53,16 @@ const emit = defineEmits<{
 	complete: [];
 }>();
 
+const { validateFile: validateImageFile, uploadFile } = useImageUpload();
+const { maxBytes, sizeHint } = useUploadLimit();
+
+// Fall back to the signed-in user's shared limit when no override is passed.
+const maxSize = computed(() => props.maxSize ?? maxBytes.value);
+const sizeHintText = computed(
+	() => props.fileTypeHint ?? `PNG files only, ${sizeHint.value}`,
+);
+
 const isUploading = ref(false);
-const uploadProgress = ref(0);
 const selectedFile = ref<File | null>(null);
 const previewUrl = ref<string>('');
 const showPreviewDialog = ref(false);
@@ -65,42 +75,8 @@ props.formFields.forEach((field) => {
 	uploadForm[field.name] = '';
 });
 
-const validateFile = (file: File): boolean => {
-	if (!file.type.includes('image/')) {
-		alert('Please select an image file.');
-		return false;
-	}
-
-	if (props.accept) {
-		const acceptedTypes = props.accept
-			.split(',')
-			.map((t) => t.trim().toLowerCase());
-		const fileType = file.type.toLowerCase();
-		const isAccepted = acceptedTypes.some(
-			(acceptType) =>
-				fileType === acceptType ||
-				acceptType === 'image/*' ||
-				fileType.startsWith(acceptType.replace('/*', '/')),
-		);
-
-		if (!isAccepted) {
-			const acceptTypes = props.accept
-				.split(',')
-				.map((t) => t.trim())
-				.join(' or ');
-			alert(`Please select a ${acceptTypes} file.`);
-			return false;
-		}
-	}
-
-	if (file.size > props.maxSize) {
-		const maxSizeMB = (props.maxSize / (1024 * 1024)).toFixed(0);
-		alert(`File size must be less than ${maxSizeMB}MB.`);
-		return false;
-	}
-
-	return true;
-};
+const validateFile = (file: File): boolean =>
+	validateImageFile(file, { accept: props.accept, maxSize: maxSize.value });
 
 const handleFileSelect = (event: Event): void => {
 	const target = event.target as HTMLInputElement;
@@ -146,150 +122,22 @@ const handleDrop = (event: DragEvent): void => {
 	}
 };
 
-// Helper function to fetch a fresh CSRF token
-const fetchFreshCsrfToken = async (): Promise<string> => {
-	try {
-		// Make a lightweight GET request to refresh the session
-		// This will return the full page but ensures session is refreshed
-		const response = await fetch(window.location.href, {
-			method: 'GET',
-			credentials: 'same-origin',
-			headers: {
-				Accept: 'text/html',
-				'X-Requested-With': 'XMLHttpRequest',
-			},
-		});
-
-		if (!response.ok) {
-			throw new Error('Failed to refresh session');
-		}
-
-		// Parse the response HTML to extract the new CSRF token
-		const html = await response.text();
-		const parser = new DOMParser();
-		const doc = parser.parseFromString(html, 'text/html');
-		const metaTag = doc.querySelector('meta[name="csrf-token"]');
-		const newToken = metaTag?.getAttribute('content') || '';
-
-		// Update the meta tag in the current document
-		const currentMetaTag = document.querySelector('meta[name="csrf-token"]');
-		if (currentMetaTag && newToken) {
-			currentMetaTag.setAttribute('content', newToken);
-		}
-
-		return newToken;
-	} catch (error) {
-		console.warn('Failed to refresh CSRF token:', error);
-		// Fallback to current meta tag if refresh fails
-		const metaTag = document.querySelector('meta[name="csrf-token"]');
-		return metaTag?.getAttribute('content') || '';
-	}
-};
-
-// Helper function to perform the actual upload
-const performUpload = async (csrfToken: string, retry = false): Promise<Response> => {
-	const formData = new FormData();
-	formData.append('image', selectedFile.value!);
-
-	// Add form fields
-	Object.keys(uploadForm).forEach((key) => {
-		formData.append(key, uploadForm[key]);
-	});
-
-	// Build headers
-	const headers: HeadersInit = {
-		Accept: 'application/json',
-		'X-Requested-With': 'XMLHttpRequest',
-	};
-
-	// Only add CSRF token if we have it
-	if (csrfToken) {
-		headers['X-CSRF-TOKEN'] = csrfToken;
-	}
-
-	const response = await fetch(props.uploadUrl, {
-		method: 'POST',
-		body: formData,
-		credentials: 'same-origin', // Include cookies for session
-		headers,
-	});
-
-	// If we get a 419 and haven't retried yet, fetch fresh token and retry
-	if (response.status === 419 && !retry) {
-		const freshToken = await fetchFreshCsrfToken();
-		return performUpload(freshToken, true);
-	}
-
-	return response;
-};
-
 const uploadImage = async (): Promise<void> => {
 	if (!selectedFile.value) {
 		return;
 	}
 
 	isUploading.value = true;
-	uploadProgress.value = 0;
-
-	// Simulate progress
-	const progressInterval = setInterval(() => {
-		if (uploadProgress.value < 90) {
-			uploadProgress.value += 10;
-		}
-	}, 100);
 
 	try {
-		// Get CSRF token from meta tag right before request
-		const metaTag = document.querySelector('meta[name="csrf-token"]');
-		const csrfToken = metaTag?.getAttribute('content') || '';
+		const result = await uploadFile({
+			url: props.uploadUrl,
+			file: selectedFile.value,
+			fieldName: 'image',
+			fields: { ...uploadForm },
+		});
 
-		const response = await performUpload(csrfToken);
-
-		if (!response.ok) {
-			// Get file size for better error messages
-			const fileSizeMB = selectedFile.value
-				? (selectedFile.value.size / (1024 * 1024)).toFixed(2)
-				: 'unknown';
-
-			// Handle specific error codes
-			if (response.status === 413) {
-				throw new Error(
-					`File (${fileSizeMB}MB) exceeds server upload limit. The server configuration limits uploads to less than your file size. Please contact support or try a smaller image.`,
-				);
-			}
-
-			if (response.status === 419) {
-				throw new Error(
-					'Session expired. Please refresh the page and try again.',
-				);
-			}
-
-			// Try to parse JSON error response
-			let errorMessage = `Upload failed (HTTP ${response.status})`;
-			try {
-				const errorData = await response.json();
-				errorMessage = errorData.message || errorMessage;
-			} catch {
-				// Response is not JSON, use status-based message
-				if (response.status === 413) {
-					errorMessage = `File (${fileSizeMB}MB) exceeds server upload limit. The server configuration limits uploads to less than your file size. Please contact support or try a smaller image.`;
-				} else if (response.status === 419) {
-					errorMessage =
-						'Session expired. Please refresh the page and try again.';
-				}
-			}
-			throw new Error(errorMessage);
-		}
-
-		const result = await response.json();
-
-		if (result.success) {
-			emit('success', result);
-		} else {
-			throw new Error(
-				result.message || 'Upload failed. Please try again.',
-			);
-		}
+		emit('success', result);
 	} catch (error) {
 		console.error('Upload error:', error);
 		const errorMessage =
@@ -299,18 +147,13 @@ const uploadImage = async (): Promise<void> => {
 		emit('error', errorMessage);
 		alert(errorMessage);
 	} finally {
-		clearInterval(progressInterval);
-		uploadProgress.value = 100;
-		setTimeout(() => {
-			resetForm();
-			emit('complete');
-		}, 500);
+		resetForm();
+		emit('complete');
 	}
 };
 
 const resetForm = (): void => {
 	isUploading.value = false;
-	uploadProgress.value = 0;
 	showPreviewDialog.value = false;
 	if (previewUrl.value) {
 		URL.revokeObjectURL(previewUrl.value);
@@ -362,13 +205,10 @@ onBeforeUnmount(() => {
 					</svg>
 				</div>
 				<div>
-					<p
-						class="text-lg font-medium text-gray-900">
+					<p class="text-lg font-medium text-gray-900">
 						{{ dragDropText }}
 					</p>
-					<p class="text-sm text-gray-500">
-						or
-					</p>
+					<p class="text-sm text-gray-500">or</p>
 					<Button
 						type="button"
 						@click="triggerFileInput"
@@ -378,7 +218,7 @@ onBeforeUnmount(() => {
 					</Button>
 				</div>
 				<p class="text-xs text-gray-500">
-					{{ fileTypeHint }}
+					{{ sizeHintText }}
 				</p>
 			</div>
 		</div>
@@ -433,17 +273,6 @@ onBeforeUnmount(() => {
 						</div>
 					</div>
 
-					<!-- Upload Progress -->
-					<div
-						v-if="isUploading"
-						class="space-y-2">
-						<div class="flex justify-between text-sm">
-							<span>{{ uploadingButtonText }}</span>
-							<span>{{ uploadProgress }}%</span>
-						</div>
-						<Progress :value="uploadProgress" />
-					</div>
-
 					<!-- Action Buttons -->
 					<div class="flex justify-end gap-3">
 						<Button
@@ -455,6 +284,9 @@ onBeforeUnmount(() => {
 						<Button
 							@click="uploadImage"
 							:disabled="isUploading">
+							<LoaderCircle
+								v-if="isUploading"
+								class="h-4 w-4 animate-spin" />
 							<template v-if="isUploading">
 								{{ uploadingButtonText }}
 							</template>
