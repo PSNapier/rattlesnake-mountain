@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\CmsPageSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -90,7 +91,7 @@ it('renders key pages without a theme toggle', function () {
     }
 
     // The admin dashboard carried its own stripped classes.
-    $admin = User::factory()->create(['role' => \App\Models\Role::Admin]);
+    $admin = User::factory()->create(['role' => Role::Admin]);
     actingAs($admin)->get('/admin')->assertSuccessful();
 });
 

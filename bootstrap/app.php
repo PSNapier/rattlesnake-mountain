@@ -3,6 +3,7 @@
 use App\Http\Middleware\DevPasswordProtection;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RateLimitUploads;
+use App\Http\Middleware\SkipEmailVerification;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,7 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'rate.limit.uploads' => RateLimitUploads::class,
-            'verified' => \App\Http\Middleware\SkipEmailVerification::class,
+            'verified' => SkipEmailVerification::class,
         ]);
 
         $middleware->web(append: [

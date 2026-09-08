@@ -16,6 +16,7 @@ use App\Http\Controllers\BreedingSlotTransferController;
 use App\Http\Controllers\DevPasswordController;
 use App\Http\Controllers\HerdController;
 use App\Http\Controllers\HorseController;
+use App\Http\Controllers\InboxController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\RedeemCreamPearlVoucherController;
@@ -184,11 +185,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('users.index');
 
     // Inbox Routes
-    Route::get('/inbox', [\App\Http\Controllers\InboxController::class, 'index'])->name('inbox.index');
-    Route::get('/inbox/{message}', [\App\Http\Controllers\InboxController::class, 'show'])->name('inbox.show');
-    Route::post('/inbox/{message}/comments', [\App\Http\Controllers\InboxController::class, 'storeComment'])->name('inbox.comments.store');
-    Route::post('/inbox/{message}/accept', [\App\Http\Controllers\InboxController::class, 'accept'])->name('inbox.accept');
-    Route::post('/inbox/{message}/decline', [\App\Http\Controllers\InboxController::class, 'decline'])->name('inbox.decline');
+    Route::get('/inbox', [InboxController::class, 'index'])->name('inbox.index');
+    Route::get('/inbox/{message}', [InboxController::class, 'show'])->name('inbox.show');
+    Route::post('/inbox/{message}/comments', [InboxController::class, 'storeComment'])->name('inbox.comments.store');
+    Route::post('/inbox/{message}/accept', [InboxController::class, 'accept'])->name('inbox.accept');
+    Route::post('/inbox/{message}/decline', [InboxController::class, 'decline'])->name('inbox.decline');
 });
 
 // Public viewing routes for users' herds and horses

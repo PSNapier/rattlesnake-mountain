@@ -3,8 +3,9 @@
 use App\Models\Item;
 use App\Models\ShopListing;
 use Database\Seeders\ShopCatalogSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 it('seeds catalog items and shop listings from json', function () {
     $this->seed(ShopCatalogSeeder::class);

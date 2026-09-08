@@ -3,8 +3,10 @@
 use App\Models\Item;
 use App\Models\ShopListing;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 it('shows only visible shop listings with pagination', function () {
     $user = User::factory()->create();
@@ -125,7 +127,7 @@ it('disables buy in inertia when balance is below listing price', function () {
             ->where('listings.data.0.can_buy_more', false)
             ->where('scorpionBalance', 0));
 
-    \Illuminate\Support\Facades\DB::table('user_items')->insert([
+    DB::table('user_items')->insert([
         'user_id' => $user->id,
         'item_id' => $scorpion->id,
         'quantity' => 100,

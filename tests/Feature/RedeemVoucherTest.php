@@ -3,8 +3,9 @@
 use App\Models\Item;
 use App\Models\User;
 use Database\Seeders\ItemSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 function seedRedeemCatalog(): void
 {

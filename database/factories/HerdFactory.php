@@ -2,10 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\Herd;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Herd>
+ * @extends Factory<Herd>
  */
 class HerdFactory extends Factory
 {

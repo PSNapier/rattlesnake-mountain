@@ -4,10 +4,11 @@ namespace Database\Factories;
 
 use App\Enums\HorseSex;
 use App\Enums\HorseState;
+use App\Models\Horse;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Horse>
+ * @extends Factory<Horse>
  */
 class HorseFactory extends Factory
 {
