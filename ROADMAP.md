@@ -673,7 +673,7 @@ A designer uploading a design meant to become an NPC, rather than one of their o
 
 ## [032] Composer Dependency Refresh Ahead of Laravel 13
 
-**Status:** `next`
+**Status:** `done`
 **Depends On:** none
 **Spec:** none
 
@@ -710,6 +710,7 @@ Every composer dependency that can move without Laravel 13 is on its latest stab
 - `config/image.php` is dead config. Nothing reads it — this app builds the manager by hand rather than through `intervention/image-laravel`. Left in place; removing it is not this item's job.
 - Pint 1.31 adds `fully_qualified_strict_types` and applies `ordered_imports` more widely than 1.22 did, so 55 files needed reformatting. Mechanical, no behavioural change.
 - `composer audit` reports 41 advisories across 12 packages, all in the [033] set. Recheck after the framework upgrade.
+- Delivered on branch `chore/laravel-13` as two commits off `942abaf`, shared with [033] because the two items were executed back to back in one tree: `chore(deps)` for the dependency and code changes, then `style:` for the Pint 1.31 reformat alone. The split was made safe with the [031] technique — reformat each file's `HEAD` version and compare it to the working copy. 55 of 58 modified PHP files matched exactly and went in the reformat commit; the other three (`HorseController`, `AppearanceController`, `config/logging.php`) carry real changes and went in the first commit.
 
 **Diagrams:**
 
@@ -733,13 +734,13 @@ flowchart LR
       `tests/Feature/HorseImageUploadTest.php`
 - [x] `npm run build` completes clean
 - [x] `./vendor/bin/pint --test` exits 0
-- [ ] The Pint reformat lands as its own commit, containing no behavioural change (working tree left dirty for review, so this is pending the commit)
+- [x] The Pint reformat lands as its own commit, containing no behavioural change
 
 ---
 
 ## [033] Upgrade to Laravel 13
 
-**Status:** `next`
+**Status:** `done`
 **Depends On:** [032]
 **Spec:** none
 
@@ -775,7 +776,8 @@ The application runs on Laravel 13.30 with the Symfony 8, Inertia 3, and Tinker 
 - `bootstrap/app.php` needed no change. `Application::configure`, `withRouting`, `withMiddleware`, `withExceptions`, and every `Middleware` method the file uses (`encryptCookies`, `alias`, `web`, `append`) all still exist and are unchanged. `artisan route:list` under `E_ALL` emits no deprecation.
 - Config was reconciled by diffing every key path in `config/` against the Laravel 13 defaults shipped in `vendor/laravel/framework/config/`. One real deviation: `logging.channels.daily.days` is `max_files` in Laravel 13. Renamed, keeping the `LOG_DAILY_DAYS` env name so no `.env` on Forge has to change. Laravel 13 still reads `max_files ?? days ?? 7`, so this was cosmetic rather than a live bug. Every other "ours-only" key (`app.dev_password`, `app.skip_email_verification`, `auth.admin_emails`, the Mailgun mailer and service blocks) is this app's own, not stale framework config. The rest of the diff is new optional Laravel 13 defaults (a `monthly` log channel, `failover`/`deferred` queue connections, new cache stores, new per-connection database options), deliberately not adopted since this item changes versions only.
 - `@inertiajs/vue3` went 2.0.3 → 3.7.0 to match the server adapter. The app touches only `Head`, `Link`, `router`, `useForm`, `usePage`, and `createInertiaApp`, all stable across the major, and nothing in `resources/js` needed editing. The production bundle got smaller: `app.js` 287.53 kB → 250.57 kB.
-- Mailgun on Symfony 8 was verified as far as a dev box allows. `MailgunHttpTransport` builds through Laravel's mail manager on the Symfony 8 bridge, and a send through the Symfony Mailer path succeeds. A real Mailgun API send was **not** performed: local `.env` is SMTP on `127.0.0.1:2525` with no `MAILGUN_*` credentials, and those live only in production. That criterion needs one send after deploy.
+- Mailgun on Symfony 8 is covered by `tests/Feature/MailgunTransportTest.php`, added by decision of 2026-09-08 in place of a live send. Nothing else in the suite touches the bridge — every other test runs on the array transport and would stay green even if the Mailgun transport had stopped resolving, which is the gap this closes. The tests assert that the `mailgun` mailer resolves to `MailgunHttpTransport`, that the configured domain and endpoint reach the transport (read off its DSN string), and that the Symfony Mailer send path works. Credentials are dummies and nothing leaves the machine: building a transport opens no connection. Proved non-vacuous by pointing `mail.mailers.mailgun` at the array transport, which fails both Mailgun-specific tests.
+- A real Mailgun API send was **not** performed and is not required by this item. Local `.env` is SMTP on `127.0.0.1:2525` with no `MAILGUN_*` credentials; those live only in production. Worth one live send after deploy as a smoke check, but the wiring regression is now guarded automatically.
 - Test count held at 287 with nothing skipped or removed, but assertion count moved 1668 → 1532. The tests are the same tests; PHPUnit 13 counts some framework-internal assertions differently. Noted rather than chased.
 - `composer audit` was reporting 41 advisories across 12 packages before this item. It now reports none. That is the strongest single argument for having done the upgrade.
 
@@ -786,5 +788,6 @@ The application runs on Laravel 13.30 with the Symfony 8, Inertia 3, and Tinker 
 - [x] `npm run build` completes clean
 - [x] Inertia pages render under `inertia-laravel` 3 with shared props intact
       `tests/Feature/DashboardTest.php`
-- [ ] A test email sends through the Mailgun bridge on Symfony 8 (transport verified to build on Symfony 8 locally; a real send needs the production credentials, so this is pending deploy)
+- [x] Mail resolves and sends through the Mailgun bridge on Symfony 8
+      `tests/Feature/MailgunTransportTest.php`
 - [x] `bootstrap/app.php` and every file under `config/` reconciled against the Laravel 13 upgrade guide, with any deviation recorded in Technical Notes
