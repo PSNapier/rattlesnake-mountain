@@ -22,6 +22,7 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Encoders\WebpEncoder;
 use Intervention\Image\ImageManager;
 
 class HorseController extends Controller
@@ -493,7 +494,7 @@ class HorseController extends Controller
             $manager = new ImageManager(new Driver);
 
             // Process and store main image
-            $image = $manager->read($file);
+            $image = $manager->decode($file);
             $width = $image->width();
             $height = $image->height();
 
@@ -503,7 +504,7 @@ class HorseController extends Controller
             }
 
             // Convert to WebP and store
-            $webpData = $image->toWebp(85);
+            $webpData = $image->encode(new WebpEncoder(quality: 85));
             Storage::disk('public')->put('horse-images/'.$filename, $webpData);
 
             // Generate URL using a route (we'll create this route)
