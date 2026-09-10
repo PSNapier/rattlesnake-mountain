@@ -4,10 +4,11 @@ use App\Models\Item;
 use App\Models\User;
 use App\Services\WelcomePackageService;
 use Database\Seeders\ItemSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 use function Pest\Laravel\mock;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 function seedWelcomeCatalog(): void
 {

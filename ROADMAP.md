@@ -1,6 +1,6 @@
 # Roadmap
 
-<!-- Next task number: [032] -->
+<!-- Next task number: [040] -->
 
 ## [008] Design Upload Terms and Graveyard Option
 
@@ -43,37 +43,59 @@ Horse design create/upload requires agreement to upload terms, and herd-leader d
 
 ## [009] New-Player Onboarding Flow
 
-**Status:** `next`
+**Status:** `freezer`
 **Depends On:** none
+**Spec:** none
 
 ### Goal
 
-Players without a herd leader are prompted on the dashboard toward character creation, randomizer/claimable path, stats guidance, and horse-lines download.
+A logged-in player whose herd has no leader sees a dismissible banner in the app layout pointing them at Getting Started, horse creation, and herd creation, so a new account has an obvious next step instead of an empty dashboard.
 
 ### Scope
 
-- Detect “no herd leader yet” (no herd or herd without leader horse)
-- Dashboard prompt with clear next steps and links
-- Dismissible or persistent until leader exists (product choice — prefer persistent until complete)
-- NOT in scope: full wizard multi-step SPA; implementing claimable roller ([010]) beyond linking
+- `needsOnboarding` shared Inertia prop, true when the user's role is `user` and no herd they own has `herd_leader_id` set
+- Banner in `AppLayout`, shown on every authenticated page, linking to `/getting-started`, `/horses/create`, and `/herds/create`
+- Per-browser dismissal in `localStorage`, no server state
+- Staff roles exempt
+- NOT in scope: a multi-step wizard; the claimable roller ([010]); dashboard-specific UI; splitting the dashboard from the public profile
+- NOT in scope: fixing the `herd_leader_id` validation hole (see Details)
 
 ### Technical Notes
 
-- Dashboard currently [`Users/Index`](resources/js/pages/Users/Index.vue) via dashboard route
-- Link targets: character handbook / stats-leveling CMS pages, horses create, claimable flow when ready
+**Blocked:** the Goal originally promised stats guidance and a horse-lines download alongside character creation and the claimable path. The banner as specified links to neither, on the grounds that `/getting-started` already carries both. Awaiting client confirmation that three links are enough. Asked 2026-09-10.
+
+**User flows:**
+
+- **Player, no leader:** banner at the top of every authenticated page. Three links, plus a close button that hides it for that browser.
+- **Player, leader set:** no banner, on any page.
+- **Staff:** no banner, regardless of herd state.
+
+**Details:**
+
+- The dashboard is not a distinct page. `routes/web.php:38` and `:199` both render `Users/Index`, so the dashboard and every public profile share one component. A banner in `AppLayout` sidesteps that entanglement rather than untangling it, and reaches the player wherever they land.
+- The flag is shared data, added to `HandleInertiaRequests::share` (`app/Http/Middleware/HandleInertiaRequests.php:41`) beside `auth` and `unreadMessageCount`. That is a herd lookup on every authenticated request: an `exists` on `herds` where `owner_id` matches and `herd_leader_id` is not null. Keep it to that one query.
+- Done state is `herd_leader_id` populated, whatever the leader horse's approval status. A design sitting in the queue counts, so a player who has done the work is not nagged while waiting on staff. A rejected design leaves them looking onboarded; accepted by decision of 2026-09-10.
+- `StoreHerdRequest.php:27` validates `herd_leader_id` as `exists:horses,id` only, so a crafted request can name another player's horse as leader and clear the banner. Known and deliberately ignored here, since the UI does not offer it. Worth its own item.
+- Both empty states, no herd at all and a herd with a null leader, get the same banner and the same copy. One condition, one thing to test.
+- Staff exemption is `role !== Role::User` against the enum at `app/Models/Role.php:8`. Not a capability check, since no area in `Role::areas()` describes it.
+- Dismissal is `localStorage`, so it survives logout on that browser. Per-browser, not truly per-session. No column, no route.
+- Every link target is a real route carrying no `coming_soon` flag: `/getting-started` (`routes/web.php:218`), `/horses/create` and `/herds/create` (resource routes at `:152` and `:153`). `claiming-npcs` sits in `CmsPageSeeder::COMING_SOON_SLUGS` (`:26`), which is why [010]'s claimable path is not linked yet.
 
 ### Acceptance Criteria
 
-- [ ] New users without herd leader see onboarding prompt on dashboard
-- [ ] Users with an established herd leader do not see the prompt
-- [ ] Links resolve to real routes/pages
-- [ ] Pest or browser-level assertion for prompt visibility conditions
-
-### Tests
-
-- [ ] `tests/Feature/OnboardingPromptTest.php::it_shows_the_prompt_for_users_without_a_herd_leader`
-- [ ] `tests/Feature/OnboardingPromptTest.php::it_hides_the_prompt_once_a_herd_leader_exists`
-- [ ] `tests/Feature/OnboardingPromptTest.php::it_links_only_to_resolvable_routes`
+- [ ] A `user` with no herd, or with a herd whose `herd_leader_id` is null, receives the onboarding flag as true
+      `tests/Feature/OnboardingPromptTest.php::it_flags_a_user_with_no_herd`
+      `tests/Feature/OnboardingPromptTest.php::it_flags_a_user_whose_herd_has_no_leader`
+- [ ] Setting `herd_leader_id` clears the flag, whether or not that horse is approved
+      `tests/Feature/OnboardingPromptTest.php::it_clears_the_flag_once_a_herd_leader_is_set`
+      `tests/Feature/OnboardingPromptTest.php::it_clears_the_flag_for_an_unapproved_leader`
+- [ ] Staff roles never receive the flag, even with no herd leader
+      `tests/Feature/OnboardingPromptTest.php::it_never_flags_staff_roles`
+- [ ] The flag is present on every authenticated page, not only the dashboard
+      `tests/Feature/OnboardingPromptTest.php::it_shares_the_flag_across_authenticated_routes`
+- [ ] Every banner link resolves to a routable, non-coming-soon page
+      `tests/Feature/OnboardingPromptTest.php::it_links_only_to_resolvable_routes`
+- [ ] Banner renders for a fresh player and the close button hides it for that browser, confirmed by hand
 
 ---
 
@@ -112,45 +134,6 @@ In-app roller offers unclaimed/claimable designs (bachelor stallions / herd mare
 - [ ] `tests/Feature/ClaimableHorseTest.php::it_transfers_ownership_and_removes_the_horse_from_the_pool`
 - [ ] `tests/Feature/ClaimableHorseTest.php::it_prevents_double_claiming_the_same_horse`
 - [ ] `tests/Feature/ClaimableHorseTest.php::it_errors_clearly_on_empty_pool_or_ineligible_user`
-
----
-
-## [011] Item Usage and Equipment Workflows
-
-**Status:** `next`
-**Depends On:** none
-
-### Goal
-
-Players can equip/dequip items on horses (and use consumables where `uses_per_unit` applies), bridging user inventory and horse/herd equipment JSON.
-
-### Scope
-
-- Equip / dequip UI on horse (and optionally herd) pages
-- Consume/use flow decrementing `user_items` or horse inventory consistently
-- Respect `uses_per_unit` and `max_count`
-- NOT in scope: full crafting; shop purchase (done); trading ([006])
-
-### Technical Notes
-
-- Dual model problem: relational `user_items` vs horse/herd JSON — pick one source of truth for equipped gear (document in implementation)
-- Columns: `horses.inventory`, `horses.equipment`, `herds.*`; item `uses_per_unit` migration already exists
-- Show pages currently display counts only
-
-### Acceptance Criteria
-
-- [ ] Player can move an owned item onto a horse’s equipment and back to inventory
-- [ ] Consumable use decrements quantity / uses correctly
-- [ ] Unauthorized users cannot equip on others’ horses
-- [ ] Pest tests for equip, dequip, and consume
-
-### Tests
-
-- [ ] `tests/Feature/ItemEquipTest.php::it_moves_an_owned_item_onto_a_horse`
-- [ ] `tests/Feature/ItemEquipTest.php::it_returns_equipped_gear_to_inventory_on_dequip`
-- [ ] `tests/Feature/ItemEquipTest.php::it_decrements_uses_per_unit_when_consuming`
-- [ ] `tests/Feature/ItemEquipTest.php::it_enforces_max_count_on_equip`
-- [ ] `tests/Feature/ItemEquipTest.php::it_forbids_equipping_on_another_users_horse`
 
 ---
 
@@ -568,53 +551,55 @@ Designers can mark a design submission as high priority when they upload it, and
 
 ## [030] Designer NPC Design Flag
 
-**Status:** `freezer`
+**Status:** `next`
 **Depends On:** [029]
 **Spec:** none
 
 ### Goal
 
-A designer uploading a design meant to become an NPC, rather than one of their own characters, can say so at upload, so the reviewer does not have to ask and the approved horse lands in the correct ownership state.
+A designer uploading a design meant to become an NPC, rather than one of their own characters, can say so at upload, so the reviewer sees the intent in the queue instead of having to ask. The flag is advisory only: approval changes nothing about ownership.
 
 ### Scope
 
 - `design_npc` capability area, seeded on for Designer and Admin, editable from the role matrix
 - "Intended as an NPC" checkbox on `/horses/create` and `/horses/{horse}/edit`, default unchecked, visible only to roles holding the capability
+- A dedicated advisory column on `horses`, separate from the derived `is_npc`
 - The stored intent shown to the reviewer in the Submissions tab
-- What approval does with that intent: open, awaiting client
+- NOT in scope: any ownership change on approval. Approval behaves exactly as it does today, and an admin hands the horse to the Sanctuary by hand afterwards (decision of 2026-09-10)
+- NOT in scope: an admin per-horse ownership transfer UI. None exists today, so the manual step is a database or Tinker edit. Worth its own item
 - NOT in scope: the priority flag ([029]); re-deriving `is_npc` for horses already in the database; the claimable roller ([010])
 
 ### Technical Notes
-
-**Blocked:** the client has not confirmed what approving an NPC-flagged design should do to ownership. Asked 2026-09-07. Nothing beyond the capability plumbing can be specified until that lands.
 
 **User flows:**
 
 - **Designer:** "Intended as an NPC" checkbox on the horse form at `/horses/create` and `/horses/{horse}/edit`.
 - **Staff (review):** Submissions tab at `/admin`. The row shows the designer NPC intent before the reviewer approves.
+- **Admin:** role matrix at `/admin`. A `design_npc` column, togglable per staff role.
 
 **Details:**
 
-- `is_npc` is derived, not declared. `Horse::syncNpcFlagsFromOwner` (`app/Models/Horse.php:167`) sets it purely from Sanctuary ownership and runs on every save where `owner_id` is dirty (`:71`). It also sets `is_claimable`, which is the pool [010] draws from. A checkbox writing `is_npc` directly would be overwritten by the next ownership change.
-- Three behaviours went to the client: assign the horse to the Sanctuary user on approval and let the existing logic derive both flags; store the intent as an advisory label and have a human reassign ownership; or decouple `is_npc` from ownership entirely. The first needs no change to the invariant. The third would mean rewriting `syncNpcFlagsFromOwner` and auditing `app/Services/LifecycleAgingService.php` (`:136`, `:257`), which reads `is_npc` to decide death proposals.
-- Approval under the first option is a real giveaway of a designer's work, which is why the checkbox is capability-gated and defaults off.
-- Capability plumbing mirrors [029]: `Role::areas()`, `defaultCapabilities()`, a `role_capabilities` seed migration, and an `areaLabels` entry in `RoleCapabilityMatrix.vue`. Two separate areas by decision of 2026-09-07, so priority-flagging can be granted without NPC-donation rights.
+- Client decision, 2026-09-10: store the intent and leave ownership alone. Of the three behaviours put to them, this is the advisory-label option. `syncNpcFlagsFromOwner` keeps its invariant untouched and no code path gives a designer's work away automatically.
+- The column must not be `is_npc`. `Horse::syncNpcFlagsFromOwner` (`app/Models/Horse.php:167`) derives `is_npc` and `is_claimable` from Sanctuary ownership on every save where `owner_id` is dirty (`:71`), so a checkbox writing `is_npc` would be overwritten by the next ownership change. Use a separate boolean, `intended_as_npc`, that nothing derives and nothing else reads.
+- Because the flag is inert, the capability gate is a review-noise control rather than a permission over someone's property. It still defaults off and still lives in the matrix.
+- The manual handover an admin performs afterwards is the existing ownership change: setting `owner_id` to the Sanctuary user makes `syncNpcFlagsFromOwner` set both `is_npc` and `is_claimable`. Nothing new is needed for that to work, only a way to do it from the UI, which this item does not build.
+- Capability plumbing mirrors [029]: `Role::areas()`, `defaultCapabilities()`, a `role_capabilities` seed migration, and an `areaLabels` plus `DEFAULT_CAPABILITY_AREAS` entry in `RoleCapabilityMatrix.vue`. Two separate areas by decision of 2026-09-07, so priority-flagging can be granted without NPC-intent rights.
 
 ### Acceptance Criteria
 
-- [ ] Client has confirmed what approval does to ownership, and the answer is recorded in Technical Notes
 - [ ] Roles holding `design_npc` see the checkbox on create and edit; players never do
       `tests/Feature/DesignNpcFlagTest.php::it_shows_the_npc_checkbox_to_capable_roles`
       `tests/Feature/DesignNpcFlagTest.php::it_hides_the_npc_checkbox_from_players`
-- [ ] Submitting with the box ticked stores the intent and surfaces it to the reviewer
+- [ ] Submitting with the box ticked stores the intent and surfaces it to the reviewer, and a player posting the field cannot set it
       `tests/Feature/DesignNpcFlagTest.php::it_stores_and_surfaces_the_npc_intent`
-- [ ] Approving an NPC-flagged design produces the confirmed ownership state, with `is_npc` and `is_claimable` consistent with it
-      `tests/Feature/DesignNpcFlagTest.php::it_applies_the_confirmed_ownership_state_on_approval`
-- [ ] An unflagged design approves exactly as it does today
+      `tests/Feature/DesignNpcFlagTest.php::it_ignores_the_field_from_an_uncapable_submitter`
+- [ ] Approving a flagged design leaves `owner_id`, `is_npc`, and `is_claimable` exactly as they were, and an unflagged approval is unchanged too
+      `tests/Feature/DesignNpcFlagTest.php::it_leaves_ownership_untouched_when_approving_a_flagged_design`
       `tests/Feature/DesignNpcFlagTest.php::it_leaves_unflagged_approvals_unchanged`
+- [ ] A later hand transfer to the Sanctuary still derives `is_npc` and `is_claimable` from ownership, with the intent flag untouched
+      `tests/Feature/DesignNpcFlagTest.php::it_derives_npc_flags_when_ownership_moves_to_the_sanctuary`
 - [ ] `design_npc` is seeded on for Designer and Admin
       `tests/Feature/Admin/RoleCapabilityMatrixTest.php::it_seeds_design_npc_for_designer_and_admin`
-
 
 ---
 
@@ -668,3 +653,524 @@ A designer uploading a design meant to become an NPC, rather than one of their o
 - [x] `./vendor/bin/pint --test` exits 0
 - [x] Committing a deliberately misformatted `resources/` file and a misformatted PHP file leaves both formatted in the resulting commit
 - [x] The reformat lands as its own commit, containing no behavioural change
+
+---
+
+## [032] Composer Dependency Refresh Ahead of Laravel 13
+
+**Status:** `done`
+**Depends On:** none
+**Spec:** none
+
+### Goal
+
+Every composer dependency that can move without Laravel 13 is on its latest stable version, so the framework upgrade in [033] is the only variable left in the lockfile.
+
+### Scope
+
+- Minor and patch bumps: `laravel/pail` 1.2.2 → 1.2.7, `laravel/pint` 1.22.1 → 1.31.0, `laravel/sail` 1.42 → 1.67, `mockery/mockery` 1.6.12 → 1.6.15, `nunomaduro/collision` 8.8 → 8.9.5, `tightenco/ziggy` 2.5.2 → 2.6.4
+- Major bumps not tied to the framework: `intervention/image` 3.11 → 4.3.2, `pestphp/pest` 3.8 → 4.7.8 with `pest-plugin-laravel` 3.2 → 4.1.0, `laravel/boost` 1.0.18 → 2.7.1
+- `laravel/framework` to the newest 12.x. This is a lockfile move inside the existing `^12.0` constraint, forced by Boost 2 (see Technical Notes). The 12 → 13 major still belongs to [033]
+- NOT in scope: the `laravel/framework` major, `symfony/*`, `inertiajs/inertia-laravel`, `laravel/tinker`. All move in [033]
+- NOT in scope: Pest 5. It requires `symfony/process ^8`, which Laravel 12 forbids, so it moved to [033] (see Technical Notes)
+- NOT in scope: `package.json`. The Node side is a separate breakage surface, and `@inertiajs/vue3` has to stay version-matched to `inertia-laravel`, which does not move until [033]
+
+### Technical Notes
+
+**Details:**
+
+- `intervention/image` 4 is the only bump that touches application code. Two call sites construct the manager the v3 way: `HorseController.php:493` and `Settings/AppearanceController.php:39`, both `new ImageManager(new Driver)` followed by `->read($file)`. `config/image.php` also carries a v3-shaped driver config. Check the v4 upgrade guide for the manager constructor, the GD driver namespace, and encoder changes before touching either controller.
+- Pest 3 → 5 skips a major. It pulls PHPUnit forward, and the suite is 281 tests across `tests/Feature` and `tests/Unit`. Expect churn in `tests/Pest.php` and in any test relying on PHPUnit 11 behaviour rather than in the Pest expectations themselves.
+- `laravel/pint` 1.31 may format differently from 1.22. Run `./vendor/bin/pint` after the bump and land any reformat as its own commit, the way [031] did. Note the shell: Pint fails under Git Bash with `env: 'php': No such file or directory`, so run it from PowerShell.
+- `laravel/boost` is a dev tool for AI-assisted development and carries no runtime risk. It can move first and alone.
+- Bump in waves rather than one `composer update`. Minors together, then each major on its own, so a failure names its own cause.
+
+**As built (2026-09-07):**
+
+- Both acceptance-criteria test paths had to be written first. Neither existed, and `UploadLimitTest.php` only covers validation, never the image pipeline behind it. `AvatarUploadTest` and `HorseImageUploadTest` read the stored file back with `getimagesizefromstring` and assert format and dimensions, so they describe the processed output rather than the upload. Both were green on Intervention 3 before the bump, which is what made them a real guard.
+- The `^8.3` PHP floor was not needed. Pest 4 and every other package here install on the existing `^8.2`.
+- Boost 2.7 requires `illuminate/console ^12.41.1`, so it forced `laravel/framework` 12.13.0 → 12.69.1. That is a lockfile move only, inside the existing `^12.0` constraint, so `composer.json` is unchanged for the framework. Suite was green on 12.69.1 before Boost went in. Boost also dragged `laravel/mcp` 0.1.1 → 0.9.4 and `laravel/roster` 0.2.3 → 1.0.0.
+- **Pest 5 is not installable on Laravel 12.** `pest-plugin-laravel` v5.0.1 requires `laravel/framework ^13.23.0`, and Pest 5 itself pulls `symfony/process ^8`, which conflicts with the `^7.2.0` Laravel 12 requires. Pest 4.7.8 is the ceiling here and is what landed. It still crosses the expensive boundary (PHPUnit 11.5 → 12.5), and the suite needed no change to `tests/Pest.php` or any test. Pest 5 moved to [033].
+- Intervention 4 broke both call sites, exactly as the tests predicted. Two renames, not one: `ImageManager::read()` → `decode()`, and the `toWebp(85)` shortcut is gone in favour of `encode(new WebpEncoder(quality: 85))`. `ImageManager`'s constructor, the `Intervention\Image\Drivers\Gd\Driver` namespace, `cover()`, and `scaleDown()` are all unchanged. Both controllers swallow the failure into a generic 500, so without the new tests this would have shipped as a silent upload outage.
+- `config/image.php` is dead config. Nothing reads it — this app builds the manager by hand rather than through `intervention/image-laravel`. Left in place; removing it is not this item's job.
+- Pint 1.31 adds `fully_qualified_strict_types` and applies `ordered_imports` more widely than 1.22 did, so 55 files needed reformatting. Mechanical, no behavioural change.
+- `composer audit` reports 41 advisories across 12 packages, all in the [033] set. Recheck after the framework upgrade.
+- Delivered on branch `chore/laravel-13` as two commits off `942abaf`, shared with [033] because the two items were executed back to back in one tree: `chore(deps)` for the dependency and code changes, then `style:` for the Pint 1.31 reformat alone. The split was made safe with the [031] technique — reformat each file's `HEAD` version and compare it to the working copy. 55 of 58 modified PHP files matched exactly and went in the reformat commit; the other three (`HorseController`, `AppearanceController`, `config/logging.php`) carry real changes and went in the first commit.
+
+**Diagrams:**
+
+```mermaid
+flowchart LR
+    A[Minor sweep] --> B[framework 12.69]
+    B --> C[boost 2]
+    C --> D[intervention/image 4]
+    D --> E[pest 4]
+    E --> F{Suite + build green}
+    F -->|yes| G[Ready for 033]
+    F -->|no| D
+```
+
+### Acceptance Criteria
+
+- [x] `composer outdated --direct` lists only `laravel/framework`, `symfony/http-client`, `symfony/mailgun-mailer`, `inertiajs/inertia-laravel`, `laravel/tinker`, and the two Pest packages deferred to [033]
+- [x] The full Pest suite passes on Pest 4 with no test skipped or removed to make it pass
+- [x] Avatar upload and horse image upload still resize and store correctly on Intervention 4
+      `tests/Feature/Settings/AvatarUploadTest.php`
+      `tests/Feature/HorseImageUploadTest.php`
+- [x] `npm run build` completes clean
+- [x] `./vendor/bin/pint --test` exits 0
+- [x] The Pint reformat lands as its own commit, containing no behavioural change
+
+---
+
+## [033] Upgrade to Laravel 13
+
+**Status:** `done`
+**Depends On:** [032]
+**Spec:** none
+
+### Goal
+
+The application runs on Laravel 13.30 with the Symfony 8, Inertia 3, and Tinker 3 versions it requires, with no behavioural change to any player-facing or admin flow.
+
+### Scope
+
+- `laravel/framework` 12.13 → 13.30.1
+- The dependencies the framework drags with it: `symfony/http-client` and `symfony/mailgun-mailer` 7.3 → 8.1.6, `inertiajs/inertia-laravel` 2.0.2 → 3.3.3, `laravel/tinker` 2.10.1 → 3.0.2
+- `pestphp/pest` 4.7.8 → 5.1.4 with `pest-plugin-laravel` 4.1.0 → 5.0.1, deferred here from [032] because `pest-plugin-laravel` v5.0.1 requires `laravel/framework ^13.23.0` and Pest 5 needs `symfony/process ^8`
+- Raise the `"php"` constraint in `composer.json` to the Laravel 13 floor
+- Work through the official upgrade guide against `bootstrap/app.php`, `config/`, and the 17 config files this app carries
+- NOT in scope: adopting new Laravel 13 features. This item changes versions and whatever the guide forces, nothing else
+- NOT in scope: `package.json`, except `@inertiajs/vue3`, which must be version-matched to whatever `inertia-laravel` 3 expects
+
+### Technical Notes
+
+**Details:**
+
+- PHP is already 8.4 locally (Herd, 8.4.7) and on Forge, confirmed 2026-09-07, so the version floor is not a blocker and Forge needs no change before deploying.
+- The skeleton is already the Laravel 11+ shape. `bootstrap/app.php` is the only bootstrap surface: `withRouting`, a `withMiddleware` closure aliasing `rate.limit.uploads` and `verified` and appending `DevPasswordProtection`, `HandleInertiaRequests`, `AddLinkHeadersForPreloadedAssets`, and an empty `withExceptions`. Check each against the guide, particularly the middleware alias and append APIs.
+- `inertia-laravel` 3 is a major on the request-handling path, and `HandleInertiaRequests` is a custom middleware in this app. Read its changelog for prop resolution and shared-data changes before assuming the middleware carries over.
+- Symfony 8 matters only through the Mailgun bridge. Mail config lives in `config/mail.php` and `config/services.php`. Verify a real send in the dev environment, not just that the container resolves the transport.
+- Work on the existing `chore/laravel-13` branch.
+- Verification is the automated pair only, by decision of 2026-09-07: the full Pest suite plus a production build. No Playwright pass is required for this item.
+
+**As built (2026-09-07):**
+
+- Laravel 13.30.1 on PHP 8.4.7. The `"php"` constraint went `^8.2` → `^8.3`, the Laravel 13 floor. Local Herd and Forge are both already 8.4, so nothing had to move on either machine.
+- One `composer update` carried the whole set: framework 12.69.1 → 13.30.1, `inertia-laravel` 2.0.2 → 3.3.3, `tinker` 2.10.1 → 3.0.2, Pest 4.7.8 → 5.1.4 (PHPUnit 12.5 → 13.3), and Guzzle 7 → 8 underneath. `composer outdated --direct` is now empty.
+- `bootstrap/app.php` needed no change. `Application::configure`, `withRouting`, `withMiddleware`, `withExceptions`, and every `Middleware` method the file uses (`encryptCookies`, `alias`, `web`, `append`) all still exist and are unchanged. `artisan route:list` under `E_ALL` emits no deprecation.
+- Config was reconciled by diffing every key path in `config/` against the Laravel 13 defaults shipped in `vendor/laravel/framework/config/`. One real deviation: `logging.channels.daily.days` is `max_files` in Laravel 13. Renamed, keeping the `LOG_DAILY_DAYS` env name so no `.env` on Forge has to change. Laravel 13 still reads `max_files ?? days ?? 7`, so this was cosmetic rather than a live bug. Every other "ours-only" key (`app.dev_password`, `app.skip_email_verification`, `auth.admin_emails`, the Mailgun mailer and service blocks) is this app's own, not stale framework config. The rest of the diff is new optional Laravel 13 defaults (a `monthly` log channel, `failover`/`deferred` queue connections, new cache stores, new per-connection database options), deliberately not adopted since this item changes versions only.
+- `@inertiajs/vue3` went 2.0.3 → 3.7.0 to match the server adapter. The app touches only `Head`, `Link`, `router`, `useForm`, `usePage`, and `createInertiaApp`, all stable across the major, and nothing in `resources/js` needed editing. The production bundle got smaller: `app.js` 287.53 kB → 250.57 kB.
+- Mailgun on Symfony 8 is covered by `tests/Feature/MailgunTransportTest.php`, added by decision of 2026-09-08 in place of a live send. Nothing else in the suite touches the bridge — every other test runs on the array transport and would stay green even if the Mailgun transport had stopped resolving, which is the gap this closes. The tests assert that the `mailgun` mailer resolves to `MailgunHttpTransport`, that the configured domain and endpoint reach the transport (read off its DSN string), and that the Symfony Mailer send path works. Credentials are dummies and nothing leaves the machine: building a transport opens no connection. Proved non-vacuous by pointing `mail.mailers.mailgun` at the array transport, which fails both Mailgun-specific tests.
+- A real Mailgun API send was **not** performed and is not required by this item. Local `.env` is SMTP on `127.0.0.1:2525` with no `MAILGUN_*` credentials; those live only in production. Worth one live send after deploy as a smoke check, but the wiring regression is now guarded automatically.
+- Test count held at 287 with nothing skipped or removed, but assertion count moved 1668 → 1532. The tests are the same tests; PHPUnit 13 counts some framework-internal assertions differently. Noted rather than chased.
+- `composer audit` was reporting 41 advisories across 12 packages before this item. It now reports none. That is the strongest single argument for having done the upgrade.
+
+### Acceptance Criteria
+
+- [x] `composer show laravel/framework` reports 13.x, and `composer outdated --direct` is empty
+- [x] The full Pest suite passes on Pest 5, with the same test count as before the upgrade and none skipped or removed to make it pass
+- [x] `npm run build` completes clean
+- [x] Inertia pages render under `inertia-laravel` 3 with shared props intact
+      `tests/Feature/DashboardTest.php`
+- [x] Mail resolves and sends through the Mailgun bridge on Symfony 8
+      `tests/Feature/MailgunTransportTest.php`
+- [x] `bootstrap/app.php` and every file under `config/` reconciled against the Laravel 13 upgrade guide, with any deviation recorded in Technical Notes
+
+---
+
+## [034] Horse Ownership Transfer
+
+**Status:** `next`
+**Depends On:** [011] (done, see ROADMAP_DONE.md)
+**Spec:** none
+
+### Goal
+
+A player can offer one of their horses to another player from the horse's own page, an admin approves or rejects it in the existing Submissions queue, and an admin can move any horse to any owner immediately from a new Horses tab, so ownership changes stop being a database edit.
+
+### Scope
+
+- `horse_transfers` table and service: pending, approved, rejected, cancelled
+- "Transfer this horse" control on the owner's own horse page, recipient picked from a name list
+- Transfer rows appear in the Submissions tab as a third `kind` beside designs and breeding requests, with approve and reject actions gated on `admin.submissions`
+- New `horses` capability area and a Horses tab in `/admin` whose only content is starting an immediate admin transfer
+- On approval: `owner_id` moves, `herd_id` clears, any herd led by the horse has `herd_leader_id` nulled, equipment returns to the sender
+- In-app `Message` on approval, rejection, and admin-initiated transfer
+- NOT in scope: a horse browser or any other horse management in the Horses tab
+- NOT in scope: recipient consent. Admin approval is the only gate (decision of 2026-09-10)
+- NOT in scope: locking a pending horse out of breeding, editing, or herd changes
+- NOT in scope: transferring herds, breeding slots, or items between users
+
+### Technical Notes
+
+**User flows:**
+
+- **Owner:** "Transfer this horse" on `/horses/{horse}`. Choose a recipient and write a note. The page then shows the request as pending, with a "Cancel transfer" button.
+- **Recipient:** nothing to do. The horse appears in their stable with no herd once an admin approves, and an in-app message says where it came from.
+- **Staff (review):** Submissions tab at `/admin`. Transfer rows sit in the same list as designs and breeding requests, filterable by the existing type dropdown. Approve, or reject with a required reason.
+- **Admin (direct):** "Horses" tab at `/admin`. Search a horse by name, pick a new owner, write a required reason, transfer immediately.
+
+**Details:**
+
+- The Submissions tab is already a unified list. `SubmissionsTab.vue:100` builds a `UnifiedRow` with a `kind` discriminator and `:127` filters on it, so designs and breeding requests already coexist there. Transfers are a third `kind`, a third source array on the props, and a third branch in `DashboardController::submissions` (`:245`). No new list component.
+- An admin-initiated transfer writes an already-approved `horse_transfers` row, so every ownership change has one history shape and appears in the queue under the approved filter. There is no pending state it passes through.
+- Two capabilities, deliberately. `horses` is a new eighth entry in `Role::areas()` (`app/Models/Role.php:18`), seeded on for Admin only, and gates the Horses tab plus the immediate-transfer route. Approving and rejecting queued transfers stays on `admin.submissions`, because that is what gates the tab the rows live in. `RoleCapabilityService::sync` intersects against `Role::areas()` (`app/Services/RoleCapabilityService.php:61`), so the area must go in that list, in `defaultCapabilities()`, in a `role_capabilities` seed migration, and in `areaLabels` plus `DEFAULT_CAPABILITY_AREAS` in `RoleCapabilityMatrix.vue`. `ALL_TABS` in `resources/js/pages/admin/Index.vue:190` gains `horses`, since a capability alone renders no tab.
+- Player eligibility: approved and living horses only. Admins bypass that entirely, since admin transfer exists to correct states the rules produced, and can move an unapproved, archived, or dead horse.
+- Herd detachment is not a rule, it is an integrity requirement, so it applies on both paths. A herd row pointing at a horse someone else owns is a broken reference, and `horses.herd_id` is a real foreign key (`create_horses_table.php:25`) while `herds.herd_leader_id` is an unconstrained column (`create_herds_table.php:19`). Clear both.
+- Breeding requests survive a transfer untouched. `BreedingRequest.requester_id` owns the outcome, so a foal from a pending breeding goes to whoever submitted it, not to the horse's new owner. Nothing to cancel.
+- Equipment returns to the sender, which is why this item depends on [011]. `horses.equipment` is JSON that nothing currently writes, and there is no dequip path to call. Without [011] the strip would have to invent the relational-versus-JSON source of truth that [011] exists to decide.
+- One pending transfer per horse, enforced by a partial unique index on `horse_id` where status is pending, not by a service check alone. Two admins approving the same horse in the same second must not both write `owner_id`. The approval itself runs in a transaction and re-reads the horse, since nothing locks it while pending.
+- The recipient list reuses the trade rule at `TradeController.php:66`: every active player, excluding self, banned users, and the Sanctuary. Players cannot see each other's numeric ids anywhere, so the picker is a name-to-id list.
+- The Sanctuary is available to admins only, and the tab warns before confirming. `Horse::syncNpcFlagsFromOwner` (`app/Models/Horse.php:167`) fires on any dirty `owner_id` and sets both `is_npc` and `is_claimable` when the new owner is the Sanctuary, so a Sanctuary transfer publishes the horse to the claimable pool. This is the manual handover [030] leaves to an admin.
+- Messages go through `Message`, the channel `SubmissionController.php:113` already uses for design decisions. Rejection carries the admin's required reason. An admin-initiated transfer messages both the old and the new owner.
+- Admin actions log to `AdminSubmissionLog` the way archive does (`SubmissionController.php:33`), which needs new `AdminAction` cases for the transfer approval, rejection, and direct move.
+
+**Diagrams:**
+
+```mermaid
+flowchart TD
+    A[Owner clicks Transfer] --> B{Approved and living?}
+    B -->|no| C[Refused at request time]
+    B -->|yes| D[Pending row in Submissions queue]
+    D -->|owner cancels| E[Cancelled]
+    D -->|admin rejects with reason| F[Rejected, sender messaged]
+    D -->|admin approves| G[Apply transfer]
+    H[Admin transfers from Horses tab] --> G
+    G --> I[owner_id moves, herd cleared, leader nulled, equipment stripped]
+    I --> J[Both parties messaged, action logged]
+```
+
+### Acceptance Criteria
+
+- [ ] An owner can request a transfer of an approved, living horse to another player, and cannot request one for a horse that is unapproved, archived, dead, or not theirs
+      `tests/Feature/HorseTransferTest.php::it_lets_an_owner_request_a_transfer`
+      `tests/Feature/HorseTransferTest.php::it_refuses_requests_for_ineligible_horses`
+      `tests/Feature/HorseTransferTest.php::it_forbids_requesting_a_transfer_of_someone_elses_horse`
+- [ ] A second pending transfer for the same horse is refused at the database level, and two concurrent approvals move the horse exactly once
+      `tests/Feature/HorseTransferTest.php::it_allows_only_one_pending_transfer_per_horse`
+      `tests/Feature/HorseTransferTest.php::it_moves_the_horse_exactly_once_under_concurrent_approval`
+- [ ] The sender can cancel while pending, and a cancelled or rejected request leaves ownership untouched
+      `tests/Feature/HorseTransferTest.php::it_lets_the_sender_cancel_a_pending_transfer`
+      `tests/Feature/HorseTransferTest.php::it_leaves_ownership_untouched_on_rejection`
+- [ ] Approval moves `owner_id`, clears `herd_id`, nulls `herd_leader_id` on any herd the horse led, and returns equipment to the sender
+      `tests/Feature/HorseTransferTest.php::it_moves_ownership_and_detaches_the_horse_from_its_herd`
+      `tests/Feature/HorseTransferTest.php::it_clears_herd_leadership_when_the_leader_is_transferred`
+      `tests/Feature/HorseTransferTest.php::it_returns_equipped_items_to_the_sender`
+- [ ] A pending breeding request involving the horse survives the transfer, and its foal still goes to the requester
+      `tests/Feature/HorseTransferTest.php::it_leaves_pending_breeding_requests_with_the_original_requester`
+- [ ] Rejection requires a reason, and approval, rejection, and admin transfer each send in-app messages to the right people
+      `tests/Feature/HorseTransferTest.php::it_requires_a_reason_to_reject`
+      `tests/Feature/HorseTransferTest.php::it_messages_both_parties_on_an_admin_transfer`
+- [ ] An admin holding `horses` can transfer any horse immediately, including unapproved and dead ones, with a required reason, and the action is logged
+      `tests/Feature/HorseTransferTest.php::it_lets_an_admin_transfer_any_horse_immediately`
+      `tests/Feature/HorseTransferTest.php::it_requires_a_reason_for_an_admin_transfer`
+      `tests/Feature/HorseTransferTest.php::it_logs_admin_transfers`
+- [ ] Transferring to the Sanctuary is available to admins only and leaves `is_npc` and `is_claimable` true
+      `tests/Feature/HorseTransferTest.php::it_marks_a_sanctuary_transfer_as_npc_and_claimable`
+      `tests/Feature/HorseTransferTest.php::it_excludes_the_sanctuary_from_the_player_recipient_list`
+- [ ] Staff without `admin.submissions` cannot approve or reject, and staff without `horses` see no Horses tab and cannot transfer directly
+      `tests/Feature/HorseTransferTest.php::it_forbids_approving_without_the_submissions_capability`
+      `tests/Feature/HorseTransferTest.php::it_forbids_direct_transfer_without_the_horses_capability`
+- [ ] `horses` is seeded on for Admin and appears in the role matrix
+      `tests/Feature/Admin/RoleCapabilityMatrixTest.php::it_seeds_horses_for_admin`
+- [ ] Transfer rows appear in the Submissions queue alongside designs and breeding requests and respond to the existing type and status filters, confirmed in a browser as an admin
+- [ ] The Horses tab warns before a Sanctuary transfer that the horse becomes an NPC and claimable, confirmed in a browser
+
+---
+
+## [035] Non-Destructive CMS Seeders and Snapshot Command
+
+**Status:** `next`
+**Depends On:** none
+**Spec:** none
+
+### Goal
+
+Seeding the database stops destroying CMS pages and navigation. `db:seed` fills gaps without overwriting live content, and `php artisan cms:snapshot` captures the current pages and menu to a fixture the seeder reads, so a `migrate:fresh --seed` restores the latest state instead of the original hardcoded copy.
+
+### Scope
+
+- `CmsPageSeeder` and `MenuItemSeeder` switch to non-destructive creation
+- `cms:snapshot` Artisan command writing pages and menu to a JSON fixture
+- Seeders read the fixture when present, fall back to the hardcoded arrays when not
+- Delete the 16 unreferenced components in `resources/js/pages/cms/`
+- NOT in scope: any change to `cms_pages` schema, rendering, or the admin UI
+
+### Technical Notes
+
+**User flows:**
+
+- **Developer:** `php artisan cms:snapshot` in the project root. Writes the current pages and menu to a fixture so the next reseed restores them.
+
+**Details:**
+
+- `CmsPageSeeder.php:38` calls `CmsPage::truncate()` and `MenuItemSeeder.php:15-16` deletes every row, so a `db:seed` run for unrelated data (items, shop) silently wipes CMS content and navigation. `ItemSeeder` and `ShopCatalogSeeder` already use `updateOrCreate` and are safe to re-run; these two are the outliers.
+- Use `firstOrCreate` keyed on `slug` for pages and on `label` + `parent_id` for menu items. Not `updateOrCreate`: once inline editing lands ([037]) the database is canonical and seeder copy is stale by definition, so the seeder must never overwrite an edit.
+- Fixture at `database/fixtures/cms-snapshot.json`, committed. It holds pages (all columns) and the menu tree. `cms:snapshot` overwrites it; the seeders prefer it over the hardcoded arrays.
+- Menu parents must be created before children, so the fixture stores the tree nested rather than flat.
+- The 16 dead components (`Rules.vue`, `Lore.vue`, `_Default.vue`, `ContactUs.vue` and siblings) are referenced by nothing. Only `cms/Show.vue` (`StaticPageController.php:21`) and `cms/Shop.vue` (`ShopController.php:90`) are rendered. Their markup stays in git history.
+
+### Acceptance Criteria
+
+- [ ] Running the CMS and menu seeders twice leaves admin edits intact and creates no duplicates
+      `tests/Feature/Cms/CmsSeederTest.php::it_does_not_overwrite_edited_pages_on_reseed`
+      `tests/Feature/Cms/CmsSeederTest.php::it_does_not_duplicate_menu_items_on_reseed`
+- [ ] Seeding an empty database still produces the full page set and menu tree
+      `tests/Feature/Cms/CmsSeederTest.php::it_seeds_every_page_and_the_menu_tree_from_empty`
+- [ ] `cms:snapshot` writes a fixture that the seeders restore verbatim after a fresh migration
+      `tests/Feature/Cms/CmsSnapshotCommandTest.php::it_writes_pages_and_menu_to_the_fixture`
+      `tests/Feature/Cms/CmsSnapshotCommandTest.php::it_restores_snapshot_content_when_seeding_a_fresh_database`
+- [ ] Seeders fall back to their hardcoded arrays when no fixture exists
+      `tests/Feature/Cms/CmsSeederTest.php::it_falls_back_to_hardcoded_pages_without_a_fixture`
+- [ ] The 16 unreferenced `pages/cms/` components are gone and every CMS route still renders, confirmed in a browser
+
+---
+
+## [036] CMS Block Schema, Visibility and Page Deletion
+
+**Status:** `next`
+**Depends On:** [035]
+**Spec:** none
+
+### Goal
+
+CMS page content becomes an ordered list of boxes with a column span and a style, rendered from sanitized HTML on a three-column grid. Pages gain live/hidden visibility and recoverable deletion, managed from the admin page list.
+
+### Scope
+
+- Migrate `content` from `{box1: [markdown], ...}` to an ordered array of `{id, span, style, html}`
+- Convert the `images` array into image boxes with visible "Art by @name" captions, then drop the column
+- `symfony/html-sanitizer` allowlist applied on every write
+- `visibility` column, `live` / `hidden`, existing pages grandfathered to `live`
+- Soft delete on `cms_pages`, with a confirm modal listing menu items pointing at the slug
+- `DynamicInfo.vue` rewritten to render the new shape on a three-column grid
+- NOT in scope: the editor UI ([037]), media library and home conversion ([038])
+- NOT in scope: any change to the role capability matrix; `admin.cms` continues to gate everything
+
+### Technical Notes
+
+**User flows:**
+
+- **Admin:** page list in the admin CMS tab. Toggle a page between Live and Hidden, delete a page, reorder pages.
+- **Visitor:** `/{slug}`. A hidden page returns the 404 page.
+- **Admin:** `/{slug}` for a hidden page. Renders normally with a banner saying it is not public.
+
+**Details:**
+
+- Box shape is `{id, span, style, html}`. `span` is 1, 2 or 3 on a three-column grid at `lg` and above; below `lg` every box is full width in drag order, matching the current pages. `style` maps to the existing CSS classes at `resources/css/app.css:69-96` (`box`, `box-alt`, centered).
+- The three-column grid replaces the fixed `lg:grid-cols-[2fr_1fr]` in `DynamicInfo.vue:52` and unifies CMS pages with the home layout at `Welcome.vue:88-128`, which already uses `lg:col-span-1/2/3`.
+- Markdown is converted to HTML by the migration, not at render time. `markdown-it` is currently instantiated with defaults (`DynamicInfo.vue:5`), meaning raw HTML is escaped, so nothing in the existing content can be hostile. After conversion the sanitizer is the only thing standing between an admin and stored XSS.
+- Sanitizer allowlist matches what the pages already use: `strong`, `em`, `h1`-`h4`, `ul`, `ol`, `li`, `a`, `img`, `blockquote`, `hr`, `p`, `br`. No `table`, no `script`, no inline event attributes, no `style`.
+- The migration snapshots every page's pre-conversion state, including the full `images` array with artist name and link, to a timestamped file in `database/fixtures/` before writing. `down()` restores from it. That archive is the structured attribution [039] re-imports, so it must not be pruned.
+- Attribution survives visually as caption text in the converted boxes and structurally in the archive. Between this item and [039] it is not queryable. Accepted deliberately.
+- `coming_soon` stays an independent flag driving its own banner (`DynamicInfo.vue:29`). A page can be live and flagged.
+- Home cannot be hidden or deleted. Guard it in the request classes, not only the UI.
+- `MenuItem.path` is free text, so nothing links a menu row to a page. The delete confirm queries menu items whose `path` matches `/{slug}` and lists them; it does not cascade.
+
+**Diagrams:**
+
+```mermaid
+flowchart TD
+    A[Request /slug] --> B{Page exists?}
+    B -->|no| C[404]
+    B -->|soft deleted| C
+    B -->|yes| D{visibility}
+    D -->|live| E[Render]
+    D -->|hidden| F{Viewer holds admin.cms?}
+    F -->|no| C
+    F -->|yes| G[Render with not-public banner]
+```
+
+### Acceptance Criteria
+
+- [ ] The migration converts every seeded page's markdown boxes to sanitized HTML boxes with a span and style, and `down()` restores the originals
+      `tests/Feature/Cms/ContentMigrationTest.php::it_converts_markdown_boxes_to_html_boxes`
+      `tests/Feature/Cms/ContentMigrationTest.php::it_restores_the_original_content_on_rollback`
+- [ ] Every `images` entry becomes an image box whose caption carries the artist name and link, and the pre-conversion array is written to the fixture archive
+      `tests/Feature/Cms/ContentMigrationTest.php::it_converts_image_credits_into_captioned_image_boxes`
+      `tests/Feature/Cms/ContentMigrationTest.php::it_archives_the_original_images_array`
+- [ ] Saving a page strips script tags, event handlers and any tag outside the allowlist
+      `tests/Feature/Cms/CmsSanitizerTest.php::it_strips_script_tags_and_event_handlers`
+      `tests/Feature/Cms/CmsSanitizerTest.php::it_keeps_allowlisted_formatting_tags`
+- [ ] A hidden page 404s for guests and players, and renders with a banner for a holder of `admin.cms`
+      `tests/Feature/Cms/CmsVisibilityTest.php::it_returns_not_found_for_a_hidden_page`
+      `tests/Feature/Cms/CmsVisibilityTest.php::it_renders_a_hidden_page_for_a_cms_admin`
+- [ ] Existing pages migrate to live and newly created pages default to hidden
+      `tests/Feature/Cms/CmsVisibilityTest.php::it_grandfathers_existing_pages_to_live`
+      `tests/Feature/Cms/CmsVisibilityTest.php::it_defaults_new_pages_to_hidden`
+- [ ] Deleting a page soft deletes it, 404s the slug, and the response names any menu items pointing at it
+      `tests/Feature/Cms/CmsPageDeletionTest.php::it_soft_deletes_a_page`
+      `tests/Feature/Cms/CmsPageDeletionTest.php::it_reports_menu_items_pointing_at_the_deleted_slug`
+- [ ] Home cannot be hidden or deleted through any route
+      `tests/Feature/Cms/CmsPageDeletionTest.php::it_refuses_to_delete_the_home_page`
+      `tests/Feature/Cms/CmsVisibilityTest.php::it_refuses_to_hide_the_home_page`
+- [ ] Span 1, 2 and 3 boxes lay out correctly on the three-column grid and stack full width on mobile, confirmed in a browser at desktop and phone widths
+- [ ] All 17 migrated pages read the same as before the migration, confirmed in a browser
+
+---
+
+## [037] Inline WYSIWYG Page Editing
+
+**Status:** `next`
+**Depends On:** [036]
+**Spec:** none
+
+### Goal
+
+An admin editing a CMS page does it on the page itself. A cog beside the header enters edit mode, where hero text, page title and every box become directly editable rich text, boxes can be added, removed, resized and dragged, and a save publishes immediately while keeping the previous version recoverable.
+
+### Scope
+
+- Tiptap 3 with Vue 3 bindings, one editor instance per box
+- Toolbar: bold, italic, headings, bullet and ordered lists, links, images, blockquote, horizontal rule
+- Cog toggle beside the header; discard and save buttons with confirmation modals
+- Add, remove, resize (span 1/2/3), restyle and drag-reorder boxes via `sortablejs`
+- Editable in place: hero title, hero description, page title. Slug and visibility stay in admin
+- Revisions: last 10 full-page snapshots per page, pruned beyond, restorable
+- Navigation guard on unsaved changes, Inertia router plus `beforeunload`
+- NOT in scope: image picking from the library ([038]); `cms/Shop.vue`, which stays a hardcoded dynamic page with no cog
+
+### Technical Notes
+
+**User flows:**
+
+- **Admin:** cog beside the header on any CMS page. Enters edit mode.
+- **Admin, in edit mode:** each box shows a toolbar, a size control, a style control and a drag handle. "Add box" appends one; the box menu removes it.
+- **Admin, in edit mode:** "Save" and "Discard" in a sticky bar, each confirming first. Save publishes immediately.
+- **Admin:** "History" in the edit bar. Lists the last 10 saves with timestamp and author, restores any of them.
+
+**Details:**
+
+- Tiptap 3 core is MIT and ships first-class Vue 3 bindings. Only the Pro extensions are paid; none are needed here.
+- One Tiptap document per box, serialized to HTML on save. The server sanitizes with the [036] allowlist before writing, so a crafted request cannot bypass the editor's constraints.
+- `sortablejs` is already a dependency and already drives reorder in `admin/CmsTab.vue`. Reuse it rather than adding a drag library.
+- Save writes the page and pushes the previous state into `cms_page_revisions` (page_id, content, hero fields, title, user_id, created_at), then prunes to the 10 newest for that page. Restoring is a normal save, so it is itself revisioned.
+- Discard reverts to the last saved server state without a request. The guard covers browser navigation and tab close; the Inertia router guard covers in-app navigation.
+- Edit mode is client state only. There is no draft on the server, so two admins editing at once means last save wins. Acceptable at this scale; not worth locking.
+- The cog appears only to a holder of `admin.cms`, matching the existing route guard at `routes/web.php:106`.
+
+### Acceptance Criteria
+
+- [ ] Saving a page persists edited hero text, page title and box HTML, and the page renders the change
+      `tests/Feature/Cms/CmsInlineEditTest.php::it_saves_edited_hero_and_box_content`
+- [ ] Adding, removing, resizing and reordering boxes persists across a save
+      `tests/Feature/Cms/CmsInlineEditTest.php::it_persists_added_and_removed_boxes`
+      `tests/Feature/Cms/CmsInlineEditTest.php::it_persists_box_order_and_spans`
+- [ ] A save request carrying script tags or non-allowlisted markup is sanitized before it is stored
+      `tests/Feature/Cms/CmsInlineEditTest.php::it_sanitizes_content_submitted_directly_to_the_endpoint`
+- [ ] The slug cannot be changed through the inline editing endpoint
+      `tests/Feature/Cms/CmsInlineEditTest.php::it_ignores_a_slug_submitted_to_the_inline_editor`
+- [ ] Each save records the previous version, history keeps only the 10 newest, and restoring one returns the page to that state
+      `tests/Feature/Cms/CmsRevisionTest.php::it_records_the_previous_version_on_save`
+      `tests/Feature/Cms/CmsRevisionTest.php::it_prunes_revisions_beyond_ten`
+      `tests/Feature/Cms/CmsRevisionTest.php::it_restores_a_previous_revision`
+- [ ] A user without `admin.cms` gets no cog and cannot reach the save or restore endpoints
+      `tests/Feature/Cms/CmsInlineEditTest.php::it_forbids_saving_without_the_cms_capability`
+      `tests/Feature/Cms/CmsRevisionTest.php::it_forbids_restoring_without_the_cms_capability`
+- [ ] Toolbar formatting, box drag/drop, resize and the save and discard confirmations behave correctly, confirmed in a browser
+- [ ] Navigating away or closing the tab with unsaved edits prompts before discarding, confirmed in a browser
+
+---
+
+## [038] Site Settings Tab and Site Resources Library
+
+**Status:** `next`
+**Depends On:** [037]
+**Spec:** none
+
+### Goal
+
+Admin gets a single Site Settings tab holding pages, menu and site resources. Resources lists the site's non-character images, accepts uploads, and feeds an image picker in the page editor. The home page becomes a CMS page so it is editable like any other, without changing how it looks.
+
+### Scope
+
+- New "Site settings" admin tab; the CMS tab's page list and menu builder fold into it as cards
+- Site resources card: lists `public/assets/` uploads and tracked `public/images/`, uploads, deletes uploads
+- Upload pipeline: WebP conversion with a dimension cap for png/jpg, GIF passthrough, SVG sanitized on upload
+- Delete scans `cms_pages.content` for the filename and names every page using it before confirming
+- Image picker in the [037] editor, sourced from the library
+- Convert `/` to a CMS page with slug `home`; hero stays app chrome, CTA and feature grid become boxes styled to match
+- NOT in scope: artist attribution on assets ([039]); horse and character images, which stay on the `public` disk and never appear here
+
+### Technical Notes
+
+**User flows:**
+
+- **Admin:** "Site settings" tab at `/admin`. Cards for Pages, Menu and Site resources.
+- **Admin:** Site resources card. Upload an image, copy its path, delete an upload.
+- **Admin:** image button in the page editor toolbar. Picks from the library or uploads inline.
+- **Admin:** cog on `/`. Edits home exactly like any other CMS page.
+
+**Details:**
+
+- Uploads go to `public/assets/`, gitignored. The 75 files in `public/images/` are tracked and stay read-only in the library, since deleting a committed file from a running server only desynchronises it from the repo. Both directories are listed by a filesystem scan; there is no media table.
+- That scan means no uploader attribution, no upload timestamp and no usage index. [039] revisits this, and adding artist data will almost certainly require a table. Do not build schema here in anticipation of it.
+- Horse uploads at `HorseController.php:508` write WebP to the `public` disk under `horse-images/`. Site assets follow the same conversion approach but a different destination, and the library must never surface the horse directory.
+- SVG is the only real XSS surface in this item: served from your own origin, an unsanitized SVG runs with the viewer's session. Strip `script`, event attributes and external references on upload, or reject the file.
+- Delete safety is a `LIKE` query against `cms_pages.content` for the filename, cheap at this page count. It warns, it does not block.
+- Home conversion: `Welcome.vue:88-128` already uses a three-column grid with `col-span-1/2/3`, so the CTA and feature grid map onto boxes directly. The hero stays in the component as app chrome. Home cannot be hidden or deleted, per [036].
+- `public/assets/` needs a deploy note: it is outside git, so it is not restored by a Forge deploy and needs its own backup.
+
+### Acceptance Criteria
+
+- [ ] The resources card lists both upload and tracked directories and excludes horse and character images
+      `tests/Feature/Cms/SiteResourcesTest.php::it_lists_uploads_and_tracked_site_images`
+      `tests/Feature/Cms/SiteResourcesTest.php::it_excludes_horse_images_from_the_library`
+- [ ] png and jpg uploads are converted to WebP within the dimension cap, GIFs are stored untouched, and SVGs are stripped of scripts and event handlers
+      `tests/Feature/Cms/SiteResourceUploadTest.php::it_converts_raster_uploads_to_webp`
+      `tests/Feature/Cms/SiteResourceUploadTest.php::it_stores_gifs_without_conversion`
+      `tests/Feature/Cms/SiteResourceUploadTest.php::it_strips_scripts_from_uploaded_svgs`
+- [ ] Oversized files and disallowed types are rejected
+      `tests/Feature/Cms/SiteResourceUploadTest.php::it_rejects_oversized_and_disallowed_uploads`
+- [ ] Deleting an upload names every page whose content references it, and tracked `public/images/` files cannot be deleted
+      `tests/Feature/Cms/SiteResourcesTest.php::it_reports_pages_using_an_asset_before_deletion`
+      `tests/Feature/Cms/SiteResourcesTest.php::it_refuses_to_delete_a_tracked_site_image`
+- [ ] A user without `admin.cms` cannot list, upload to, or delete from the library
+      `tests/Feature/Cms/SiteResourcesTest.php::it_forbids_library_access_without_the_cms_capability`
+- [ ] Home resolves to the `home` CMS page and is editable through the same endpoints as any other page
+      `tests/Feature/Cms/HomePageConversionTest.php::it_renders_home_from_the_cms_page`
+      `tests/Feature/Cms/HomePageConversionTest.php::it_saves_edits_to_the_home_page`
+- [ ] Home looks unchanged after conversion at desktop and phone widths, confirmed in a browser
+- [ ] The Site settings tab, its three cards and the editor's image picker work end to end, confirmed in a browser
+
+---
+
+## [039] Attributed Site Image Uploads
+
+**Status:** `freezer`
+**Depends On:** [038]
+**Spec:** none
+
+### Goal
+
+Site artwork carries structured artist attribution again. Uploading a site image captures the artist's name and link alongside the file, the credits archived by [036] are re-imported onto the matching files, and credits render from that data rather than from hand-typed caption text.
+
+### Scope
+
+- Storage for artist name and link per site asset
+- Upload surface capturing attribution, modelled on the character upload flow but not character-specific
+- Re-import the archived `images` arrays from the [036] fixture onto matching paths
+- Credits render from the stored data wherever the asset is used
+- NOT in scope: attribution for horse and character images
+
+### Technical Notes
+
+**Blocked:** three decisions are open and the grill was cut short before they were settled (2026-09-10).
+
+- **Where attribution lives.** [038] deliberately ships a filesystem scan with no media table. Structured credits need somewhere to live: a `media` table covering uploads with a scan still handling tracked files, a `media` table covering everything via a one-time import of the 75 files in `public/images/`, or a sidecar JSON that keeps the no-table decision at the cost of querying and merge conflicts.
+- **What the page is.** Described as "like the character page, but not character specific". That reads as either an admin-only upload surface with metadata, or that plus a public gallery of site artwork with credits, which adds design and moderation surface.
+- **How existing credits are matched.** The archive keys attribution by image path. Paths rewritten during the [036] conversion, or images an admin replaced between [036] and this item, will not match and need a manual pass.
+
+**Details:**
+
+- No attribution model exists anywhere in the codebase today. Horses carry no artist column; the CMS `images` arrays are the only structured credits that have ever existed, and [036] retires them into a fixture archive.
+- Until this item lands, credits are caption text inside box HTML: visible on the page, not queryable, and editable into anything by whoever is editing.
+- The archive written by the [036] migration is the only structured source for the original credits. It must survive until this item consumes it.
+
+### Acceptance Criteria
+
+- [ ] Uploading a site image captures artist name and link and stores them with the file
+- [ ] The archived credits from [036] are re-imported onto the matching assets, and unmatched entries are reported rather than dropped
+- [ ] Credits render from stored attribution wherever an attributed asset is used
+- [ ] Horse and character images are untouched by this system

@@ -5,9 +5,10 @@ use App\Models\Referral;
 use App\Models\User;
 use App\Services\ReferralRewardService;
 use Database\Seeders\ItemSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\URL;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 function seedReferralCatalog(): void
 {

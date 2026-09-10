@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\MenuItem;
+use App\Models\Message;
 use App\Support\UploadLimit;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
@@ -44,7 +45,7 @@ class HandleInertiaRequests extends Middleware
         $user = $request->user();
         $unreadCount = 0;
         if ($user) {
-            $unreadCount = \App\Models\Message::where('user_id', $user->id)
+            $unreadCount = Message::where('user_id', $user->id)
                 ->where('is_read', false)
                 ->count();
         }
@@ -72,6 +73,8 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'flash' => [
                 'rollResult' => fn () => session('rollResult'),
+                'success' => fn () => session('success'),
+                'error' => fn () => session('error'),
             ],
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],

@@ -4,13 +4,15 @@ use App\Models\Herd;
 use App\Models\Horse;
 use App\Models\Role;
 use App\Models\User;
+use Database\Seeders\SanctuarySeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->admin = User::factory()->create(['role' => Role::Admin]);
     $this->user = User::factory()->create(['role' => Role::User]);
-    $this->seed(\Database\Seeders\SanctuarySeeder::class);
+    $this->seed(SanctuarySeeder::class);
 });
 
 it('shows users on admin index', function () {

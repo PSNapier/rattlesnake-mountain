@@ -1,5 +1,66 @@
 # Roadmap Done
 
+## [011] Item Usage and Equipment Workflows
+
+**Status:** `done`
+**Depends On:** none
+
+### Goal
+
+Players can equip/dequip items on horses (and use consumables where `uses_per_unit` applies), bridging user inventory and horse/herd equipment JSON.
+
+### Scope
+
+- Equip / dequip UI on horse pages
+- Consume/use flow decrementing `user_items` or horse inventory consistently
+- Respect `uses_per_unit` and `max_count`
+- NOT in scope: full crafting; shop purchase (done); trading ([006])
+- Herd equip/dequip was the optional half of this item and was not built. Herd pages never rendered `herds.inventory` / `herds.equipment` at all, so there was no surface to extend. `EquipmentService` is written against `Horse` and would need a shared interface first.
+
+### Technical Notes
+
+**User flows:**
+
+**Flows:** `verified`
+
+- **Player:** "Equipment" card on `/horses/{horse}`. Pick an owned item from the dropdown and press "Equip" to move it onto the horse, press "Use" to spend one use of a multi-use item, press "Return to inventory" to move a full unit back.
+- **Viewer:** `/horses/{horse}` and `/u/{user}/horses/{horse}`. Sees the equipped list and remaining uses, with no equip, use, or return controls.
+
+**Details:**
+
+- Dual model resolved: `user_items` is the source of truth for stock a player holds, `horses.equipment` is the source of truth for units worn by a horse. A unit is in exactly one of the two, never both, so equipping is a move rather than a copy. Documented in the `EquipmentService` class docblock.
+- Equipment entry shape, one per equipped unit: `{uid, item_id, uses_remaining, equipped_at}`. `uses_remaining` is seeded from `items.uses_per_unit` at equip time.
+- A partly used unit cannot be returned to inventory. `user_items` counts whole units only, so returning a half-spent unit would silently refill it on re-equip. The "Return to inventory" button is disabled in that state.
+- `max_count` is enforced per horse on equip and per player on dequip.
+- Both inventories always belong to the horse's **owner**, not the acting user, so an admin acting on a player's horse spends and refunds that player's stock.
+- Concurrency follows `TradeService`: `lockForUpdate` on the horse row (a JSON blob cannot be locked per entry) and `insertOrIgnore` then `lockForUpdate` on the `user_items` row.
+- `horses.inventory` is untouched. "Back to inventory" in the criteria means the player's inventory.
+- Fixed along the way: `HandleInertiaRequests::share()` only exposed `flash.rollResult`, so the `->with('success', ...)` calls in ~13 controllers were dead on the front end. `success` and `error` are now shared.
+- `HorseController::show()` and `HorseController::publicShow()` both render `Horses/Show`, so both must supply `equipment` and `equippableItems`. Browser verification caught `publicShow` missing them, which crashed the Equipment card on `/u/{user}/horses/{horse}` with "Cannot read properties of undefined". Both now go through the shared `equipmentProps()` helper, covered by `it_sends_equipment_props_to_both_horse_show_routes`.
+- Browser-verified on `/horses/{horse}`: equip, Use to 2/3, Use to zero (entry removed), re-equip, and Return to inventory, with the flash banner and the disabled-while-partly-used button all behaving. The public page fix is covered by test only.
+- No migration was needed. `items` still has no slot or type column, so any active item can be equipped.
+
+### Acceptance Criteria
+
+- [x] Player can move an owned item onto a horse’s equipment and back to inventory
+- [x] Consumable use decrements quantity / uses correctly
+- [x] Unauthorized users cannot equip on others’ horses
+- [x] Pest tests for equip, dequip, and consume
+
+### Tests
+
+- [x] `tests/Feature/ItemEquipTest.php::it_moves_an_owned_item_onto_a_horse`
+- [x] `tests/Feature/ItemEquipTest.php::it_returns_equipped_gear_to_inventory_on_dequip`
+- [x] `tests/Feature/ItemEquipTest.php::it_decrements_uses_per_unit_when_consuming`
+- [x] `tests/Feature/ItemEquipTest.php::it_enforces_max_count_on_equip`
+- [x] `tests/Feature/ItemEquipTest.php::it_forbids_equipping_on_another_users_horse`
+- [x] `tests/Feature/ItemEquipTest.php::it_refuses_to_return_partly_used_gear_to_inventory`
+- [x] `tests/Feature/ItemEquipTest.php::it_refuses_to_equip_an_item_the_owner_does_not_have`
+- [x] `tests/Feature/ItemEquipTest.php::it_forbids_dequipping_and_using_on_another_users_horse`
+- [x] `tests/Feature/ItemEquipTest.php::it_sends_equipment_props_to_both_horse_show_routes`
+
+---
+
 ## [027] Configurable Staff and Player Upload Size Limits
 
 **Status:** `done`

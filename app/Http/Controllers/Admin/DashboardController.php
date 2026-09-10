@@ -11,6 +11,7 @@ use App\Models\Announcement;
 use App\Models\BreedingRequest;
 use App\Models\BreedingSlot;
 use App\Models\CmsPage;
+use App\Models\Herd;
 use App\Models\Horse;
 use App\Models\Item;
 use App\Models\LifecycleSetting;
@@ -22,6 +23,7 @@ use App\Models\ShopListing;
 use App\Models\User;
 use App\Services\RoleCapabilityService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -41,7 +43,7 @@ class DashboardController extends Controller
 
         if ($user->can('admin.submissions')) {
             $props['submissions'] = $this->submissions();
-            $props['herds'] = \App\Models\Herd::select('id', 'name')
+            $props['herds'] = Herd::select('id', 'name')
                 ->orderBy('name')
                 ->get();
         }
@@ -238,7 +240,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, array<string, mixed>>
+     * @return Collection<int, array<string, mixed>>
      */
     private function submissions()
     {

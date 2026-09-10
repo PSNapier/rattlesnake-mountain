@@ -10,18 +10,21 @@ use App\Http\Requests\UpdateHorseRequest;
 use App\Models\AdminSubmissionLog;
 use App\Models\Herd;
 use App\Models\Horse;
+use App\Models\Item;
 use App\Models\User;
 use App\Services\BreedingSlotService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Encoders\WebpEncoder;
 use Intervention\Image\ImageManager;
 
 class HorseController extends Controller
@@ -133,14 +136,62 @@ class HorseController extends Controller
                 ->first();
         }
 
+        $canUpdate = Auth::user()->can('update', $horse);
+
         return Inertia::render('Horses/Show', [
             'horse' => $horse,
             'pendingVersion' => $pendingVersion,
+            ...$this->equipmentProps($horse, $canUpdate),
             'can' => [
-                'update' => Auth::user()->can('update', $horse),
+                'update' => $canUpdate,
                 'delete' => Auth::user()->can('delete', $horse),
             ],
         ]);
+    }
+
+    /**
+     * Equipment props for the Horses/Show component. Both show() and publicShow()
+     * render that component, so both have to supply these.
+     *
+     * @return array{equipment: Collection<int, array<string, mixed>>, equippableItems: Collection<int, array<string, mixed>>|array{}}
+     */
+    private function equipmentProps(Horse $horse, bool $canUpdate): array
+    {
+        $entries = $horse->equipment ?? [];
+        $items = Item::whereIn('id', collect($entries)->pluck('item_id')->unique())->get()->keyBy('id');
+
+        $equipment = collect($entries)
+            ->filter(fn (array $entry) => $items->has($entry['item_id']))
+            ->map(function (array $entry) use ($items) {
+                $item = $items->get($entry['item_id']);
+
+                return [
+                    'uid' => $entry['uid'],
+                    'item_id' => $entry['item_id'],
+                    'name' => $item->name,
+                    'uses_remaining' => $entry['uses_remaining'],
+                    'uses_per_unit' => $item->uses_per_unit,
+                ];
+            })
+            ->values();
+
+        // Equipping always draws from the horse owner's inventory, never the viewer's,
+        // so an admin acting on a player's horse spends that player's stock.
+        $equippableItems = [];
+        if ($canUpdate && $horse->owner !== null) {
+            $equippableItems = $horse->owner->items()->where('is_active', true)->get()
+                ->filter(fn (Item $item) => $item->pivot->quantity > 0)
+                ->map(fn (Item $item) => [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'quantity' => $item->pivot->quantity,
+                    'max_count' => $item->max_count,
+                    'uses_per_unit' => $item->uses_per_unit,
+                ])
+                ->values();
+        }
+
+        return ['equipment' => $equipment, 'equippableItems' => $equippableItems];
     }
 
     /**
@@ -354,11 +405,14 @@ class HorseController extends Controller
             $pendingVersion = $horse->pendingVersions()->where('state', HorseState::Pending)->first();
         }
 
+        $canUpdate = Auth::check() && Auth::user()->can('update', $horse);
+
         return Inertia::render('Horses/Show', [
             'horse' => $horse,
             'pendingVersion' => $pendingVersion,
+            ...$this->equipmentProps($horse, $canUpdate),
             'can' => [
-                'update' => Auth::check() && Auth::user()->can('update', $horse),
+                'update' => $canUpdate,
                 'delete' => Auth::check() && Auth::user()->can('delete', $horse),
             ],
         ]);
@@ -493,7 +547,7 @@ class HorseController extends Controller
             $manager = new ImageManager(new Driver);
 
             // Process and store main image
-            $image = $manager->read($file);
+            $image = $manager->decode($file);
             $width = $image->width();
             $height = $image->height();
 
@@ -503,7 +557,7 @@ class HorseController extends Controller
             }
 
             // Convert to WebP and store
-            $webpData = $image->toWebp(85);
+            $webpData = $image->encode(new WebpEncoder(quality: 85));
             Storage::disk('public')->put('horse-images/'.$filename, $webpData);
 
             // Generate URL using a route (we'll create this route)

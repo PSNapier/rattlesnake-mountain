@@ -4,8 +4,9 @@ use App\Models\Item;
 use App\Models\Role;
 use App\Models\ShopListing;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 it('admin can create update and delete shop listing', function () {
     $admin = User::factory()->create(['role' => Role::Admin]);

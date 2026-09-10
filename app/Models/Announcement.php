@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 class Announcement extends Model
 {
@@ -60,9 +61,9 @@ class Announcement extends Model
     /**
      * Announcements shown publicly, newest first.
      *
-     * @return \Illuminate\Support\Collection<int, array<string, mixed>>
+     * @return Collection<int, array<string, mixed>>
      */
-    public static function publicFeed(int $limit = 3): \Illuminate\Support\Collection
+    public static function publicFeed(int $limit = 3): Collection
     {
         return static::query()
             ->published()

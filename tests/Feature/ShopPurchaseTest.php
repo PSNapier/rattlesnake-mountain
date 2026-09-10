@@ -3,8 +3,9 @@
 use App\Models\Item;
 use App\Models\ShopListing;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 function createListing(string $name = 'Target Item', int $maxCount = 10, int $price = 100): ShopListing
 {

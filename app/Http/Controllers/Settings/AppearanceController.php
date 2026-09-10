@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Encoders\WebpEncoder;
 use Intervention\Image\ImageManager;
 
 class AppearanceController extends Controller
@@ -39,7 +40,7 @@ class AppearanceController extends Controller
             $manager = new ImageManager(new Driver);
 
             // Process and store image
-            $image = $manager->read($file);
+            $image = $manager->decode($file);
             $width = $image->width();
             $height = $image->height();
 
@@ -48,7 +49,7 @@ class AppearanceController extends Controller
             $image->cover($size, $size);
 
             // Convert to WebP and store
-            $webpData = $image->toWebp(85);
+            $webpData = $image->encode(new WebpEncoder(quality: 85));
             Storage::disk('public')->put('avatars/'.$filename, $webpData);
 
             // Update user avatar URL using the route

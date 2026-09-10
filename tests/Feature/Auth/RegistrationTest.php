@@ -2,8 +2,9 @@
 
 use App\Models\Referral;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 test('registration screen can be rendered', function () {
     $response = $this->get('/register');
