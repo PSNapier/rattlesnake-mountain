@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select } from '@/components/ui/select';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 interface Herd {
 	id: number;
@@ -38,8 +40,26 @@ interface Horse {
 	herd?: Herd;
 }
 
+interface EquippedItem {
+	uid: string;
+	item_id: number;
+	name: string;
+	uses_remaining: number;
+	uses_per_unit: number;
+}
+
+interface EquippableItem {
+	id: number;
+	name: string;
+	quantity: number;
+	max_count: number;
+	uses_per_unit: number;
+}
+
 interface Props {
 	horse: Horse;
+	equipment: EquippedItem[];
+	equippableItems: EquippableItem[];
 	can: {
 		update: boolean;
 		delete: boolean;
@@ -47,6 +67,40 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+const page = usePage();
+
+const equipForm = useForm({
+	item_id: null as number | null,
+});
+
+const equippableOptions = computed(() =>
+	props.equippableItems.map((item) => ({
+		value: item.id,
+		label: `${item.name} (x${item.quantity})`,
+	})),
+);
+
+const submitEquip = (): void => {
+	equipForm.post(route('horses.equipment.store', props.horse.id), {
+		preserveScroll: true,
+		onSuccess: () => equipForm.reset('item_id'),
+	});
+};
+
+const useEquipment = (uid: string): void => {
+	router.post(
+		route('horses.equipment.use', [props.horse.id, uid]),
+		{},
+		{ preserveScroll: true },
+	);
+};
+
+const returnEquipment = (uid: string): void => {
+	router.delete(route('horses.equipment.destroy', [props.horse.id, uid]), {
+		preserveScroll: true,
+	});
+};
 
 const breadcrumbs: BreadcrumbItem[] = [
 	{
@@ -205,16 +259,105 @@ const deleteHorse = () => {
 								{{ props.horse.inventory.length }} items
 							</p>
 						</div>
+					</CardContent>
+				</Card>
+
+				<!-- Equipment -->
+				<Card class="lg:col-span-2">
+					<CardHeader>
+						<CardTitle>Equipment</CardTitle>
+					</CardHeader>
+					<CardContent class="space-y-4">
+						<div
+							v-if="(page.props.flash as any)?.success"
+							class="rounded-lg bg-green-50 p-4">
+							<p
+								class="text-sm font-medium text-green-800">
+								{{ (page.props.flash as any)?.success }}
+							</p>
+						</div>
+
+						<p
+							v-if="equipForm.errors.item_id"
+							class="text-sm text-red-500">
+							{{ equipForm.errors.item_id }}
+						</p>
+
+						<p
+							v-if="props.equipment.length === 0"
+							class="text-gray-600">
+							Nothing equipped.
+						</p>
 
 						<div
-							v-if="
-								props.horse.equipment &&
-								props.horse.equipment.length > 0
-							">
-							<h3 class="font-semibold">Equipment</h3>
-							<p class="text-gray-600">
-								{{ props.horse.equipment.length }} items
+							v-for="e in props.equipment"
+							:key="e.uid"
+							class="flex items-center justify-between gap-3 border-b pb-2 last:border-b-0">
+							<span class="text-sm">
+								{{ e.name }}
+								<span
+									v-if="e.uses_per_unit > 1"
+									class="text-gray-600">
+									{{ e.uses_remaining }} /
+									{{ e.uses_per_unit }} uses
+								</span>
+							</span>
+							<div
+								v-if="props.can.update"
+								class="flex gap-2">
+								<Button
+									v-if="e.uses_per_unit > 1"
+									size="sm"
+									variant="outline"
+									@click="useEquipment(e.uid)">
+									Use
+								</Button>
+								<Button
+									size="sm"
+									variant="outline"
+									:disabled="
+										e.uses_remaining <
+										e.uses_per_unit
+									"
+									:title="
+										e.uses_remaining <
+										e.uses_per_unit
+											? 'Partially used gear cannot be returned to inventory.'
+											: undefined
+									"
+									@click="returnEquipment(e.uid)">
+									Return to inventory
+								</Button>
+							</div>
+						</div>
+
+						<div
+							v-if="props.can.update"
+							class="pt-2">
+							<p
+								v-if="
+									props.equippableItems.length === 0
+								"
+								class="text-sm text-gray-600">
+								No items in your inventory.
 							</p>
+							<div
+								v-else
+								class="flex items-center gap-2">
+								<Select
+									v-model="equipForm.item_id"
+									:options="equippableOptions"
+									placeholder="Select an item"
+									class="w-64" />
+								<Button
+									:disabled="
+										!equipForm.item_id ||
+										equipForm.processing
+									"
+									@click="submitEquip">
+									Equip
+								</Button>
+							</div>
 						</div>
 					</CardContent>
 				</Card>

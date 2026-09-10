@@ -16,6 +16,7 @@ use App\Http\Controllers\BreedingSlotTransferController;
 use App\Http\Controllers\DevPasswordController;
 use App\Http\Controllers\HerdController;
 use App\Http\Controllers\HorseController;
+use App\Http\Controllers\HorseEquipmentController;
 use App\Http\Controllers\InboxController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LeaderboardController;
@@ -154,6 +155,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/horses/{horse}/approve', [HorseController::class, 'approve'])->name('horses.approve');
     Route::post('/horses/{horse}/publish', [HorseController::class, 'publish'])->name('horses.publish');
     Route::post('/horses/upload-image', [HorseController::class, 'uploadImage'])->name('horses.upload-image')->middleware('rate.limit.uploads');
+
+    Route::post('/horses/{horse}/equipment', [HorseEquipmentController::class, 'store'])->name('horses.equipment.store');
+    Route::delete('/horses/{horse}/equipment/{uid}', [HorseEquipmentController::class, 'destroy'])->name('horses.equipment.destroy');
+    Route::post('/horses/{horse}/equipment/{uid}/use', [HorseEquipmentController::class, 'use'])->name('horses.equipment.use');
 
     Route::get('/breedings', [BreedingController::class, 'index'])->name('breedings.index');
     Route::post('/breedings', [BreedingController::class, 'store'])->name('breedings.store');
