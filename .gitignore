@@ -26,3 +26,4 @@ database/seeders/LocalOnly.php
 todo-26-3-5.md
 bash.exe.stackdump
 .playwright-mcp/
+/tests/tmp

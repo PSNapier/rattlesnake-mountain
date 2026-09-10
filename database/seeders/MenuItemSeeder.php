@@ -3,79 +3,98 @@
 namespace Database\Seeders;
 
 use App\Models\MenuItem;
+use App\Support\CmsSnapshot;
 use Illuminate\Database\Seeder;
 
 class MenuItemSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     *
+     * Non-destructive: an item that already exists at a given label and parent
+     * is left alone, so reseeding for unrelated data never rewrites navigation
+     * an admin has edited.
      */
     public function run(): void
     {
-        MenuItem::whereNotNull('parent_id')->delete();
-        MenuItem::whereNull('parent_id')->delete();
+        $this->createTree($this->menu(), null);
+    }
 
-        // Top-level items
-        $home = MenuItem::create([
-            'label' => 'Home',
-            'path' => '/',
-            'sort_order' => 1,
-        ]);
+    /**
+     * The snapshot fixture when one has been captured, otherwise the tree
+     * hardcoded below.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function menu(): array
+    {
+        $snapshot = CmsSnapshot::read();
 
-        $gettingStarted = MenuItem::create([
-            'label' => 'Getting Started',
-            'path' => '/getting-started',
-            'sort_order' => 2,
-        ]);
-
-        $wildlife = MenuItem::create([
-            'label' => 'Wildlife',
-            'path' => '/wildlife',
-            'sort_order' => 3,
-        ]);
-
-        $contactUs = MenuItem::create([
-            'label' => 'Contact Us',
-            'path' => '/contact-us',
-            'sort_order' => 4,
-        ]);
-
-        // Getting Started submenu
-        $gettingStartedChildren = [
-            ['label' => 'Rules', 'path' => '/rules'],
-            ['label' => 'Lore', 'path' => '/lore'],
-            ['label' => 'Character Handbook', 'path' => '/character-handbook'],
-            ['label' => 'Stats & Leveling', 'path' => '/stats-leveling'],
-            ['label' => 'Character Upload', 'path' => '/character-upload'],
-            ['label' => 'Shop', 'path' => '/shop'],
-        ];
-
-        foreach ($gettingStartedChildren as $index => $child) {
-            MenuItem::create([
-                'parent_id' => $gettingStarted->id,
-                'label' => $child['label'],
-                'path' => $child['path'],
-                'sort_order' => $index + 1,
-            ]);
+        if ($snapshot !== null && $snapshot['menu'] !== []) {
+            return $snapshot['menu'];
         }
 
-        // Wildlife submenu
-        $wildlifeChildren = [
-            ['label' => 'Lifespans', 'path' => '/lifespans'],
-            ['label' => 'Story Progression', 'path' => '/story-progression'],
-            ['label' => 'Claiming NPCs', 'path' => '/claiming-npcs'],
-            ['label' => 'Herd Unity', 'path' => '/herd-unity'],
-            ['label' => 'Breeding & Foaling', 'path' => '/breeding-foaling'],
-            ['label' => 'Player vs. Player', 'path' => '/player-vs-player'],
-        ];
+        return $this->hardcodedMenu();
+    }
 
-        foreach ($wildlifeChildren as $index => $child) {
-            MenuItem::create([
-                'parent_id' => $wildlife->id,
-                'label' => $child['label'],
-                'path' => $child['path'],
-                'sort_order' => $index + 1,
-            ]);
+    /**
+     * Parents are created before their children, which is why the tree is
+     * stored nested rather than flat.
+     *
+     * @param  list<array<string, mixed>>  $items
+     */
+    private function createTree(array $items, ?int $parentId): void
+    {
+        foreach ($items as $index => $item) {
+            $node = MenuItem::query()->firstOrCreate(
+                [
+                    'label' => $item['label'],
+                    'parent_id' => $parentId,
+                ],
+                [
+                    'path' => $item['path'] ?? null,
+                    'sort_order' => $item['sort_order'] ?? $index + 1,
+                ]
+            );
+
+            $this->createTree(array_values($item['children'] ?? []), $node->id);
         }
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function hardcodedMenu(): array
+    {
+        return [
+            ['label' => 'Home', 'path' => '/', 'sort_order' => 1],
+            [
+                'label' => 'Getting Started',
+                'path' => '/getting-started',
+                'sort_order' => 2,
+                'children' => [
+                    ['label' => 'Rules', 'path' => '/rules', 'sort_order' => 1],
+                    ['label' => 'Lore', 'path' => '/lore', 'sort_order' => 2],
+                    ['label' => 'Character Handbook', 'path' => '/character-handbook', 'sort_order' => 3],
+                    ['label' => 'Stats & Leveling', 'path' => '/stats-leveling', 'sort_order' => 4],
+                    ['label' => 'Character Upload', 'path' => '/character-upload', 'sort_order' => 5],
+                    ['label' => 'Shop', 'path' => '/shop', 'sort_order' => 6],
+                ],
+            ],
+            [
+                'label' => 'Wildlife',
+                'path' => '/wildlife',
+                'sort_order' => 3,
+                'children' => [
+                    ['label' => 'Lifespans', 'path' => '/lifespans', 'sort_order' => 1],
+                    ['label' => 'Story Progression', 'path' => '/story-progression', 'sort_order' => 2],
+                    ['label' => 'Claiming NPCs', 'path' => '/claiming-npcs', 'sort_order' => 3],
+                    ['label' => 'Herd Unity', 'path' => '/herd-unity', 'sort_order' => 4],
+                    ['label' => 'Breeding & Foaling', 'path' => '/breeding-foaling', 'sort_order' => 5],
+                    ['label' => 'Player vs. Player', 'path' => '/player-vs-player', 'sort_order' => 6],
+                ],
+            ],
+            ['label' => 'Contact Us', 'path' => '/contact-us', 'sort_order' => 4],
+        ];
     }
 }

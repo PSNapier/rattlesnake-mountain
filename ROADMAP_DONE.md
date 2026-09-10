@@ -1,5 +1,57 @@
 # Roadmap Done
 
+## [035] Non-Destructive CMS Seeders and Snapshot Command
+
+**Status:** `done`
+**Depends On:** none
+**Spec:** none
+
+### Goal
+
+Seeding the database stops destroying CMS pages and navigation. `db:seed` fills gaps without overwriting live content, and `php artisan cms:snapshot` captures the current pages and menu to a fixture the seeder reads, so a `migrate:fresh --seed` restores the latest state instead of the original hardcoded copy.
+
+### Scope
+
+- `CmsPageSeeder` and `MenuItemSeeder` switch to non-destructive creation
+- `cms:snapshot` Artisan command writing pages and menu to a JSON fixture
+- Seeders read the fixture when present, fall back to the hardcoded arrays when not
+- Delete the 16 unreferenced components in `resources/js/pages/cms/`
+- NOT in scope: any change to `cms_pages` schema, rendering, or the admin UI
+
+### Technical Notes
+
+**User flows:**
+
+**Flows:** `verified`
+
+- **Developer:** `php artisan cms:snapshot` in the project root. Writes the current pages and menu to a fixture so the next reseed restores them.
+
+**Details:**
+
+- `CmsPageSeeder.php:38` calls `CmsPage::truncate()` and `MenuItemSeeder.php:15-16` deletes every row, so a `db:seed` run for unrelated data (items, shop) silently wipes CMS content and navigation. `ItemSeeder` and `ShopCatalogSeeder` already use `updateOrCreate` and are safe to re-run; these two are the outliers.
+- Use `firstOrCreate` keyed on `slug` for pages and on `label` + `parent_id` for menu items. Not `updateOrCreate`: once inline editing lands ([037]) the database is canonical and seeder copy is stale by definition, so the seeder must never overwrite an edit.
+- Fixture at `database/data/cms-snapshot.json` (alongside `shop_catalog.json`, the repo's one home for committed seed input), committed. It holds pages (all columns) and the menu tree. `cms:snapshot` overwrites it; the seeders prefer it over the hardcoded arrays.
+- Menu parents must be created before children, so the fixture stores the tree nested rather than flat.
+- The 16 dead components (`Rules.vue`, `Lore.vue`, `_Default.vue`, `ContactUs.vue` and siblings) are referenced by nothing. Only `cms/Show.vue` (`StaticPageController.php:21`) and `cms/Shop.vue` (`ShopController.php:90`) are rendered. Their markup stays in git history.
+- Built: fixture read/write lives in `App\Support\CmsSnapshot`, which exposes a `$pathOverride` test hook so the seeder tests can exercise the fixture and the fallback without touching the committed file. `cms:snapshot` is `app/Console/Commands/CmsSnapshotCommand.php`.
+- The dev database had already been wiped of all 16 pages and 16 menu items before this item ran. The destructive seeders were only half the cause: `phpunit.xml` set `DB_CONNECTION=mysql` with no `DB_DATABASE` override and there is no `.env.testing`, so `RefreshDatabase` dropped every table in the working `rattlesnake_mountain` database on each `php artisan test` run. Fixed in the same pass by pointing `phpunit.xml` at `rattlesnake_mountain_testing`. Anyone pulling this branch needs to create that database once.
+
+### Acceptance Criteria
+
+- [x] Running the CMS and menu seeders twice leaves admin edits intact and creates no duplicates
+      `tests/Feature/Cms/CmsSeederTest.php::it_does_not_overwrite_edited_pages_on_reseed`
+      `tests/Feature/Cms/CmsSeederTest.php::it_does_not_duplicate_menu_items_on_reseed`
+- [x] Seeding an empty database still produces the full page set and menu tree
+      `tests/Feature/Cms/CmsSeederTest.php::it_seeds_every_page_and_the_menu_tree_from_empty`
+- [x] `cms:snapshot` writes a fixture that the seeders restore verbatim after a fresh migration
+      `tests/Feature/Cms/CmsSnapshotCommandTest.php::it_writes_pages_and_menu_to_the_fixture`
+      `tests/Feature/Cms/CmsSnapshotCommandTest.php::it_restores_snapshot_content_when_seeding_a_fresh_database`
+- [x] Seeders fall back to their hardcoded arrays when no fixture exists
+      `tests/Feature/Cms/CmsSeederTest.php::it_falls_back_to_hardcoded_pages_without_a_fixture`
+- [x] The 16 unreferenced `pages/cms/` components are gone and every CMS route still renders, confirmed in a browser
+
+---
+
 ## [019] CMS Rich Text / WYSIWYG and Home Editability
 
 **Status:** `cancelled`

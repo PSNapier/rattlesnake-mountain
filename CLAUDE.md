@@ -1,6 +1,16 @@
 # Rattlesnake Mountain
 
-Laravel 12 + Inertia + Vue 3 + Tailwind, MySQL. Development on Windows (Herd), production on Laravel Forge.
+Laravel 13 + Inertia + Vue 3 + Tailwind, MySQL. Development on Windows (Herd), production on Laravel Forge.
+
+## Tests
+
+`php artisan test` runs `RefreshDatabase`, which drops every table. `phpunit.xml` points it at `rattlesnake_mountain_testing`, kept separate from the working `rattlesnake_mountain` database. Create it once before the first run:
+
+```sh
+mysql -h 127.0.0.1 -u root -e "CREATE DATABASE IF NOT EXISTS rattlesnake_mountain_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+```
+
+Never remove the `DB_DATABASE` override from `phpunit.xml`. Without it a test run wipes the dev database.
 
 ## Browser verification (Playwright MCP)
 

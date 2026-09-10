@@ -721,54 +721,6 @@ flowchart TD
 
 ---
 
-## [035] Non-Destructive CMS Seeders and Snapshot Command
-
-**Status:** `next`
-**Depends On:** none
-**Spec:** none
-
-### Goal
-
-Seeding the database stops destroying CMS pages and navigation. `db:seed` fills gaps without overwriting live content, and `php artisan cms:snapshot` captures the current pages and menu to a fixture the seeder reads, so a `migrate:fresh --seed` restores the latest state instead of the original hardcoded copy.
-
-### Scope
-
-- `CmsPageSeeder` and `MenuItemSeeder` switch to non-destructive creation
-- `cms:snapshot` Artisan command writing pages and menu to a JSON fixture
-- Seeders read the fixture when present, fall back to the hardcoded arrays when not
-- Delete the 16 unreferenced components in `resources/js/pages/cms/`
-- NOT in scope: any change to `cms_pages` schema, rendering, or the admin UI
-
-### Technical Notes
-
-**User flows:**
-
-- **Developer:** `php artisan cms:snapshot` in the project root. Writes the current pages and menu to a fixture so the next reseed restores them.
-
-**Details:**
-
-- `CmsPageSeeder.php:38` calls `CmsPage::truncate()` and `MenuItemSeeder.php:15-16` deletes every row, so a `db:seed` run for unrelated data (items, shop) silently wipes CMS content and navigation. `ItemSeeder` and `ShopCatalogSeeder` already use `updateOrCreate` and are safe to re-run; these two are the outliers.
-- Use `firstOrCreate` keyed on `slug` for pages and on `label` + `parent_id` for menu items. Not `updateOrCreate`: once inline editing lands ([037]) the database is canonical and seeder copy is stale by definition, so the seeder must never overwrite an edit.
-- Fixture at `database/fixtures/cms-snapshot.json`, committed. It holds pages (all columns) and the menu tree. `cms:snapshot` overwrites it; the seeders prefer it over the hardcoded arrays.
-- Menu parents must be created before children, so the fixture stores the tree nested rather than flat.
-- The 16 dead components (`Rules.vue`, `Lore.vue`, `_Default.vue`, `ContactUs.vue` and siblings) are referenced by nothing. Only `cms/Show.vue` (`StaticPageController.php:21`) and `cms/Shop.vue` (`ShopController.php:90`) are rendered. Their markup stays in git history.
-
-### Acceptance Criteria
-
-- [ ] Running the CMS and menu seeders twice leaves admin edits intact and creates no duplicates
-      `tests/Feature/Cms/CmsSeederTest.php::it_does_not_overwrite_edited_pages_on_reseed`
-      `tests/Feature/Cms/CmsSeederTest.php::it_does_not_duplicate_menu_items_on_reseed`
-- [ ] Seeding an empty database still produces the full page set and menu tree
-      `tests/Feature/Cms/CmsSeederTest.php::it_seeds_every_page_and_the_menu_tree_from_empty`
-- [ ] `cms:snapshot` writes a fixture that the seeders restore verbatim after a fresh migration
-      `tests/Feature/Cms/CmsSnapshotCommandTest.php::it_writes_pages_and_menu_to_the_fixture`
-      `tests/Feature/Cms/CmsSnapshotCommandTest.php::it_restores_snapshot_content_when_seeding_a_fresh_database`
-- [ ] Seeders fall back to their hardcoded arrays when no fixture exists
-      `tests/Feature/Cms/CmsSeederTest.php::it_falls_back_to_hardcoded_pages_without_a_fixture`
-- [ ] The 16 unreferenced `pages/cms/` components are gone and every CMS route still renders, confirmed in a browser
-
----
-
 ## [036] CMS Block Schema, Visibility and Page Deletion
 
 **Status:** `next`
@@ -804,7 +756,7 @@ CMS page content becomes an ordered list of boxes with a column span and a style
 - The three-column grid replaces the fixed `lg:grid-cols-[2fr_1fr]` in `DynamicInfo.vue:52` and unifies CMS pages with the home layout at `Welcome.vue:88-128`, which already uses `lg:col-span-1/2/3`.
 - Markdown is converted to HTML by the migration, not at render time. `markdown-it` is currently instantiated with defaults (`DynamicInfo.vue:5`), meaning raw HTML is escaped, so nothing in the existing content can be hostile. After conversion the sanitizer is the only thing standing between an admin and stored XSS.
 - Sanitizer allowlist matches what the pages already use: `strong`, `em`, `h1`-`h4`, `ul`, `ol`, `li`, `a`, `img`, `blockquote`, `hr`, `p`, `br`. No `table`, no `script`, no inline event attributes, no `style`.
-- The migration snapshots every page's pre-conversion state, including the full `images` array with artist name and link, to a timestamped file in `database/fixtures/` before writing. `down()` restores from it. That archive is the structured attribution [039] re-imports, so it must not be pruned.
+- The migration snapshots every page's pre-conversion state, including the full `images` array with artist name and link, to a timestamped file in `database/data/` before writing. `down()` restores from it. That archive is the structured attribution [039] re-imports, so it must not be pruned.
 - Attribution survives visually as caption text in the converted boxes and structurally in the archive. Between this item and [039] it is not queryable. Accepted deliberately.
 - `coming_soon` stays an independent flag driving its own banner (`DynamicInfo.vue:29`). A page can be live and flagged.
 - Home cannot be hidden or deleted. Guard it in the request classes, not only the UI.

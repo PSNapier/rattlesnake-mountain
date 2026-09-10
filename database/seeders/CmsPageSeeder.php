@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\CmsPage;
+use App\Support\CmsSnapshot;
 use Illuminate\Database\Seeder;
 
 class CmsPageSeeder extends Seeder
@@ -32,11 +33,40 @@ class CmsPageSeeder extends Seeder
 
     /**
      * Run the database seeds.
+     *
+     * Non-destructive: existing pages are left exactly as they are, so an
+     * unrelated `db:seed` never clobbers admin edits. Only missing slugs are
+     * created.
      */
     public function run(): void
     {
-        CmsPage::truncate();
+        foreach ($this->pages() as $page) {
+            CmsPage::query()->firstOrCreate(['slug' => $page['slug']], $page);
+        }
+    }
 
+    /**
+     * The snapshot fixture when one has been captured, otherwise the copy
+     * hardcoded below.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function pages(): array
+    {
+        $snapshot = CmsSnapshot::read();
+
+        if ($snapshot !== null && $snapshot['pages'] !== []) {
+            return $snapshot['pages'];
+        }
+
+        return $this->hardcodedPages();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function hardcodedPages(): array
+    {
         $pages = [
             [
                 'slug' => 'getting-started',
@@ -595,10 +625,10 @@ class CmsPageSeeder extends Seeder
             ],
         ];
 
-        foreach ($pages as $page) {
-            $page['coming_soon'] = in_array($page['slug'], self::COMING_SOON_SLUGS, true);
-
-            CmsPage::create($page);
+        foreach ($pages as $index => $page) {
+            $pages[$index]['coming_soon'] = in_array($page['slug'], self::COMING_SOON_SLUGS, true);
         }
+
+        return $pages;
     }
 }
