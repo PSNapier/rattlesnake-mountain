@@ -309,41 +309,6 @@ Freeze accounts after 4 months without art/lit submissions; frozen accounts skip
 
 ---
 
-## [019] CMS Rich Text / WYSIWYG and Home Editability
-
-**Status:** `freezer`
-**Depends On:** none
-
-### Goal
-
-Replace multi-box JSON CMS editing with a simpler rich-text (or in-page WYSIWYG) experience, and make Home editable once that direction is chosen.
-
-### Scope
-
-- Product decision: rich-text body vs on-page WYSIWYG
-- Home (`Welcome.vue`) becomes CMS-managed or section-editable
-- NOT in scope until decision made (burndown blocked items)
-
-### Technical Notes
-
-- Admin: [`resources/js/pages/admin/CmsTab.vue`](resources/js/pages/admin/CmsTab.vue) — `contentJson` multi-box
-- Home intentionally excluded from `CmsPageSeeder` historically
-
-### Acceptance Criteria
-
-- [ ] Editing direction decided and documented
-- [ ] CMS pages editable via chosen editor
-- [ ] Home content editable without deploy
-- [ ] Tests for update + public render
-
-### Tests
-
-- [ ] `tests/Feature/AdminCmsPageTest.php::it_saves_rich_text_bodies_from_the_chosen_editor`
-- [ ] `tests/Feature/AdminCmsPageTest.php::it_updates_home_content_without_a_deploy`
-- [ ] `tests/Feature/CmsStaticPageTest.php::it_renders_edited_content_publicly`
-
----
-
 ## [020] Fix Local vs CI Test Discrepancies
 
 **Status:** `freezer`
