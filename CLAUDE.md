@@ -24,3 +24,15 @@ The browser profile is isolated and nothing is persisted between sessions, so lo
 The browser drives the live dev site against the working `rattlesnake_mountain` MySQL database. There is no isolation and no rollback: anything clicked is a real write. Read-only verification is the default. Before exercising a flow that mutates data (admin actions, breeding, lifecycle, trading, deletions), say what will be written and get the user's go-ahead.
 
 Nothing here runs in CI.
+
+<!-- laravel-boost:start -->
+## Stack
+
+- Laravel 13.30 on PHP 8.3
+- Vue 3.5, Inertia 3.7, Vite 6.4, TypeScript 5.7
+- Pest 5, Tailwind 4.1
+
+Laravel Boost is installed: Boost agent skills are in `.claude/skills/`, and the Boost
+MCP server (`.mcp.json`) exposes this app's routes, models, config, database schema,
+logs, tinker, and version-accurate Laravel docs. Prefer those tools over guessing.
+<!-- laravel-boost:end -->
