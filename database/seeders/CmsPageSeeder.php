@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\CmsPage;
+use App\Support\CmsLegacyContent;
 use App\Support\CmsSnapshot;
 use Illuminate\Database\Seeder;
 
@@ -41,8 +42,36 @@ class CmsPageSeeder extends Seeder
     public function run(): void
     {
         foreach ($this->pages() as $page) {
+            $page = $this->normalise($page);
+
             CmsPage::query()->firstOrCreate(['slug' => $page['slug']], $page);
         }
+    }
+
+    /**
+     * Both the hardcoded copy below and any snapshot fixture captured before
+     * [036] carry the legacy `{box1: [markdown]}` shape and a separate
+     * `images` array. Convert those on the way in so a fresh install lands on
+     * the box shape the renderer expects.
+     *
+     * @param  array<string, mixed>  $page
+     * @return array<string, mixed>
+     */
+    private function normalise(array $page): array
+    {
+        $content = $page['content'] ?? [];
+        $isLegacy = array_key_exists('images', $page) || ! array_is_list($content);
+
+        if ($isLegacy) {
+            $page['content'] = CmsLegacyContent::toBoxes($content, $page['images'] ?? []);
+        }
+
+        unset($page['images']);
+
+        // Seeded pages are the site's published copy, not drafts.
+        $page['visibility'] ??= CmsPage::VISIBILITY_LIVE;
+
+        return $page;
     }
 
     /**

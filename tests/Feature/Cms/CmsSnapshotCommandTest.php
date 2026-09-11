@@ -41,7 +41,7 @@ it('writes pages and menu to the fixture', function () {
 
     expect($rules)->toHaveKeys([
         'slug', 'title', 'description', 'hero_title', 'hero_description',
-        'content', 'images', 'coming_soon', 'sort_order',
+        'content', 'coming_soon', 'visibility', 'sort_order',
     ]);
 
     // The menu is stored as a tree so parents exist before children on restore.
@@ -64,9 +64,12 @@ it('restores snapshot content when seeding a fresh database', function () {
 
     $this->artisan('cms:snapshot')->assertSuccessful();
 
-    // Stand in for migrate:fresh --seed.
+    // Stand in for migrate:fresh --seed: a real delete, not the soft delete
+    // CmsPage::query()->delete() would perform now that the model uses
+    // SoftDeletes. A soft-deleted row still holds its slug, which would
+    // collide with the reseed below.
     MenuItem::query()->delete();
-    CmsPage::query()->delete();
+    CmsPage::query()->forceDelete();
 
     $this->seed(CmsPageSeeder::class);
     $this->seed(MenuItemSeeder::class);

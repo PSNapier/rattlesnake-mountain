@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\DestroyCmsPageRequest;
 use App\Http\Requests\ReorderCmsPagesRequest;
 use App\Http\Requests\ReorderMenuItemsRequest;
 use App\Http\Requests\StoreCmsPageRequest;
 use App\Http\Requests\StoreMenuItemRequest;
 use App\Http\Requests\UpdateCmsPageRequest;
+use App\Http\Requests\UpdateCmsPageVisibilityRequest;
 use App\Http\Requests\UpdateMenuItemRequest;
 use App\Models\CmsPage;
 use App\Models\MenuItem;
+use App\Support\CmsSanitizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,16 +22,74 @@ class CmsController extends Controller
     public function storeCmsPage(StoreCmsPageRequest $request): RedirectResponse
     {
         $maxSort = CmsPage::max('sort_order') ?? -1;
-        CmsPage::create(array_merge($request->validated(), ['sort_order' => $maxSort + 1]));
+        $data = $this->sanitized($request->validated());
+
+        // New pages start hidden. Publishing is a deliberate second step from
+        // the page list.
+        CmsPage::create(array_merge($data, [
+            'sort_order' => $maxSort + 1,
+            'visibility' => CmsPage::VISIBILITY_HIDDEN,
+        ]));
 
         return redirect()->back()->with('success', 'Page created successfully.');
     }
 
     public function updateCmsPage(UpdateCmsPageRequest $request, CmsPage $page): RedirectResponse
     {
-        $page->update($request->validated());
+        $page->update($this->sanitized($request->validated()));
 
         return redirect()->back()->with('success', 'Page updated successfully.');
+    }
+
+    public function updateCmsPageVisibility(UpdateCmsPageVisibilityRequest $request, CmsPage $page): RedirectResponse
+    {
+        $page->update(['visibility' => $request->validated('visibility')]);
+
+        return redirect()->back()->with(
+            'success',
+            $page->isLive() ? 'Page is now live.' : 'Page is now hidden.'
+        );
+    }
+
+    /**
+     * Soft delete, so a page can be brought back. `MenuItem.path` is free
+     * text, so nothing links a menu row to a page: the response names the menu
+     * items that pointed at the slug rather than cascading through them.
+     */
+    public function destroyCmsPage(DestroyCmsPageRequest $request, CmsPage $page): RedirectResponse
+    {
+        $menuLinks = MenuItem::query()
+            ->where('path', '/'.$page->slug)
+            ->get(['id', 'label', 'path'])
+            ->map(fn (MenuItem $item) => [
+                'id' => $item->id,
+                'label' => $item->label,
+                'path' => $item->path,
+            ])
+            ->values()
+            ->all();
+
+        $page->delete();
+
+        return redirect()->back()
+            ->with('success', 'Page deleted.')
+            ->with('menu_links', $menuLinks);
+    }
+
+    /**
+     * Every write runs the box HTML through the allowlist. It is the only
+     * thing standing between an admin account and stored XSS.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function sanitized(array $data): array
+    {
+        if (isset($data['content']) && is_array($data['content'])) {
+            $data['content'] = CmsSanitizer::sanitizeBoxes($data['content']);
+        }
+
+        return $data;
     }
 
     public function storeMenuItem(StoreMenuItemRequest $request): RedirectResponse

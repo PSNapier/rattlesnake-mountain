@@ -15,9 +15,16 @@ import { GripVertical } from 'lucide-vue-next';
 import Sortable from 'sortablejs';
 import { computed, onMounted, ref, watch } from 'vue';
 
-interface CmsImage {
-	name: string;
-	link: string;
+interface CmsBox {
+	id: string;
+	span: 1 | 2 | 3;
+	style: 'box' | 'box-alt' | 'box-centered';
+	html: string;
+}
+
+interface CmsMenuLink {
+	id: number;
+	label: string;
 	path: string;
 }
 
@@ -28,10 +35,11 @@ interface CmsPage {
 	description?: string | null;
 	hero_title: string;
 	hero_description: string | null;
-	content: Record<string, string[]>;
-	images: CmsImage[];
+	content: CmsBox[];
 	coming_soon: boolean;
+	visibility: 'live' | 'hidden';
 	sort_order: number;
+	menu_links: CmsMenuLink[];
 }
 
 interface MenuItemWithChildren {
@@ -57,6 +65,9 @@ const props = defineProps<Props>();
 const menuListRef = ref<HTMLElement | null>(null);
 let sortableMenu: Sortable | null = null;
 const childSortables = new Map<number, Sortable>();
+
+const pagesListRef = ref<HTMLElement | null>(null);
+let sortablePages: Sortable | null = null;
 
 function getParentIdFromList(el: HTMLElement): number | null {
 	const id = el.dataset.parentId;
@@ -92,6 +103,25 @@ function reorderAfterMove(evt: Sortable.SortableEvent) {
 }
 
 onMounted(() => {
+	if (pagesListRef.value) {
+		sortablePages = Sortable.create(pagesListRef.value, {
+			handle: '.drag-handle',
+			animation: 150,
+			dataIdAttr: 'data-id',
+			onEnd() {
+				const order =
+					sortablePages?.toArray().map((id) => Number(id)) ?? [];
+				if (order.length) {
+					router.post(
+						route('admin.cms.pages.reorder'),
+						{ order },
+						{ preserveScroll: true },
+					);
+				}
+			},
+		});
+	}
+
 	if (menuListRef.value) {
 		sortableMenu = Sortable.create(menuListRef.value, {
 			handle: '.drag-handle',
@@ -202,8 +232,7 @@ const pageForm = ref({
 	description: '',
 	hero_description: '',
 	comingSoon: false,
-	contentJson: '{}',
-	imagesJson: '[]',
+	contentJson: '[]',
 });
 
 watch(
@@ -214,8 +243,7 @@ watch(
 				description: page.description ?? '',
 				hero_description: page.hero_description ?? '',
 				comingSoon: Boolean(page.coming_soon),
-				contentJson: JSON.stringify(page.content ?? {}, null, 2),
-				imagesJson: JSON.stringify(page.images ?? [], null, 2),
+				contentJson: JSON.stringify(page.content ?? [], null, 2),
 			};
 		}
 	},
@@ -240,8 +268,7 @@ function openMenuEdit(
 			description: page.description ?? '',
 			hero_description: page.hero_description ?? '',
 			comingSoon: Boolean(page.coming_soon),
-			contentJson: JSON.stringify(page.content ?? {}, null, 2),
-			imagesJson: JSON.stringify(page.images ?? [], null, 2),
+			contentJson: JSON.stringify(page.content ?? [], null, 2),
 		};
 	} else {
 		displayLinkedPage.value = null;
@@ -249,8 +276,7 @@ function openMenuEdit(
 			description: '',
 			hero_description: '',
 			comingSoon: false,
-			contentJson: '{}',
-			imagesJson: '[]',
+			contentJson: '[]',
 		};
 	}
 	menuItemDialogOpen.value = true;
@@ -268,8 +294,7 @@ function openMenuAdd(parentId: number | null) {
 		description: '',
 		hero_description: '',
 		comingSoon: false,
-		contentJson: '{}',
-		imagesJson: '[]',
+		contentJson: '[]',
 	};
 	menuItemDialogOpen.value = true;
 }
@@ -288,8 +313,7 @@ function closeMenuDialog() {
 			description: '',
 			hero_description: '',
 			comingSoon: false,
-			contentJson: '{}',
-			imagesJson: '[]',
+			contentJson: '[]',
 		};
 	}, 250);
 }
@@ -302,18 +326,11 @@ function saveMenuItem() {
 			doClose();
 			return;
 		}
-		let content: Record<string, string[]>;
-		let images: CmsImage[];
+		let content: CmsBox[];
 		try {
 			content = JSON.parse(pageForm.value.contentJson);
 		} catch {
 			alert('Invalid JSON in page content.');
-			return;
-		}
-		try {
-			images = JSON.parse(pageForm.value.imagesJson);
-		} catch {
-			alert('Invalid JSON in page images.');
 			return;
 		}
 		const payload = {
@@ -323,7 +340,6 @@ function saveMenuItem() {
 			hero_description: pageForm.value.hero_description || null,
 			coming_soon: pageForm.value.comingSoon,
 			content,
-			images,
 		};
 		const page = linkedPage.value;
 		if (page) {
@@ -367,12 +383,135 @@ function deleteMenuItem(id: number) {
 	if (!confirm('Delete this menu item and its children?')) return;
 	router.delete(route('admin.cms.menu.destroy', id));
 }
+
+function toggleVisibility(page: CmsPage) {
+	const visibility = page.visibility === 'live' ? 'hidden' : 'live';
+	router.patch(
+		route('admin.cms.pages.visibility', page.id),
+		{ visibility },
+		{ preserveScroll: true },
+	);
+}
+
+const deletePageDialogOpen = ref(false);
+const pageToDelete = ref<CmsPage | null>(null);
+
+function openDeletePage(page: CmsPage) {
+	pageToDelete.value = page;
+	deletePageDialogOpen.value = true;
+}
+
+function closeDeletePageDialog() {
+	deletePageDialogOpen.value = false;
+	setTimeout(() => {
+		pageToDelete.value = null;
+	}, 250);
+}
+
+function confirmDeletePage() {
+	if (!pageToDelete.value) return;
+	router.delete(route('admin.cms.pages.destroy', pageToDelete.value.id), {
+		preserveScroll: true,
+		onSuccess: closeDeletePageDialog,
+	});
+}
 </script>
 
 <template>
 	<Card>
 		<CardHeader>
-			<CardTitle>Menu & Pages</CardTitle>
+			<CardTitle>Pages</CardTitle>
+		</CardHeader>
+		<CardContent>
+			<ul
+				ref="pagesListRef"
+				class="space-y-2">
+				<li
+					v-for="page in props.cmsPages"
+					:key="page.id"
+					:data-id="page.id"
+					class="flex items-center gap-3 rounded border border-gray-200 p-3">
+					<span
+						class="drag-handle cursor-grab text-gray-400 active:cursor-grabbing">
+						<GripVertical class="size-4" />
+					</span>
+					<span class="flex-1 font-medium">{{
+						page.title
+					}}</span>
+					<span class="text-cape-palliser-600 text-sm"
+						>/{{ page.slug }}</span
+					>
+					<div class="flex gap-2">
+						<Button
+							v-if="page.slug !== 'home'"
+							variant="outline"
+							size="sm"
+							:title="
+								page.visibility === 'live'
+									? 'Click to hide this page from the public'
+									: 'Click to make this page live'
+							"
+							@click="toggleVisibility(page)">
+							{{
+								page.visibility === 'live'
+									? 'Live'
+									: 'Hidden'
+							}}
+						</Button>
+						<Button
+							v-if="page.slug !== 'home'"
+							variant="destructive"
+							size="sm"
+							@click="openDeletePage(page)"
+							>Delete</Button
+						>
+					</div>
+				</li>
+			</ul>
+		</CardContent>
+	</Card>
+
+	<Dialog v-model:open="deletePageDialogOpen">
+		<DialogContent>
+			<DialogHeader>
+				<DialogTitle
+					>Delete "{{ pageToDelete?.title }}"?</DialogTitle
+				>
+			</DialogHeader>
+			<div class="space-y-3">
+				<p>This deletion can be recovered by staff if needed.</p>
+				<div v-if="pageToDelete?.menu_links.length">
+					<p class="font-medium">
+						These menu items link to this page and will
+						<span class="font-bold">not</span> be removed:
+					</p>
+					<ul class="list-inside list-disc">
+						<li
+							v-for="link in pageToDelete.menu_links"
+							:key="link.id">
+							{{ link.label }}
+						</li>
+					</ul>
+				</div>
+			</div>
+			<DialogFooter>
+				<Button
+					variant="outline"
+					@click="closeDeletePageDialog"
+					>Cancel</Button
+				>
+				<Button
+					variant="destructive"
+					@click="confirmDeletePage"
+					>Delete</Button
+				>
+			</DialogFooter>
+		</DialogContent>
+	</Dialog>
+
+	<Card>
+		<CardHeader>
+			<CardTitle>Menu</CardTitle>
 		</CardHeader>
 		<CardContent>
 			<div class="space-y-2">
@@ -562,14 +701,6 @@ function deleteMenuItem(id: number) {
 							id="contentJson"
 							v-model="pageForm.contentJson"
 							rows="10"
-							class="border-input mt-1 w-full rounded-md border px-3 py-2 font-mono text-sm" />
-					</div>
-					<div>
-						<Label for="imagesJson">Images (JSON)</Label>
-						<textarea
-							id="imagesJson"
-							v-model="pageForm.imagesJson"
-							rows="4"
 							class="border-input mt-1 w-full rounded-md border px-3 py-2 font-mono text-sm" />
 					</div>
 				</div>

@@ -26,8 +26,8 @@ class CmsSnapshotCommand extends Command
         'hero_title',
         'hero_description',
         'content',
-        'images',
         'coming_soon',
+        'visibility',
         'sort_order',
     ];
 

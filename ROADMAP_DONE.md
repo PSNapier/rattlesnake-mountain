@@ -1,5 +1,96 @@
 # Roadmap Done
 
+## [036] CMS Block Schema, Visibility and Page Deletion
+
+**Status:** `done`
+**Depends On:** [035]
+**Spec:** none
+
+### Goal
+
+CMS page content becomes an ordered list of boxes with a column span and a style, rendered from sanitized HTML on a three-column grid. Pages gain live/hidden visibility and recoverable deletion, managed from the admin page list.
+
+### Scope
+
+- Migrate `content` from `{box1: [markdown], ...}` to an ordered array of `{id, span, style, html}`
+- Convert the `images` array into image boxes with visible "Art by @name" captions, then drop the column
+- `symfony/html-sanitizer` allowlist applied on every write
+- `visibility` column, `live` / `hidden`, existing pages grandfathered to `live`
+- Soft delete on `cms_pages`, with a confirm modal listing menu items pointing at the slug
+- `DynamicInfo.vue` rewritten to render the new shape on a three-column grid
+- The conversion lives in `App\Support\CmsLegacyContent`, shared by the migration and `CmsPageSeeder`, so a fresh `migrate:fresh --seed` also lands on the box shape
+- NOT in scope: the editor UI ([037]), media library and home conversion ([038])
+- NOT in scope: any change to the role capability matrix; `admin.cms` continues to gate everything
+
+### Technical Notes
+
+**User flows:**
+
+**Flows:** `verified`
+
+- **Admin:** page list in the admin CMS tab. Toggle a page between Live and Hidden, delete a page, reorder pages.
+- **Visitor:** `/{slug}`. A hidden page returns the 404 page.
+- **Admin:** `/{slug}` for a hidden page. Renders normally with a banner saying it is not public.
+
+**Details:**
+
+- Box shape is `{id, span, style, html}`. `span` is 1, 2 or 3 on a three-column grid at `lg` and above; below `lg` every box is full width in drag order, matching the current pages. `style` is one of `box`, `box-alt`, `box-centered`; the first two are the CSS classes at `resources/css/app.css:69-96` and `box-centered` renders `box` plus `text-center`, so no new CSS was needed.
+- Conversion order: text boxes and image boxes interleave (text, art, text, art…), a text box spans 2 when an image box sits beside it and 3 once the art runs out, and image boxes always span 1. That reproduces the old 2fr/1fr reading order.
+- Image boxes now render below `lg` as well. The old image column was `hidden lg:flex`, so on a phone the attribution was invisible; the drag-order rule above puts it back in the flow.
+- The three-column grid replaces the fixed `lg:grid-cols-[2fr_1fr]` in `DynamicInfo.vue:52` and unifies CMS pages with the home layout at `Welcome.vue:88-128`, which already uses `lg:col-span-1/2/3`.
+- Markdown is converted to HTML by the migration, not at render time. `markdown-it` is currently instantiated with defaults (`DynamicInfo.vue:5`), meaning raw HTML is escaped, so nothing in the existing content can be hostile. After conversion the sanitizer is the only thing standing between an admin and stored XSS.
+- Sanitizer allowlist matches what the pages already use: `strong`, `em`, `h1`-`h4`, `ul`, `ol`, `li`, `a`, `img`, `blockquote`, `hr`, `p`, `br`. No `table`, no `script`, no inline event attributes, no `style`.
+- The migration snapshots every page's pre-conversion state, including the full `images` array with artist name and link, to `database/data/cms-legacy-content-{Y_m_d_His}.json` before writing. `down()` restores from the most recent one. That archive is the structured attribution [039] re-imports, so it must not be pruned.
+- Attribution survives visually as caption text in the converted boxes and structurally in the archive. Between this item and [039] it is not queryable. Accepted deliberately.
+- `coming_soon` stays an independent flag driving its own banner (`DynamicInfo.vue:29`). A page can be live and flagged.
+- Home cannot be hidden or deleted. Guard it in the request classes, not only the UI. No `home` row exists in `cms_pages` yet ([038] converts it); the guard is keyed on the slug and is in place ahead of that.
+- Adding `SoftDeletes` to `CmsPage` broke `2026_07_23_174936_update_breeding_foaling_cms_copy`, which read the table through the model and so inherited a `deleted_at` scope for a column that migration runs before. It now uses `DB::table`, which is what a migration should have been doing.
+- Every test that replays the migration lives in `ContentMigrationTest`, which owns its own lifecycle (`migrate:fresh` per test, explicit restore after) and uses no `RefreshDatabase`. DDL implicitly commits in MySQL, so a migration replay silently ends the per-test transaction and leaves later, unrelated tests failing on a half-migrated schema. Pest's `uses()` is file-scoped, so the replay cases cannot share a file with transactional ones. That is why `it_grandfathers_existing_pages_to_live` sits in `ContentMigrationTest` rather than `CmsVisibilityTest`.
+- `MenuItem.path` is free text, so nothing links a menu row to a page. The delete confirm queries menu items whose `path` matches `/{slug}` and lists them; it does not cascade.
+
+**Diagrams:**
+
+```mermaid
+flowchart TD
+    A[Request /slug] --> B{Page exists?}
+    B -->|no| C[404]
+    B -->|soft deleted| C
+    B -->|yes| D{visibility}
+    D -->|live| E[Render]
+    D -->|hidden| F{Viewer holds admin.cms?}
+    F -->|no| C
+    F -->|yes| G[Render with not-public banner]
+```
+
+### Acceptance Criteria
+
+- [x] The migration converts every seeded page's markdown boxes to sanitized HTML boxes with a span and style, and `down()` restores the originals
+      `tests/Feature/Cms/ContentMigrationTest.php::it_converts_markdown_boxes_to_html_boxes`
+      `tests/Feature/Cms/ContentMigrationTest.php::it_restores_the_original_content_on_rollback`
+- [x] Every `images` entry becomes an image box whose caption carries the artist name and link, and the pre-conversion array is written to the fixture archive
+      `tests/Feature/Cms/ContentMigrationTest.php::it_converts_image_credits_into_captioned_image_boxes`
+      `tests/Feature/Cms/ContentMigrationTest.php::it_archives_the_original_images_array`
+- [x] Saving a page strips script tags, event handlers and any tag outside the allowlist
+      `tests/Feature/Cms/CmsSanitizerTest.php::it_strips_script_tags_and_event_handlers`
+      `tests/Feature/Cms/CmsSanitizerTest.php::it_keeps_allowlisted_formatting_tags`
+- [x] A hidden page 404s for guests and players, and renders with a banner for a holder of `admin.cms`
+      `tests/Feature/Cms/CmsVisibilityTest.php::it_returns_not_found_for_a_hidden_page`
+      `tests/Feature/Cms/CmsVisibilityTest.php::it_renders_a_hidden_page_for_a_cms_admin`
+- [x] Existing pages migrate to live and newly created pages default to hidden
+      `tests/Feature/Cms/ContentMigrationTest.php::it_grandfathers_existing_pages_to_live`
+      `tests/Feature/Cms/CmsVisibilityTest.php::it_defaults_new_pages_to_hidden`
+- [x] Deleting a page soft deletes it, 404s the slug, and the response names any menu items pointing at it
+      `tests/Feature/Cms/CmsPageDeletionTest.php::it_soft_deletes_a_page`
+      `tests/Feature/Cms/CmsPageDeletionTest.php::it_reports_menu_items_pointing_at_the_deleted_slug`
+- [x] Home cannot be hidden or deleted through any route
+      `tests/Feature/Cms/CmsPageDeletionTest.php::it_refuses_to_delete_the_home_page`
+      `tests/Feature/Cms/CmsVisibilityTest.php::it_refuses_to_hide_the_home_page`
+- [x] Span 1, 2 and 3 boxes lay out correctly on the three-column grid and stack full width on mobile, confirmed in a browser at desktop and phone widths
+- [x] All 16 migrated pages read the same as before the migration, confirmed in a browser
+      (15 are reachable as CMS pages; the `shop` row converted too but `/shop` is served by `ShopController`, so it never renders through `DynamicInfo`)
+
+---
+
 ## [035] Non-Destructive CMS Seeders and Snapshot Command
 
 **Status:** `done`

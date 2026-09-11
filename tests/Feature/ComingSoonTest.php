@@ -68,7 +68,6 @@ it('lets staff clear a coming soon banner once the feature ships', function () {
         'hero_description' => $page->hero_description,
         'coming_soon' => false,
         'content' => $page->content,
-        'images' => $page->images,
     ])->assertRedirect();
 
     expect($page->fresh()->coming_soon)->toBeFalse();
@@ -84,13 +83,14 @@ it('exposes no submit play cta on those routes', function () {
 
     foreach ($slugs as $slug) {
         $cmsPage = CmsPage::where('slug', $slug)->firstOrFail();
-        $body = collect($cmsPage->content ?? [])->flatten()->implode("\n");
+        $body = collect($cmsPage->content ?? [])->pluck('html')->implode("\n");
 
         // Every in-app link on a Coming Soon page must land on a real page. A
         // link to a submit flow that was never built renders the NotFound page.
-        preg_match_all('/\]\((\/[^)\s]*)\)/', $body, $matches);
+        preg_match_all('/href="(\/[^"]*)"/', $body, $matches);
 
-        // Markdown image embeds share this syntax; they are assets, not links.
+        // Art lives in `src`, not `href`, but keep the guard in case a box
+        // ever links straight at an asset.
         $paths = array_filter(
             array_unique($matches[1]),
             fn (string $path) => ! str_starts_with($path, '/images/')

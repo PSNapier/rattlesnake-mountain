@@ -275,30 +275,49 @@ Opt-in player-vs-player gameplay after core activity systems exist (ref doc: imp
 
 **Status:** `next`
 **Depends On:** [015]
+**Spec:** none
 
 ### Goal
 
-Freeze accounts after 4 months without art/lit submissions; frozen accounts skip aging/events/PvP until unfrozen.
+Freeze accounts after 4 months without art/lit submissions; frozen accounts skip aging/events/PvP until unfrozen. Every automatic freeze surfaces in the admin submission queue so staff see it happen and can set the account back to active in one click.
 
 ### Scope
 
 - Scheduler using submission activity (not login proxy)
 - Enforce frozen state in aging/events/PvP
 - Keep existing admin freeze + self-unfreeze
-- NOT in scope: inventing a login-based proxy; full activities system ([015])
+- Auto-frozen accounts surface as a notice in the admin Submissions tab, each with a "Set active" control that clears `frozen_at`
+- Distinguish automatic freezes from manual ones so the notice only lists the former
+- Dismissing or acting on the notice does not re-freeze the account on the next scheduler run until it is inactive again
+- NOT in scope: inventing a login-based proxy; full activities system ([015]); email or in-app notifications to the frozen user
 
 ### Technical Notes
 
-- Manual freeze already: `frozen_at`, Admin Users tab, profile self-unfreeze
+**User flows:**
+
+- **Scheduler:** nightly command freezes accounts with no art/lit submission in 4 months and records the freeze as automatic.
+- **Admin:** Submissions tab at `/admin` (submissions). A notice above the queue lists accounts auto-frozen since the last acknowledgement, showing the account name and the freeze date. Each row has a "Set active" button that unfreezes immediately and drops the row from the notice.
+- **User:** existing profile self-unfreeze is unchanged.
+
+**Details:**
+
+- Manual freeze already: `frozen_at`, Admin Users tab (`resources/js/pages/admin/UsersTab.vue:258-263`), profile self-unfreeze
+- `admin.users.unfreeze` (`routes/web.php:94`, `UserController::unfreezeUser`) already does the state change; the notice reuses that route rather than adding a second unfreeze path
+- Telling automatic from manual needs a column or flag beyond `frozen_at` alone (e.g. `frozen_reason` or `frozen_automatically_at`); pick one when the scheduler is written
+- Needs an acknowledgement marker so a set-active row stays gone and an ignored row persists across admin visits
+- Notice is gated on `can:admin.submissions`, the same gate as the tab (`routes/web.php:70`)
 - Unfrozen from post-MVP (2026-07-16); still gated on submission activity from [015]
-- Can ship freeze _enforcement_ + scheduler skeleton before [015] if activity source is stubbed — confirm trigger strategy before coding
+- Can ship freeze _enforcement_ + scheduler skeleton before [015] if activity source is stubbed - confirm trigger strategy before coding
 
 ### Acceptance Criteria
 
 - [ ] Accounts with no submissions for 4 months auto-freeze
 - [ ] Frozen users excluded from aging/events/PvP
 - [ ] Unfreeze restores eligibility
-- [ ] Pest tests for scheduler and enforcement
+- [ ] Admin Submissions tab shows a notice listing auto-frozen accounts
+- [ ] "Set active" from the notice unfreezes the account and removes it from the notice
+- [ ] Manually frozen accounts do not appear in the notice
+- [ ] Pest tests for scheduler, enforcement, and the admin notice
 
 ### Tests
 
@@ -306,38 +325,75 @@ Freeze accounts after 4 months without art/lit submissions; frozen accounts skip
 - [ ] `tests/Feature/InactivityFreezeTest.php::it_leaves_recently_active_accounts_unfrozen`
 - [ ] `tests/Feature/InactivityFreezeTest.php::it_excludes_frozen_users_from_aging_events_and_pvp`
 - [ ] `tests/Feature/InactivityFreezeTest.php::it_restores_eligibility_after_unfreeze`
+- [ ] `tests/Feature/InactivityFreezeTest.php::it_lists_auto_frozen_accounts_in_the_admin_submission_queue`
+- [ ] `tests/Feature/InactivityFreezeTest.php::it_omits_manually_frozen_accounts_from_the_notice`
+- [ ] `tests/Feature/InactivityFreezeTest.php::it_sets_an_auto_frozen_account_back_to_active_from_the_notice`
 
 ---
 
-## [020] Fix Local vs CI Test Discrepancies
+## [020] Re-enable CI Test Suite and Align Environments
 
-**Status:** `freezer`
+**Status:** `next`
 **Depends On:** none
+**Spec:** none
 
 ### Goal
 
-Tests behave the same locally and in CI so failures are trustworthy.
+GitHub Actions runs the Pest suite again, on the same PHP version and the same database engine used locally, so a green check means the suite actually passed. Style checks stop silently rewriting a throwaway checkout and start failing on violations instead. The one test that was commented out to make CI pass is restored.
 
 ### Scope
 
-- Identify environment-specific failures (filesystem, case sensitivity, mail, vite, DB)
-- Align phpunit/pest config, env, and path assumptions
-- NOT in scope: expanding coverage for unrelated features
+- Re-enable the commented `Tests` step in `.github/workflows/tests.yml`, and the commented `name:` key above it
+- MySQL 8.4 service container with the database named `rattlesnake_mountain_testing`, and the job-level `DB_CONNECTION` / `DB_DATABASE` env removed so `phpunit.xml` is the only declaration
+- Declare `gd`, `mbstring` and `pdo_mysql` on `setup-php`; drop `coverage: xdebug` to `none`
+- Raise `composer.json` to `"php": "^8.4"`; correct `CLAUDE.md` on the PHP version and on nothing running in CI
+- `.env.example` switches from sqlite to MySQL
+- Pin `DEV_PASSWORD` to empty in `phpunit.xml`
+- Restore `tests/Feature/DevPasswordTest.php` and fix every case
+- `lint.yml` switches to check mode: `pint --test`, `npm run format:check`, `eslint .` with no `--fix`
+- Triggers become pushes to `main` plus pull requests; the phantom `develop` entry goes
+- NOT in scope: branch protection or required status checks. CI reports, it does not block merges (decision of 2026-09-11)
+- NOT in scope: `vue-tsc` in CI. `npm run build` stays the frontend gate, and the two known `admin/Index.vue` type errors from [031] stay out of this item
+- NOT in scope: coverage thresholds, running the suite against sqlite, consolidating the two workflow files
 
 ### Technical Notes
 
-- Noted in [`.cursor/burndown.md`](.cursor/burndown.md)
-- Windows vs Linux path/case issues have bitten production before (Inertia path case)
+**User flows:**
+
+- **Developer:** pull request on GitHub. The `linter` and `tests` checks both report a real result, and a failure is visible without blocking the merge.
+- **Developer:** `php artisan test` locally. Same PHP 8.4, same MySQL engine, same `rattlesnake_mountain_testing` database name as CI.
+
+**Details:**
+
+- The suite has not run in CI since `a5566d5` ("temporarily disabling CI"). `tests.yml` comments out the `- name: Tests` step, so the job checks out, installs, builds assets and reports green without testing anything. Only the `name:` key at the top is commented, so the workflow still fires on every push. It is a check that proves nothing.
+- PHP is already aligned in practice: local is 8.4.7 and both workflows pin 8.4. Only `composer.json:12` (`^8.3`, a floor rather than a pin) and `CLAUDE.md:31` ("PHP 8.3") still say otherwise. Raising the floor to `^8.4` sits above Laravel 13's own `^8.3` minimum without contradicting it.
+- `CLAUDE.md` also states "Nothing here runs in CI", which `lint.yml` has contradicted all along.
+- PHPUnit does not overwrite an environment variable that already exists unless the `<env>` entry carries `force="true"`. `tests.yml` sets `DB_CONNECTION=sqlite` and `DB_DATABASE=':memory:'` as job env, so those beat the `phpunit.xml` values and CI would test an engine this project has never run on. Removing the job env is the fix rather than adding `force`: one declaration, in the file CLAUDE.md already warns never to weaken.
+- Naming the service database `rattlesnake_mountain_testing` means `phpunit.xml` needs no CI-specific branch. Host and credentials come from the copied `.env`, which is why `.env.example:24-29` moves to MySQL instead of staying on sqlite the project has never used.
+- `config/image.php:4` selects the `gd` driver and three tests upload images (`HorseImageUploadTest`, `Settings/AvatarUploadTest`, `UploadLimitTest`), so the extension list is declared explicitly rather than trusted to the runner's defaults.
+- `DevPasswordTest` is not purely an environment casualty. Its "bypasses protection when no dev password is set" case asserts `$page->component('static/Home')`, but `routes/web.php:221` renders `Welcome`, so that assertion is stale on any machine. Restoring the file means re-running all six cases and fixing each on its merits. Why CI rejected them in `82f8e1e` is still undiagnosed, and the diagnosis is part of this item.
+- `DEV_PASSWORD` is commented out at `.env:7` and unpinned in `phpunit.xml`, so uncommenting one line in an untracked file would redirect every feature test through `DevPasswordProtection`. Pinning it empty makes the suite independent of local `.env` state; the restored cases set it per-test with `Config::set` as they already do.
+- `lint.yml` runs `pint`, `npm run format` and `eslint --fix`, all of which rewrite files and exit 0, and the auto-commit step that would have pushed those rewrites is itself commented out. [031] already made all three pass and added a pre-commit hook, so check mode should be green on the first run.
+- If a test proves genuinely unportable to Linux, use `->skip('<reason>, see [NNN]')` and open the item it names. Commenting a test out is what produced this one.
+- The as-built note lists every test whose behaviour differed between the two environments. That list is criterion 7, and it lives here rather than in a separate document.
 
 ### Acceptance Criteria
 
-- [ ] Documented list of previously divergent tests now passing in both environments
-- [ ] CI green on main with same suite run locally
-- [ ] No skipped/commented tests left as silent CI workarounds without tickets
-
-### Tests
-
-- [ ] Full suite green locally and in CI on the same commit. No new test file. Verified by comparing both runs.
+- [ ] The Pest step is active in `tests.yml` and the full suite passes in CI against MySQL 8.4, on a push to `main` and on a pull request
+- [ ] The same commit passes locally with `php artisan test`, and the two runs report the same test count
+- [ ] `phpunit.xml` is the only place the test database is named, no workflow env overrides it, and the `DB_DATABASE` safety override is intact
+- [ ] `DevPasswordTest` is restored with all six cases active and passing in both environments
+      `tests/Feature/DevPasswordTest.php::it_shows_the_password_page_when_a_dev_password_is_set`
+      `tests/Feature/DevPasswordTest.php::it_allows_access_with_the_correct_password`
+      `tests/Feature/DevPasswordTest.php::it_denies_access_with_an_incorrect_password`
+      `tests/Feature/DevPasswordTest.php::it_allows_access_to_all_routes_after_authentication`
+      `tests/Feature/DevPasswordTest.php::it_bypasses_protection_when_no_dev_password_is_set`
+      `tests/Feature/DevPasswordTest.php::it_redirects_from_the_password_page_when_no_dev_password_is_set`
+- [ ] The suite passes with `DEV_PASSWORD` uncommented in a local `.env`, proving the pin works
+- [ ] No test file in `tests/` is commented out, and any `->skip()` names both a reason and a roadmap item
+- [ ] `lint.yml` fails on a deliberately misformatted file and passes on a clean tree
+- [ ] `composer.json`, both workflows and `CLAUDE.md` state PHP 8.4, and `CLAUDE.md` no longer claims nothing runs in CI
+- [ ] Every test that behaved differently between local and CI is listed in the as-built note with what was wrong
 
 ---
 
@@ -718,89 +774,6 @@ flowchart TD
       `tests/Feature/Admin/RoleCapabilityMatrixTest.php::it_seeds_horses_for_admin`
 - [ ] Transfer rows appear in the Submissions queue alongside designs and breeding requests and respond to the existing type and status filters, confirmed in a browser as an admin
 - [ ] The Horses tab warns before a Sanctuary transfer that the horse becomes an NPC and claimable, confirmed in a browser
-
----
-
-## [036] CMS Block Schema, Visibility and Page Deletion
-
-**Status:** `next`
-**Depends On:** [035]
-**Spec:** none
-
-### Goal
-
-CMS page content becomes an ordered list of boxes with a column span and a style, rendered from sanitized HTML on a three-column grid. Pages gain live/hidden visibility and recoverable deletion, managed from the admin page list.
-
-### Scope
-
-- Migrate `content` from `{box1: [markdown], ...}` to an ordered array of `{id, span, style, html}`
-- Convert the `images` array into image boxes with visible "Art by @name" captions, then drop the column
-- `symfony/html-sanitizer` allowlist applied on every write
-- `visibility` column, `live` / `hidden`, existing pages grandfathered to `live`
-- Soft delete on `cms_pages`, with a confirm modal listing menu items pointing at the slug
-- `DynamicInfo.vue` rewritten to render the new shape on a three-column grid
-- NOT in scope: the editor UI ([037]), media library and home conversion ([038])
-- NOT in scope: any change to the role capability matrix; `admin.cms` continues to gate everything
-
-### Technical Notes
-
-**User flows:**
-
-- **Admin:** page list in the admin CMS tab. Toggle a page between Live and Hidden, delete a page, reorder pages.
-- **Visitor:** `/{slug}`. A hidden page returns the 404 page.
-- **Admin:** `/{slug}` for a hidden page. Renders normally with a banner saying it is not public.
-
-**Details:**
-
-- Box shape is `{id, span, style, html}`. `span` is 1, 2 or 3 on a three-column grid at `lg` and above; below `lg` every box is full width in drag order, matching the current pages. `style` maps to the existing CSS classes at `resources/css/app.css:69-96` (`box`, `box-alt`, centered).
-- The three-column grid replaces the fixed `lg:grid-cols-[2fr_1fr]` in `DynamicInfo.vue:52` and unifies CMS pages with the home layout at `Welcome.vue:88-128`, which already uses `lg:col-span-1/2/3`.
-- Markdown is converted to HTML by the migration, not at render time. `markdown-it` is currently instantiated with defaults (`DynamicInfo.vue:5`), meaning raw HTML is escaped, so nothing in the existing content can be hostile. After conversion the sanitizer is the only thing standing between an admin and stored XSS.
-- Sanitizer allowlist matches what the pages already use: `strong`, `em`, `h1`-`h4`, `ul`, `ol`, `li`, `a`, `img`, `blockquote`, `hr`, `p`, `br`. No `table`, no `script`, no inline event attributes, no `style`.
-- The migration snapshots every page's pre-conversion state, including the full `images` array with artist name and link, to a timestamped file in `database/data/` before writing. `down()` restores from it. That archive is the structured attribution [039] re-imports, so it must not be pruned.
-- Attribution survives visually as caption text in the converted boxes and structurally in the archive. Between this item and [039] it is not queryable. Accepted deliberately.
-- `coming_soon` stays an independent flag driving its own banner (`DynamicInfo.vue:29`). A page can be live and flagged.
-- Home cannot be hidden or deleted. Guard it in the request classes, not only the UI.
-- `MenuItem.path` is free text, so nothing links a menu row to a page. The delete confirm queries menu items whose `path` matches `/{slug}` and lists them; it does not cascade.
-
-**Diagrams:**
-
-```mermaid
-flowchart TD
-    A[Request /slug] --> B{Page exists?}
-    B -->|no| C[404]
-    B -->|soft deleted| C
-    B -->|yes| D{visibility}
-    D -->|live| E[Render]
-    D -->|hidden| F{Viewer holds admin.cms?}
-    F -->|no| C
-    F -->|yes| G[Render with not-public banner]
-```
-
-### Acceptance Criteria
-
-- [ ] The migration converts every seeded page's markdown boxes to sanitized HTML boxes with a span and style, and `down()` restores the originals
-      `tests/Feature/Cms/ContentMigrationTest.php::it_converts_markdown_boxes_to_html_boxes`
-      `tests/Feature/Cms/ContentMigrationTest.php::it_restores_the_original_content_on_rollback`
-- [ ] Every `images` entry becomes an image box whose caption carries the artist name and link, and the pre-conversion array is written to the fixture archive
-      `tests/Feature/Cms/ContentMigrationTest.php::it_converts_image_credits_into_captioned_image_boxes`
-      `tests/Feature/Cms/ContentMigrationTest.php::it_archives_the_original_images_array`
-- [ ] Saving a page strips script tags, event handlers and any tag outside the allowlist
-      `tests/Feature/Cms/CmsSanitizerTest.php::it_strips_script_tags_and_event_handlers`
-      `tests/Feature/Cms/CmsSanitizerTest.php::it_keeps_allowlisted_formatting_tags`
-- [ ] A hidden page 404s for guests and players, and renders with a banner for a holder of `admin.cms`
-      `tests/Feature/Cms/CmsVisibilityTest.php::it_returns_not_found_for_a_hidden_page`
-      `tests/Feature/Cms/CmsVisibilityTest.php::it_renders_a_hidden_page_for_a_cms_admin`
-- [ ] Existing pages migrate to live and newly created pages default to hidden
-      `tests/Feature/Cms/CmsVisibilityTest.php::it_grandfathers_existing_pages_to_live`
-      `tests/Feature/Cms/CmsVisibilityTest.php::it_defaults_new_pages_to_hidden`
-- [ ] Deleting a page soft deletes it, 404s the slug, and the response names any menu items pointing at it
-      `tests/Feature/Cms/CmsPageDeletionTest.php::it_soft_deletes_a_page`
-      `tests/Feature/Cms/CmsPageDeletionTest.php::it_reports_menu_items_pointing_at_the_deleted_slug`
-- [ ] Home cannot be hidden or deleted through any route
-      `tests/Feature/Cms/CmsPageDeletionTest.php::it_refuses_to_delete_the_home_page`
-      `tests/Feature/Cms/CmsVisibilityTest.php::it_refuses_to_hide_the_home_page`
-- [ ] Span 1, 2 and 3 boxes lay out correctly on the three-column grid and stack full width on mobile, confirmed in a browser at desktop and phone widths
-- [ ] All 17 migrated pages read the same as before the migration, confirmed in a browser
 
 ---
 

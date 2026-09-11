@@ -17,8 +17,9 @@ it('creates a new CMS page', function () {
         'hero_title' => 'Black Market',
         'description' => null,
         'hero_description' => 'Trading hub.',
-        'content' => ['intro' => ['Welcome to the black market.']],
-        'images' => [],
+        'content' => [
+            ['id' => 'b1', 'span' => 3, 'style' => 'box', 'html' => '<p>Welcome to the black market.</p>'],
+        ],
     ])
         ->assertRedirect()
         ->assertSessionHas('success');
@@ -26,5 +27,10 @@ it('creates a new CMS page', function () {
     expect(CmsPage::where('slug', 'black-market')->exists())->toBeTrue();
     $page = CmsPage::where('slug', 'black-market')->first();
     expect($page->title)->toBe('Black Market');
-    expect($page->content)->toBe(['intro' => ['Welcome to the black market.']]);
+    // toEqual, not toBe: MySQL's JSON column type does not preserve object
+    // key insertion order on round trip.
+    expect($page->content)->toEqual([
+        ['id' => 'b1', 'span' => 3, 'style' => 'box', 'html' => '<p>Welcome to the black market.</p>'],
+    ]);
+    expect($page->visibility)->toBe(CmsPage::VISIBILITY_HIDDEN);
 });

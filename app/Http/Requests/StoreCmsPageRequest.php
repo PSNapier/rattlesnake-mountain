@@ -25,12 +25,11 @@ class StoreCmsPageRequest extends FormRequest
             'hero_description' => ['nullable', 'string'],
             'content' => ['required', 'array'],
             'content.*' => ['array'],
-            'content.*.*' => ['string'],
+            'content.*.id' => ['nullable', 'string', 'max:64'],
+            'content.*.span' => ['required', 'integer', 'in:1,2,3'],
+            'content.*.style' => ['required', 'string', 'in:box,box-alt,box-centered'],
+            'content.*.html' => ['present', 'string'],
             'coming_soon' => ['nullable', 'boolean'],
-            'images' => ['nullable', 'array'],
-            'images.*.name' => ['required_with:images', 'string', 'max:255'],
-            'images.*.link' => ['nullable', 'string', 'max:2048'],
-            'images.*.path' => ['required_with:images', 'string', 'max:2048'],
         ];
     }
 }

@@ -19,8 +19,10 @@ it('renders static page for getting-started when seeded', function () {
         'description' => null,
         'hero_title' => 'Getting Started',
         'hero_description' => 'A quick guide.',
-        'content' => ['box1' => ['Content here.']],
-        'images' => [],
+        'content' => [
+            ['id' => 'b1', 'span' => 3, 'style' => 'box', 'html' => '<p>Content here.</p>'],
+        ],
+        'visibility' => CmsPage::VISIBILITY_LIVE,
         'sort_order' => 2,
     ]);
 

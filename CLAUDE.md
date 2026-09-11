@@ -28,7 +28,7 @@ Nothing here runs in CI.
 <!-- laravel-boost:start -->
 ## Stack
 
-- Laravel 13.30 on PHP 8.3
+- Laravel 13.30 on PHP 8.4
 - Vue 3.5, Inertia 3.7, Vite 6.4, TypeScript 5.7
 - Pest 5, Tailwind 4.1
 

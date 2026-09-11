@@ -73,7 +73,22 @@ class DashboardController extends Controller
         }
 
         if ($user->can('admin.cms')) {
-            $props['cmsPages'] = CmsPage::orderBy('sort_order')->get(['id', 'slug', 'title', 'description', 'hero_title', 'hero_description', 'content', 'images', 'coming_soon', 'sort_order']);
+            $menuPaths = MenuItem::query()->get(['id', 'label', 'path'])->groupBy('path');
+
+            $props['cmsPages'] = CmsPage::orderBy('sort_order')
+                ->get(['id', 'slug', 'title', 'description', 'hero_title', 'hero_description', 'content', 'coming_soon', 'visibility', 'sort_order'])
+                ->map(fn (CmsPage $page) => array_merge($page->toArray(), [
+                    // `MenuItem.path` is free text, so this is the only link
+                    // between a menu row and a page: the delete confirm lists
+                    // what would be left pointing at a dead slug.
+                    'menu_links' => $menuPaths->get('/'.$page->slug, collect())
+                        ->map(fn (MenuItem $item) => [
+                            'id' => $item->id,
+                            'label' => $item->label,
+                            'path' => $item->path,
+                        ])->values()->all(),
+                ]))
+                ->values();
             $props['menuItems'] = MenuItem::with('children')->whereNull('parent_id')->orderBy('sort_order')->get()
                 ->map(fn (MenuItem $item) => [
                     'id' => $item->id,

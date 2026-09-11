@@ -18,6 +18,14 @@ class StaticPageController extends Controller
             return Inertia::render('NotFound');
         }
 
+        // A hidden page is invisible to everyone but the people who can edit
+        // it, and they get a banner saying so.
+        $mayPreview = $request->user()?->can('admin.cms') ?? false;
+
+        if (! $page->isLive() && ! $mayPreview) {
+            return Inertia::render('NotFound');
+        }
+
         return Inertia::render('cms/Show', [
             'page' => [
                 'id' => $page->id,
@@ -28,8 +36,9 @@ class StaticPageController extends Controller
                     'title' => $page->hero_title,
                     'description' => $page->hero_description,
                 ],
-                'images' => $page->images ?? [],
                 'coming_soon' => (bool) $page->coming_soon,
+                'visibility' => $page->visibility,
+                'not_public' => ! $page->isLive(),
                 'content' => $page->content ?? [],
             ],
         ]);

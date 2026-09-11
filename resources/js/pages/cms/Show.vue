@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import DynamicInfo from '@/components/custom/DynamicInfo.vue';
 
-interface CmsImage {
-	name: string;
-	link: string | null;
-	path: string;
+interface CmsBox {
+	id: string;
+	span: 1 | 2 | 3;
+	style: 'box' | 'box-alt' | 'box-centered';
+	html: string;
 }
 
 interface CmsPage {
@@ -16,9 +17,10 @@ interface CmsPage {
 		title: string;
 		description: string | null;
 	};
-	images: CmsImage[];
 	coming_soon: boolean;
-	content: Record<string, string[]>;
+	visibility: 'live' | 'hidden';
+	not_public: boolean;
+	content: CmsBox[];
 }
 
 defineProps<{
@@ -29,7 +31,7 @@ defineProps<{
 <template>
 	<DynamicInfo
 		:hero="page.hero"
-		:images="page.images"
 		:coming-soon="page.coming_soon"
+		:not-public="page.not_public"
 		:content="page.content" />
 </template>
