@@ -30,6 +30,8 @@ class StoreHorseRequest extends FormRequest
             'stats' => 'nullable|array',
             'inventory' => 'nullable|array',
             'equipment' => 'nullable|array',
+            'is_high_priority' => 'nullable|boolean',
+            'intended_as_npc' => 'nullable|boolean',
         ];
     }
 

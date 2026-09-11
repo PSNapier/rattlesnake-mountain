@@ -37,6 +37,6 @@ it('allows designers', function () {
         ->assertSuccessful()
         ->assertInertia(fn ($page) => $page
             ->component('admin/Index')
-            ->where('adminCapabilities', ['submissions'])
+            ->where('adminCapabilities', ['design_npc', 'design_priority', 'submissions'])
         );
 });

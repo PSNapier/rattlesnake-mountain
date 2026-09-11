@@ -23,6 +23,7 @@ import { computed, ref } from 'vue';
 type Status = 'pending' | 'contacted' | 'approved' | 'archived';
 type SubmissionKind = 'horse' | 'breeding';
 type TypeFilter = 'all' | SubmissionKind;
+type PriorityFilter = 'all' | 'high' | 'normal';
 type SortField =
 	| 'user_name'
 	| 'name'
@@ -66,6 +67,8 @@ interface Submission {
 	last_admin_name?: string | null;
 	public_horse_id?: number | null;
 	is_edit?: boolean;
+	is_high_priority?: boolean;
+	intended_as_npc?: boolean;
 	design_link?: string | null;
 	age_years?: number;
 	age_months?: number;
@@ -126,6 +129,7 @@ const props = withDefaults(defineProps<Props>(), {
 const searchQuery = ref('');
 const statusFilter = ref<Status | 'all'>('all');
 const typeFilter = ref<TypeFilter>('all');
+const priorityFilter = ref<PriorityFilter>('all');
 const sortField = ref<SortField>('date_submitted');
 const sortDirection = ref<SortDirection>('desc');
 
@@ -248,6 +252,15 @@ const filteredAndSorted = computed(() => {
 		result = result.filter((item) => item.status === statusFilter.value);
 	}
 
+	if (priorityFilter.value !== 'all') {
+		const wantHigh = priorityFilter.value === 'high';
+		result = result.filter(
+			(item) =>
+				item.kind === 'horse' &&
+				(item.submission?.is_high_priority === true) === wantHigh,
+		);
+	}
+
 	if (sortField.value && sortDirection.value) {
 		result.sort((a, b) => {
 			let aValue: string | Date;
@@ -348,6 +361,17 @@ const closeReviewModal = (): void => {
 	showReviewModal.value = false;
 	selectedSubmission.value = null;
 	reviewNotes.value = '';
+};
+
+const handleTogglePriority = (submission: Submission): void => {
+	router.post(
+		route('admin.horses.priority', submission.id),
+		{ is_high_priority: !submission.is_high_priority },
+		{
+			preserveScroll: true,
+			onSuccess: () => router.reload(),
+		},
+	);
 };
 
 const handleUnarchive = (submission: Submission): void => {
@@ -525,6 +549,25 @@ const rejectBreeding = (id: number): void => {
 							},
 						]"
 						placeholder="Filter by status" />
+				</div>
+				<div class="w-full sm:w-48">
+					<Select
+						v-model="priorityFilter"
+						:options="[
+							{
+								value: 'all',
+								label: 'All Priorities',
+							},
+							{
+								value: 'high',
+								label: 'High priority',
+							},
+							{
+								value: 'normal',
+								label: 'Normal priority',
+							},
+						]"
+						placeholder="Filter by priority" />
 				</div>
 			</div>
 
@@ -704,6 +747,22 @@ const rejectBreeding = (id: number): void => {
 												(Edit)
 											</span>
 										</Link>
+										<span
+											v-if="
+												row.submission
+													.is_high_priority
+											"
+											class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
+											High priority
+										</span>
+										<span
+											v-if="
+												row.submission
+													.intended_as_npc
+											"
+											class="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-800">
+											Intended as NPC
+										</span>
 									</div>
 								</td>
 								<td
@@ -758,6 +817,27 @@ const rejectBreeding = (id: number): void => {
 								</td>
 								<td
 									class="flex gap-2 px-4 py-3 text-sm">
+									<Button
+										v-if="
+											row.submission.status !==
+												'approved' &&
+											row.submission.status !==
+												'archived'
+										"
+										variant="outline"
+										size="sm"
+										@click="
+											handleTogglePriority(
+												row.submission,
+											)
+										">
+										{{
+											row.submission
+												.is_high_priority
+												? 'Clear priority'
+												: 'Raise priority'
+										}}
+									</Button>
 									<Button
 										v-if="
 											row.submission.status !==

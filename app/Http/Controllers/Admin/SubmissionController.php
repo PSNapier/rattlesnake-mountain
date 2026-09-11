@@ -76,6 +76,29 @@ class SubmissionController extends Controller
             ->with('success', 'Submission unarchived and restored to pending.');
     }
 
+    public function priority(Horse $horse, Request $request): RedirectResponse
+    {
+        if (! Auth::user()->can('admin.submissions')) {
+            abort(403);
+        }
+
+        $raised = $request->boolean('is_high_priority');
+
+        $horse->update([
+            'is_high_priority' => $raised,
+        ]);
+
+        AdminSubmissionLog::create([
+            'horse_id' => $horse->id,
+            'admin_id' => Auth::id(),
+            'action' => $raised ? AdminAction::PriorityRaised : AdminAction::PriorityCleared,
+            'notes' => $request->input('notes'),
+        ]);
+
+        return redirect()->route('admin.index')
+            ->with('success', $raised ? 'Submission flagged as high priority.' : 'High priority flag cleared.');
+    }
+
     public function contact(Horse $horse, Request $request): RedirectResponse
     {
         if (! Auth::user()->can('admin.submissions')) {

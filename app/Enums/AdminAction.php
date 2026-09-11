@@ -8,4 +8,6 @@ enum AdminAction: string
     case Approved = 'approved';
     case Archived = 'archived';
     case Unarchived = 'unarchived';
+    case PriorityRaised = 'priority_raised';
+    case PriorityCleared = 'priority_cleared';
 }

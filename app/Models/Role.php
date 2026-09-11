@@ -25,6 +25,8 @@ enum Role: string
             'items',
             'shop',
             'cms',
+            'design_priority',
+            'design_npc',
         ];
     }
 
@@ -44,9 +46,13 @@ enum Role: string
                 'items',
                 'shop',
                 'cms',
+                'design_priority',
+                'design_npc',
             ],
             self::Designer => [
                 'submissions',
+                'design_priority',
+                'design_npc',
             ],
             self::StoryAdmin, self::GameMaster => [
                 'rollers',

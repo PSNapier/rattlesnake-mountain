@@ -28,6 +28,8 @@ const areaLabels: Record<string, string> = {
 	items: 'Items',
 	shop: 'Shop',
 	cms: 'CMS',
+	design_priority: 'Design Priority',
+	design_npc: 'Design NPC',
 };
 
 const DEFAULT_CAPABILITY_AREAS = [
@@ -38,6 +40,8 @@ const DEFAULT_CAPABILITY_AREAS = [
 	'items',
 	'shop',
 	'cms',
+	'design_priority',
+	'design_npc',
 ] as const;
 
 const page = usePage<{

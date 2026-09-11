@@ -129,3 +129,23 @@ it('passes role matrix props only to admins on the dashboard', function () {
             ->where('capabilityAreas', [])
         );
 });
+
+it('seeds design priority for designer and admin', function () {
+    $matrix = app(RoleCapabilityService::class)->matrix();
+
+    expect($matrix[Role::Admin->value])->toContain('design_priority')
+        ->and($matrix[Role::Designer->value])->toContain('design_priority')
+        ->and($matrix[Role::StoryAdmin->value])->not->toContain('design_priority')
+        ->and($matrix[Role::GameMaster->value])->not->toContain('design_priority')
+        ->and($matrix[Role::User->value])->not->toContain('design_priority');
+});
+
+it('seeds design npc for designer and admin', function () {
+    $matrix = app(RoleCapabilityService::class)->matrix();
+
+    expect($matrix[Role::Admin->value])->toContain('design_npc')
+        ->and($matrix[Role::Designer->value])->toContain('design_npc')
+        ->and($matrix[Role::StoryAdmin->value])->not->toContain('design_npc')
+        ->and($matrix[Role::GameMaster->value])->not->toContain('design_npc')
+        ->and($matrix[Role::User->value])->not->toContain('design_npc');
+});

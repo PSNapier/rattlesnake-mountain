@@ -1,5 +1,136 @@
 # Roadmap Done
 
+## [030] Designer NPC Design Flag
+
+**Status:** `done`
+**Depends On:** [029]
+**Spec:** none
+
+### Goal
+
+A designer uploading a design meant to become an NPC, rather than one of their own characters, can say so at upload, so the reviewer sees the intent in the queue instead of having to ask. The flag is advisory only: approval changes nothing about ownership.
+
+### Scope
+
+- `design_npc` capability area, seeded on for Designer and Admin, editable from the role matrix
+- "Intended as an NPC" checkbox on `/horses/create` and `/horses/{horse}/edit`, default unchecked, visible only to roles holding the capability
+- A dedicated advisory column on `horses`, separate from the derived `is_npc`
+- The stored intent shown to the reviewer in the Submissions tab
+- NOT in scope: any ownership change on approval. Approval behaves exactly as it does today, and an admin hands the horse to the Sanctuary by hand afterwards (decision of 2026-09-10)
+- NOT in scope: an admin per-horse ownership transfer UI. None exists today, so the manual step is a database or Tinker edit. Worth its own item
+- NOT in scope: the priority flag ([029]); re-deriving `is_npc` for horses already in the database; the claimable roller ([010])
+
+### Technical Notes
+
+**User flows:**
+
+**Flows:** `verified`
+
+- **Designer:** "Intended as an NPC" checkbox on the horse form at `/horses/create` and `/horses/{horse}/edit`.
+- **Staff (review):** Submissions tab at `/admin`. Flagged rows carry an "Intended as NPC" badge beside the submission name, visible before the reviewer approves.
+- **Admin:** role matrix at `/admin`. A `design_npc` column, togglable per staff role.
+
+**Details:**
+
+- Client decision, 2026-09-10: store the intent and leave ownership alone. Of the three behaviours put to them, this is the advisory-label option. `syncNpcFlagsFromOwner` keeps its invariant untouched and no code path gives a designer's work away automatically.
+- The column must not be `is_npc`. `Horse::syncNpcFlagsFromOwner` (`app/Models/Horse.php:167`) derives `is_npc` and `is_claimable` from Sanctuary ownership on every save where `owner_id` is dirty (`:71`), so a checkbox writing `is_npc` would be overwritten by the next ownership change. Use a separate boolean, `intended_as_npc`, that nothing derives and nothing else reads.
+- Because the flag is inert, the capability gate is a review-noise control rather than a permission over someone's property. It still defaults off and still lives in the matrix.
+- The manual handover an admin performs afterwards is the existing ownership change: setting `owner_id` to the Sanctuary user makes `syncNpcFlagsFromOwner` set both `is_npc` and `is_claimable`. Nothing new is needed for that to work, only a way to do it from the UI, which this item does not build.
+- Capability plumbing mirrors [029]: `Role::areas()`, `defaultCapabilities()`, a `role_capabilities` seed migration, and an `areaLabels` plus `DEFAULT_CAPABILITY_AREAS` entry in `RoleCapabilityMatrix.vue`. Two separate areas by decision of 2026-09-07, so priority-flagging can be granted without NPC-intent rights.
+
+**As built:**
+
+- Column is `horses.intended_as_npc`, boolean, default false. Nothing derives it and nothing else reads it.
+- Surfaced to the reviewer as a badge on the queue row. There is no separate reviewer control: the flag is the submitter's statement of intent, so staff have nothing to set.
+- Each seed lives in the same migration as its column rather than in a separate one, so a rollback takes the area and the column together.
+
+### Acceptance Criteria
+
+- [x] Roles holding `design_npc` see the checkbox on create and edit; players never do
+      `tests/Feature/DesignNpcFlagTest.php::it_shows_the_npc_checkbox_to_capable_roles`
+      `tests/Feature/DesignNpcFlagTest.php::it_hides_the_npc_checkbox_from_players`
+- [x] Submitting with the box ticked stores the intent and surfaces it to the reviewer, and a player posting the field cannot set it
+      `tests/Feature/DesignNpcFlagTest.php::it_stores_and_surfaces_the_npc_intent`
+      `tests/Feature/DesignNpcFlagTest.php::it_ignores_the_field_from_an_uncapable_submitter`
+- [x] Approving a flagged design leaves `owner_id`, `is_npc`, and `is_claimable` exactly as they were, and an unflagged approval is unchanged too
+      `tests/Feature/DesignNpcFlagTest.php::it_leaves_ownership_untouched_when_approving_a_flagged_design`
+      `tests/Feature/DesignNpcFlagTest.php::it_leaves_unflagged_approvals_unchanged`
+- [x] A later hand transfer to the Sanctuary still derives `is_npc` and `is_claimable` from ownership, with the intent flag untouched
+      `tests/Feature/DesignNpcFlagTest.php::it_derives_npc_flags_when_ownership_moves_to_the_sanctuary`
+- [x] `design_npc` is seeded on for Designer and Admin
+      `tests/Feature/Admin/RoleCapabilityMatrixTest.php::it_seeds_design_npc_for_designer_and_admin`
+
+---
+
+## [029] Designer High-Priority Submission Flag
+
+**Status:** `done`
+**Depends On:** none
+**Spec:** none
+
+### Goal
+
+Designers can mark a design submission as high priority when they upload it, and submissions-capable staff can raise or clear that flag in the review queue, so urgent designs are visible at a glance instead of found by scrolling.
+
+### Scope
+
+- `design_priority` capability area added to the role matrix, seeded on for Designer and Admin
+- "High priority" checkbox on `/horses/create` and `/horses/{horse}/edit`, rendered only for roles holding the capability, default unchecked
+- Boolean on `horses`, persisted through approval
+- Badge on flagged rows in the admin Submissions tab, plus a priority dropdown beside the existing status filter
+- Staff route to raise or clear the flag on a queued submission, gated on `admin.submissions`
+- NOT in scope: the designer NPC flag ([030]); auto-flagging derived from submitter role; changing the queue default sort; notifications
+
+### Technical Notes
+
+**User flows:**
+
+**Flows:** `verified`
+
+- **Designer:** "High priority" checkbox on the horse form at `/horses/create` and `/horses/{horse}/edit`. Ticking it marks the submission for fast review.
+- **Player:** the same two forms, with no checkbox. Nothing changes.
+- **Staff (review):** Submissions tab at `/admin`. Flagged rows carry a "High priority" badge, an "All Priorities / High priority / Normal priority" dropdown sits beside the status filter, and each queued row carries a "Raise priority" / "Clear priority" button beside Review.
+- **Admin:** role matrix at `/admin`. A `design_priority` column, togglable per staff role.
+
+**Details:**
+
+- `Role::areas()` (`app/Models/Role.php:18`) is a hardcoded seven-entry list, and `RoleCapabilityService::sync` intersects any submitted matrix against it (`app/Services/RoleCapabilityService.php:61`), so an area missing from that list is silently dropped on save. The new area goes there and into `Role::defaultCapabilities()` for Admin and Designer.
+- `app/Providers/AppServiceProvider.php:46` mints an `admin.{area}` gate for every area, so `admin.design_priority` will exist. Nothing routes on it. The form uses the capability as a field-visibility check, not a route gate. Accepted.
+- A new area does not produce a phantom admin tab: `resources/js/pages/admin/Index.vue:225` gates tab rendering on a fixed `ALL_TABS` list. It does need an `areaLabels` entry and a `DEFAULT_CAPABILITY_AREAS` entry in `resources/js/pages/admin/RoleCapabilityMatrix.vue` (`:27`, `:142`), or the matrix renders the raw slug.
+- Existing `role_capabilities` rows need a seed migration for the new area. The [021] migration is the pattern.
+- `statusFilter` is a single-select `Status | 'all'` ref (`resources/js/pages/admin/SubmissionsTab.vue:122`). Priority is a second independent ref, not another option in that dropdown, so "pending AND high priority" stays expressible. The filter chain at `:240` gains one clause.
+- The flag persists through approval, so the approved filter still shows what was fast-tracked. No write on approve.
+- Staff writes go through a new route beside `archive` / `unarchive` in `SubmissionController` and log to `AdminSubmissionLog` the way archive does (`:33`), which needs a new `AdminAction` case.
+
+**As built:**
+
+- Column is `horses.is_high_priority`, boolean, default false.
+- `POST /admin/horses/{horse}/priority` (`admin.horses.priority`) takes `is_high_priority` and logs `AdminAction::PriorityRaised` or `AdminAction::PriorityCleared`. Two cases rather than one, so the log reads as an action rather than a state.
+- The row control is a toggle button, not a per-row dropdown: with one boolean there is nothing to pick from.
+- `HorseController::designFlagInput()` drops any flag field the submitter lacks the capability for, so a player posting `is_high_priority` is ignored rather than rejected. Same helper serves [030].
+- `tests/Feature/AdminAccessTest.php` asserted the designer's exact capability list, so it was updated for the two new areas.
+
+### Acceptance Criteria
+
+- [x] Roles holding `design_priority` see the checkbox on create and edit; players do not
+      `tests/Feature/DesignPriorityFlagTest.php::it_shows_the_priority_checkbox_to_capable_roles`
+      `tests/Feature/DesignPriorityFlagTest.php::it_hides_the_priority_checkbox_from_players`
+- [x] Submitting with the box ticked stores the flag, and a player posting the field cannot set it
+      `tests/Feature/DesignPriorityFlagTest.php::it_stores_the_flag_from_a_capable_submitter`
+      `tests/Feature/DesignPriorityFlagTest.php::it_ignores_the_field_from_an_uncapable_submitter`
+- [x] Submissions-capable staff can raise and clear the flag on a queued submission; others cannot
+      `tests/Feature/DesignPriorityFlagTest.php::it_lets_staff_raise_and_clear_the_flag`
+      `tests/Feature/DesignPriorityFlagTest.php::it_forbids_non_staff_from_changing_the_flag`
+- [x] The flag survives approval and is still visible under the approved filter
+      `tests/Feature/DesignPriorityFlagTest.php::it_keeps_the_flag_after_approval`
+- [x] `design_priority` is seeded on for Designer and Admin, and toggling it in the matrix changes who sees the checkbox
+      `tests/Feature/Admin/RoleCapabilityMatrixTest.php::it_seeds_design_priority_for_designer_and_admin`
+      `tests/Feature/DesignPriorityFlagTest.php::it_respects_a_matrix_toggle_of_design_priority`
+- [x] Priority dropdown combines with the status filter rather than replacing it, confirmed in a browser as staff
+- [x] Flagged rows read "High priority" in the Submissions tab, confirmed in a browser
+
+---
+
 ## [031] Repo-Wide Lint and Format Compliance
 
 **Status:** `done`

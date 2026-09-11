@@ -328,6 +328,8 @@ class DashboardController extends Controller
                 'last_admin_name' => $latestLog?->admin?->name,
                 'public_horse_id' => $horse->public_horse_id,
                 'is_edit' => $horse->public_horse_id !== null,
+                'is_high_priority' => (bool) $horse->is_high_priority,
+                'intended_as_npc' => (bool) $horse->intended_as_npc,
                 'design_link' => $horse->design_link,
                 'age_years' => $horse->age_years,
                 'age_months' => $horse->age_months_part,

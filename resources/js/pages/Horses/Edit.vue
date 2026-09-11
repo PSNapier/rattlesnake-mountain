@@ -2,6 +2,7 @@
 import ImageUpload from '@/components/ImageUpload.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
@@ -31,6 +32,8 @@ interface Horse {
 	stats: any[];
 	inventory: any[];
 	equipment: any[];
+	is_high_priority?: boolean;
+	intended_as_npc?: boolean;
 }
 
 interface AdminLog {
@@ -46,9 +49,19 @@ interface Props {
 	isPendingEdit?: boolean;
 	publicHorse?: Horse | null;
 	adminLogs?: AdminLog[];
+	can?: {
+		update?: boolean;
+		design_priority?: boolean;
+		design_npc?: boolean;
+	};
 }
 
 const props = defineProps<Props>();
+
+const can = computed(() => ({
+	design_priority: props.can?.design_priority === true,
+	design_npc: props.can?.design_npc === true,
+}));
 
 const page = usePage<SharedData>();
 const isStaff = computed(() => {
@@ -86,6 +99,8 @@ const form = useForm({
 	stats: props.horse.stats,
 	inventory: props.horse.inventory,
 	equipment: props.horse.equipment,
+	is_high_priority: props.horse.is_high_priority ?? false,
+	intended_as_npc: props.horse.intended_as_npc ?? false,
 });
 
 const canEditSex = computed(() => !props.horse.sex || isStaff.value);
@@ -389,6 +404,36 @@ const handleImageUploadSuccess = (data: { url: string }) => {
 									class="mt-1 text-sm text-red-500">
 									{{ form.errors.herd_id }}
 								</p>
+							</div>
+
+							<div
+								v-if="
+									can.design_priority ||
+									can.design_npc
+								"
+								class="space-y-3 rounded border border-gray-200 p-4">
+								<Label
+									v-if="can.design_priority"
+									for="is_high_priority"
+									class="flex items-center space-x-3">
+									<Checkbox
+										id="is_high_priority"
+										v-model="
+											form.is_high_priority
+										" />
+									<span>High priority</span>
+								</Label>
+								<Label
+									v-if="can.design_npc"
+									for="intended_as_npc"
+									class="flex items-center space-x-3">
+									<Checkbox
+										id="intended_as_npc"
+										v-model="
+											form.intended_as_npc
+										" />
+									<span>Intended as an NPC</span>
+								</Label>
 							</div>
 
 							<div class="flex gap-4 pt-4">

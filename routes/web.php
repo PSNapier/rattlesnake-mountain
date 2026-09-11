@@ -71,6 +71,7 @@ Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
         Route::post('/admin/horses/{horse}/archive', [SubmissionController::class, 'archive'])->name('admin.horses.archive');
         Route::post('/admin/horses/{horse}/unarchive', [SubmissionController::class, 'unarchive'])->name('admin.horses.unarchive');
         Route::post('/admin/horses/{horse}/contact', [SubmissionController::class, 'contact'])->name('admin.horses.contact');
+        Route::post('/admin/horses/{horse}/priority', [SubmissionController::class, 'priority'])->name('admin.horses.priority');
     });
 
     // Item Management

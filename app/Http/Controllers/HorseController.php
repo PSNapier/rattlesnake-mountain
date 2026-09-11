@@ -81,6 +81,7 @@ class HorseController extends Controller
 
         return Inertia::render('Horses/Create', [
             'herds' => $herds,
+            'can' => $this->designFlagCapabilities(),
         ]);
     }
 
@@ -106,6 +107,7 @@ class HorseController extends Controller
             'inventory' => $request->inventory ?? [],
             'equipment' => $request->equipment ?? [],
             'state' => HorseState::Pending,
+            ...$this->designFlagInput($request),
         ]);
 
         return redirect()->route('horses.show', $horse)
@@ -261,6 +263,7 @@ class HorseController extends Controller
             'adminLogs' => $adminLogs,
             'can' => [
                 'update' => Auth::user()->can('update', $horse),
+                ...$this->designFlagCapabilities(),
             ],
         ]);
     }
@@ -302,7 +305,7 @@ class HorseController extends Controller
                 if (Auth::user()->can('admin.submissions') && $request->filled('sex')) {
                     $pendingData['sex'] = $request->validated('sex');
                 }
-                $pendingVersion->update($pendingData);
+                $pendingVersion->update([...$pendingData, ...$this->designFlagInput($request)]);
 
                 return redirect()->route('horses.show', $pendingVersion)
                     ->with('success', 'Pending changes updated. Waiting for approval.');
@@ -325,6 +328,7 @@ class HorseController extends Controller
                 'equipment' => $request->equipment ?? [],
                 'state' => HorseState::Pending,
                 'public_horse_id' => $horse->id,
+                ...$this->designFlagInput($request),
             ]);
 
             return redirect()->route('horses.show', $pendingVersion)
@@ -349,10 +353,43 @@ class HorseController extends Controller
             $pendingUpdate['sex'] = $request->validated('sex');
         }
 
-        $horse->update($pendingUpdate);
+        $horse->update([...$pendingUpdate, ...$this->designFlagInput($request)]);
 
         return redirect()->route('horses.show', $horse)
             ->with('success', 'Horse updated successfully!');
+    }
+
+    /**
+     * Whether the current user may set the designer-only submission flags.
+     *
+     * @return array{design_priority: bool, design_npc: bool}
+     */
+    private function designFlagCapabilities(): array
+    {
+        return [
+            'design_priority' => Auth::user()->can('admin.design_priority'),
+            'design_npc' => Auth::user()->can('admin.design_npc'),
+        ];
+    }
+
+    /**
+     * Flag values to persist, dropping any field the submitter lacks the capability for.
+     *
+     * @return array<string, bool>
+     */
+    private function designFlagInput(Request $request): array
+    {
+        $values = [];
+
+        if (Auth::user()->can('admin.design_priority')) {
+            $values['is_high_priority'] = $request->boolean('is_high_priority');
+        }
+
+        if (Auth::user()->can('admin.design_npc')) {
+            $values['intended_as_npc'] = $request->boolean('intended_as_npc');
+        }
+
+        return $values;
     }
 
     /**
