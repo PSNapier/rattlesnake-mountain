@@ -13,6 +13,7 @@ use App\Models\BreedingSlot;
 use App\Models\CmsPage;
 use App\Models\Herd;
 use App\Models\Horse;
+use App\Models\HorseTransfer;
 use App\Models\Item;
 use App\Models\LifecycleSetting;
 use App\Models\MenuItem;
@@ -46,6 +47,25 @@ class DashboardController extends Controller
             $props['herds'] = Herd::select('id', 'name')
                 ->orderBy('name')
                 ->get();
+            $props['horseTransfers'] = $this->horseTransfers();
+        }
+
+        if ($user->can('admin.horses')) {
+            // The Sanctuary is in this list and nowhere else: handing a horse over to
+            // it is how an admin publishes the horse to the claimable pool.
+            $props['transferableUsers'] = User::query()
+                ->whereNull('deleted_at')
+                ->orderByDesc('is_sanctuary')
+                ->orderBy('name')
+                ->limit(500)
+                ->get(['id', 'name', 'is_sanctuary'])
+                ->map(fn (User $candidate) => [
+                    'id' => $candidate->id,
+                    'name' => $candidate->name,
+                    'is_sanctuary' => (bool) $candidate->is_sanctuary,
+                ])
+                ->values()
+                ->all();
         }
 
         if ($user->can('admin.items')) {
@@ -252,6 +272,38 @@ class DashboardController extends Controller
         }
 
         return Inertia::render('admin/Index', $props);
+    }
+
+    /**
+     * Transfers are a third `kind` in the unified Submissions list, so they ship as a
+     * third flat source array rather than getting a list of their own.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function horseTransfers(): array
+    {
+        return HorseTransfer::query()
+            ->with(['horse:id,name', 'fromUser:id,name', 'toUser:id,name', 'actedBy:id,name'])
+            ->latest()
+            ->limit(200)
+            ->get()
+            ->map(fn (HorseTransfer $transfer) => [
+                'id' => $transfer->id,
+                'horse_id' => $transfer->horse_id,
+                'horse_name' => $transfer->horse?->name ?? 'Deleted horse',
+                'from_user_id' => $transfer->from_user_id,
+                'from_user_name' => $transfer->fromUser?->name ?? 'Unknown',
+                'to_user_id' => $transfer->to_user_id,
+                'to_user_name' => $transfer->toUser?->name ?? 'Unknown',
+                'notes' => $transfer->notes,
+                'reason' => $transfer->reason,
+                'status' => $transfer->status->value,
+                'created_at' => $transfer->created_at?->toIso8601String(),
+                'resolved_at' => $transfer->resolved_at?->toIso8601String(),
+                'acted_by_name' => $transfer->actedBy?->name,
+            ])
+            ->values()
+            ->all();
     }
 
     /**

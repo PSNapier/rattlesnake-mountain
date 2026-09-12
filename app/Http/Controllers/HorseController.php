@@ -13,6 +13,7 @@ use App\Models\Horse;
 use App\Models\Item;
 use App\Models\User;
 use App\Services\BreedingSlotService;
+use App\Services\HorseTransferService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -144,11 +145,57 @@ class HorseController extends Controller
             'horse' => $horse,
             'pendingVersion' => $pendingVersion,
             ...$this->equipmentProps($horse, $canUpdate),
+            ...$this->transferProps($horse, Auth::user()),
             'can' => [
                 'update' => $canUpdate,
                 'delete' => Auth::user()->can('delete', $horse),
+                'transfer' => $this->canTransfer($horse, Auth::user()),
             ],
         ]);
+    }
+
+    /**
+     * Only the sender ever sees a pending transfer or the recipient list: the
+     * recipient has nothing to do, and a stranger has no business knowing a horse
+     * is on offer.
+     *
+     * @return array{pendingTransfer: array<string, mixed>|null, transferRecipients: array<int, array<string, mixed>>}
+     */
+    private function transferProps(Horse $horse, ?User $viewer): array
+    {
+        $transfers = app(HorseTransferService::class);
+        $isOwner = $viewer !== null && (int) $horse->owner_id === (int) $viewer->id;
+
+        if (! $isOwner) {
+            return ['pendingTransfer' => null, 'transferRecipients' => []];
+        }
+
+        $pending = $transfers->pendingFor($horse);
+
+        return [
+            'pendingTransfer' => $pending === null ? null : [
+                'id' => $pending->id,
+                'to_user_name' => $pending->toUser?->name,
+                'notes' => $pending->notes,
+                'created_at' => $pending->created_at?->toIso8601String(),
+            ],
+            'transferRecipients' => $transfers->recipientsFor($viewer)
+                ->map(fn (User $candidate) => [
+                    'id' => $candidate->id,
+                    'name' => $candidate->name,
+                ])
+                ->values()
+                ->all(),
+        ];
+    }
+
+    private function canTransfer(Horse $horse, ?User $viewer): bool
+    {
+        if ($viewer === null || (int) $horse->owner_id !== (int) $viewer->id) {
+            return false;
+        }
+
+        return app(HorseTransferService::class)->isRequestable($horse);
     }
 
     /**
@@ -448,9 +495,11 @@ class HorseController extends Controller
             'horse' => $horse,
             'pendingVersion' => $pendingVersion,
             ...$this->equipmentProps($horse, $canUpdate),
+            ...$this->transferProps($horse, Auth::user()),
             'can' => [
                 'update' => $canUpdate,
                 'delete' => Auth::check() && Auth::user()->can('delete', $horse),
+                'transfer' => $this->canTransfer($horse, Auth::user()),
             ],
         ]);
     }

@@ -110,6 +110,51 @@ class EquipmentService
     }
 
     /**
+     * Strip every equipped unit off a horse, crediting the current owner's inventory
+     * where the unit can go back into a stack.
+     *
+     * Ownership changes have to leave the horse bare, so unlike `dequip` this cannot
+     * refuse. A partly used unit, or one that would overflow the owner's `max_count`,
+     * is discarded rather than returned: `user_items` counts whole units only, so
+     * there is nowhere for those to land.
+     *
+     * @return array{returned: list<string>, discarded: list<string>}
+     */
+    public function returnAllToOwner(Horse $horse): array
+    {
+        $returned = [];
+        $discarded = [];
+
+        foreach (collect($this->entries($horse))->pluck('uid')->filter()->all() as $uid) {
+            try {
+                $item = $this->dequip($horse, $uid);
+                $returned[] = $item->name;
+            } catch (RuntimeException) {
+                $this->discard($horse, $uid);
+                $discarded[] = $uid;
+            }
+        }
+
+        return ['returned' => $returned, 'discarded' => $discarded];
+    }
+
+    /**
+     * Remove an equipped unit without crediting anyone's inventory.
+     */
+    private function discard(Horse $horse, string $uid): void
+    {
+        DB::transaction(function () use ($horse, $uid) {
+            $locked = $this->lockHorse($horse);
+            $equipment = $this->entries($locked);
+            $position = $this->positionOf($equipment, $uid);
+
+            unset($equipment[$position]);
+
+            $this->persist($horse, $locked, $equipment);
+        }, 3);
+    }
+
+    /**
      * Spend one use of an equipped unit, removing the entry once it is used up.
      *
      * @return array{item: Item, uses_remaining: int, consumed: bool}

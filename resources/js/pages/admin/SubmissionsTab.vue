@@ -20,8 +20,14 @@ import {
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
-type Status = 'pending' | 'contacted' | 'approved' | 'archived';
-type SubmissionKind = 'horse' | 'breeding';
+type Status =
+	| 'pending'
+	| 'contacted'
+	| 'approved'
+	| 'archived'
+	| 'rejected'
+	| 'cancelled';
+type SubmissionKind = 'horse' | 'breeding' | 'transfer';
 type TypeFilter = 'all' | SubmissionKind;
 type PriorityFilter = 'all' | 'high' | 'normal';
 type SortField =
@@ -100,6 +106,22 @@ interface PaginatedBreedingRequests {
 	data: BreedingRequestRow[];
 }
 
+interface HorseTransferRow {
+	id: number;
+	horse_id: number;
+	horse_name: string;
+	from_user_id: number;
+	from_user_name: string;
+	to_user_id: number;
+	to_user_name: string;
+	notes: string | null;
+	reason: string | null;
+	status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+	created_at: string;
+	resolved_at: string | null;
+	acted_by_name: string | null;
+}
+
 interface UnifiedRow {
 	key: string;
 	kind: SubmissionKind;
@@ -113,17 +135,20 @@ interface UnifiedRow {
 	last_admin_name?: string | null;
 	submission?: Submission;
 	breeding?: BreedingRequestRow;
+	transfer?: HorseTransferRow;
 }
 
 interface Props {
 	submissions: Submission[];
 	herds?: Herd[];
 	breedingRequests?: PaginatedBreedingRequests | null;
+	horseTransfers?: HorseTransferRow[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
 	herds: () => [],
 	breedingRequests: null,
+	horseTransfers: () => [],
 });
 
 const searchQuery = ref('');
@@ -229,7 +254,23 @@ const unifiedRows = computed((): UnifiedRow[] => {
 		breeding,
 	}));
 
-	return [...horseRows, ...breedingRows];
+	const transferRows: UnifiedRow[] = props.horseTransfers.map(
+		(transfer) => ({
+			key: `transfer-${transfer.id}`,
+			kind: 'transfer' as const,
+			id: transfer.id,
+			user_id: transfer.from_user_id,
+			user_name: transfer.from_user_name,
+			name: transfer.horse_name,
+			date_submitted: transfer.created_at,
+			status: transfer.status,
+			last_contact_date: transfer.resolved_at,
+			last_admin_name: transfer.acted_by_name,
+			transfer,
+		}),
+	);
+
+	return [...horseRows, ...breedingRows, ...transferRows];
 });
 
 const filteredAndSorted = computed(() => {
@@ -344,6 +385,10 @@ const getStatusBadgeClass = (status: Status): string => {
 		case 'approved':
 			return 'bg-green-100 text-green-800';
 		case 'archived':
+			return 'bg-gray-100 text-gray-800';
+		case 'rejected':
+			return 'bg-red-100 text-red-800';
+		case 'cancelled':
 			return 'bg-gray-100 text-gray-800';
 		default:
 			return 'bg-gray-100 text-gray-800';
@@ -491,6 +536,51 @@ const rejectBreeding = (id: number): void => {
 		{ preserveScroll: true },
 	);
 };
+
+const approveTransfer = (id: number): void => {
+	router.post(
+		route('admin.horse-transfers.approve', id),
+		{},
+		{ preserveScroll: true },
+	);
+};
+
+const rejectDialogTransfer = ref<HorseTransferRow | null>(null);
+const rejectReason = ref('');
+
+const showRejectTransferDialog = computed({
+	get: () => rejectDialogTransfer.value !== null,
+	set: (value: boolean) => {
+		if (!value) {
+			closeRejectTransferDialog();
+		}
+	},
+});
+
+const openRejectTransferDialog = (transfer: HorseTransferRow): void => {
+	rejectDialogTransfer.value = transfer;
+	rejectReason.value = '';
+};
+
+function closeRejectTransferDialog(): void {
+	rejectDialogTransfer.value = null;
+	rejectReason.value = '';
+}
+
+const confirmRejectTransfer = (): void => {
+	if (!rejectDialogTransfer.value || !rejectReason.value.trim()) {
+		return;
+	}
+
+	router.post(
+		route('admin.horse-transfers.reject', rejectDialogTransfer.value.id),
+		{ reason: rejectReason.value },
+		{
+			preserveScroll: true,
+			onSuccess: () => closeRejectTransferDialog(),
+		},
+	);
+};
 </script>
 
 <template>
@@ -520,6 +610,10 @@ const rejectBreeding = (id: number): void => {
 								value: 'breeding',
 								label: 'Breeding',
 							},
+							{
+								value: 'transfer',
+								label: 'Transfer',
+							},
 						]"
 						placeholder="Filter by type" />
 				</div>
@@ -546,6 +640,14 @@ const rejectBreeding = (id: number): void => {
 							{
 								value: 'archived',
 								label: 'Archived',
+							},
+							{
+								value: 'rejected',
+								label: 'Rejected',
+							},
+							{
+								value: 'cancelled',
+								label: 'Cancelled',
 							},
 						]"
 						placeholder="Filter by status" />
@@ -1010,6 +1112,152 @@ const rejectBreeding = (id: number): void => {
 										">
 										Reject
 									</Button>
+								</td>
+							</tr>
+							<tr
+								v-else-if="
+									row.kind === 'transfer' &&
+									row.transfer
+								"
+								:class="[
+									'border-b border-gray-200 hover:bg-gray-50',
+									row.transfer.status !== 'pending'
+										? 'opacity-75'
+										: '',
+								]">
+								<td
+									class="text-cape-palliser-700 px-4 py-3 text-sm">
+									<span
+										class="inline-flex items-center rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-800">
+										Transfer
+									</span>
+								</td>
+								<td
+									class="text-cape-palliser-950 px-4 py-3 text-sm">
+									<Link
+										:href="
+											route(
+												'users.profile',
+												row.transfer
+													.from_user_id,
+											)
+										"
+										class="hover:text-shakespeare-600 hover:underline">
+										{{
+											row.transfer
+												.from_user_name
+										}}
+									</Link>
+								</td>
+								<td
+									class="text-cape-palliser-950 px-4 py-3 text-sm">
+									<div class="space-y-1">
+										<Link
+											:href="
+												route(
+													'horses.show',
+													row.transfer
+														.horse_id,
+												)
+											"
+											class="hover:text-shakespeare-600 font-medium hover:underline">
+											{{
+												row.transfer
+													.horse_name
+											}}
+										</Link>
+										<p
+											class="text-cape-palliser-600 text-xs">
+											To
+											{{
+												row.transfer
+													.to_user_name
+											}}
+										</p>
+										<p
+											v-if="row.transfer.notes"
+											class="text-cape-palliser-600 text-xs">
+											{{ row.transfer.notes }}
+										</p>
+										<p
+											v-if="
+												row.transfer.reason
+											"
+											class="text-xs text-red-700">
+											Reason:
+											{{ row.transfer.reason }}
+										</p>
+									</div>
+								</td>
+								<td
+									class="text-cape-palliser-700 px-4 py-3 text-sm">
+									{{
+										formatDate(
+											row.transfer.created_at,
+										)
+									}}
+								</td>
+								<td class="px-4 py-3 text-sm">
+									<span
+										:class="[
+											'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+											getStatusBadgeClass(
+												row.transfer.status,
+											),
+										]">
+										{{
+											row.transfer.status
+												.charAt(0)
+												.toUpperCase() +
+											row.transfer.status.slice(
+												1,
+											)
+										}}
+									</span>
+								</td>
+								<td
+									class="text-cape-palliser-700 px-4 py-3 text-sm">
+									{{
+										formatDate(
+											row.transfer.resolved_at,
+										)
+									}}
+								</td>
+								<td
+									class="text-cape-palliser-700 px-4 py-3 text-sm">
+									{{
+										row.transfer.acted_by_name ||
+										'—'
+									}}
+								</td>
+								<td
+									class="flex gap-2 px-4 py-3 text-sm">
+									<template
+										v-if="
+											row.transfer.status ===
+											'pending'
+										">
+										<Button
+											size="sm"
+											@click="
+												approveTransfer(
+													row.transfer
+														.id,
+												)
+											">
+											Approve
+										</Button>
+										<Button
+											size="sm"
+											variant="outline"
+											@click="
+												openRejectTransferDialog(
+													row.transfer,
+												)
+											">
+											Reject
+										</Button>
+									</template>
 								</td>
 							</tr>
 						</template>
@@ -1584,6 +1832,46 @@ const rejectBreeding = (id: number): void => {
 					variant="outline"
 					@click="closeReviewModal">
 					Close
+				</Button>
+			</DialogFooter>
+		</DialogContent>
+	</Dialog>
+
+	<!-- Reject Transfer Modal -->
+	<Dialog v-model:open="showRejectTransferDialog">
+		<DialogContent @pointer-down-outside="closeRejectTransferDialog">
+			<DialogHeader>
+				<DialogTitle>Reject transfer</DialogTitle>
+			</DialogHeader>
+			<p
+				v-if="rejectDialogTransfer"
+				class="text-sm text-gray-600">
+				Reject the transfer of
+				<strong>{{ rejectDialogTransfer.horse_name }}</strong>
+				from {{ rejectDialogTransfer.from_user_name }} to
+				{{ rejectDialogTransfer.to_user_name }}? The reason is shown
+				to both players.
+			</p>
+			<div>
+				<Label for="reject-transfer-reason">Reason</Label>
+				<textarea
+					id="reject-transfer-reason"
+					v-model="rejectReason"
+					rows="4"
+					class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 mt-1 flex w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+					placeholder="Why is this transfer being rejected?" />
+			</div>
+			<DialogFooter>
+				<Button
+					variant="outline"
+					@click="closeRejectTransferDialog">
+					Cancel
+				</Button>
+				<Button
+					variant="destructive"
+					:disabled="!rejectReason.trim()"
+					@click="confirmRejectTransfer">
+					Reject transfer
 				</Button>
 			</DialogFooter>
 		</DialogContent>

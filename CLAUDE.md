@@ -21,7 +21,7 @@ The browser profile is isolated and nothing is persisted between sessions, so lo
 
 ### Data safety
 
-The browser drives the live dev site against the working `rattlesnake_mountain` MySQL database. There is no isolation and no rollback: anything clicked is a real write. Read-only verification is the default. Before exercising a flow that mutates data (admin actions, breeding, lifecycle, trading, deletions), say what will be written and get the user's go-ahead.
+The browser drives the live dev site against the working `rattlesnake_mountain` MySQL database.
 
 Nothing here runs in CI.
 

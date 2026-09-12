@@ -149,3 +149,20 @@ it('seeds design npc for designer and admin', function () {
         ->and($matrix[Role::GameMaster->value])->not->toContain('design_npc')
         ->and($matrix[Role::User->value])->not->toContain('design_npc');
 });
+
+it('seeds horses for admin', function () {
+    expect(Role::areas())->toContain('horses')
+        ->and(Role::Admin->defaultCapabilities())->toContain('horses')
+        ->and(
+            RoleCapability::query()
+                ->where('role', Role::Admin->value)
+                ->where('capability', 'horses')
+                ->exists()
+        )->toBeTrue();
+
+    $admin = User::factory()->create(['role' => Role::Admin]);
+    $designer = User::factory()->create(['role' => Role::Designer]);
+
+    expect($admin->can('admin.horses'))->toBeTrue()
+        ->and($designer->can('admin.horses'))->toBeFalse();
+});

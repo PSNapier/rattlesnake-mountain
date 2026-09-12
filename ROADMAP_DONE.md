@@ -1,5 +1,113 @@
 # Roadmap Done
 
+## [034] Horse Ownership Transfer
+
+**Status:** `done`
+**Depends On:** [011] (done, see ROADMAP_DONE.md)
+**Spec:** none
+
+### Goal
+
+A player can offer one of their horses to another player from the horse's own page, an admin approves or rejects it in the existing Submissions queue, and an admin can move any horse to any owner immediately from a new Horses tab, so ownership changes stop being a database edit.
+
+### Scope
+
+- `horse_transfers` table and service: pending, approved, rejected, cancelled
+- "Transfer this horse" control on the owner's own horse page, recipient picked from a name list
+- Transfer rows appear in the Submissions tab as a third `kind` beside designs and breeding requests, with approve and reject actions gated on `admin.submissions`
+- New `horses` capability area and a Horses tab in `/admin` whose only content is starting an immediate admin transfer
+- On approval: `owner_id` moves, `herd_id` clears, any herd led by the horse has `herd_leader_id` nulled, equipment returns to the sender
+- In-app `Message` on approval, rejection, and admin-initiated transfer
+- NOT in scope: a horse browser or any other horse management in the Horses tab
+- NOT in scope: recipient consent. Admin approval is the only gate (decision of 2026-09-10)
+- NOT in scope: locking a pending horse out of breeding, editing, or herd changes
+- NOT in scope: transferring herds, breeding slots, or items between users
+
+### Technical Notes
+
+**User flows:**
+
+**Flows:** `verified`
+
+- **Owner:** "Transfer this horse" in the Transfer panel on `/horses/{horse}`. Choose a recipient and optionally write a note. The panel then shows the request as pending, with a "Cancel transfer" button.
+- **Recipient:** nothing to do. The horse appears in their stable with no herd once an admin approves, and an in-app message says where it came from.
+- **Staff (review):** Submissions tab at `/admin`. Transfer rows sit in the same list as designs and breeding requests, filterable by the existing type dropdown. Approve, or reject with a required reason.
+- **Admin (direct):** "Horses" tab at `/admin`. Search a horse by name, pick a new owner, write a required reason, then "Transfer horse". Choosing the Sanctuary shows a warning inline and a confirmation step before anything moves.
+
+**Details:**
+
+- The Submissions tab is already a unified list. `SubmissionsTab.vue:100` builds a `UnifiedRow` with a `kind` discriminator and `:127` filters on it, so designs and breeding requests already coexist there. Transfers are a third `kind`, a third source array on the props, and a third branch in `DashboardController::submissions` (`:245`). No new list component.
+- An admin-initiated transfer writes an already-approved `horse_transfers` row, so every ownership change has one history shape and appears in the queue under the approved filter. There is no pending state it passes through.
+- Two capabilities, deliberately. `horses` is a new entry in `Role::areas()` (the tenth, since [031] added `design_priority` and `design_npc`) (`app/Models/Role.php:18`), seeded on for Admin only, and gates the Horses tab plus the immediate-transfer route. Approving and rejecting queued transfers stays on `admin.submissions`, because that is what gates the tab the rows live in. `RoleCapabilityService::sync` intersects against `Role::areas()` (`app/Services/RoleCapabilityService.php:61`), so the area must go in that list, in `defaultCapabilities()`, in a `role_capabilities` seed migration, and in `areaLabels` plus `DEFAULT_CAPABILITY_AREAS` in `RoleCapabilityMatrix.vue`. `ALL_TABS` in `resources/js/pages/admin/Index.vue:190` gains `horses`, since a capability alone renders no tab.
+- Player eligibility: approved and living horses only. Admins bypass that entirely, since admin transfer exists to correct states the rules produced, and can move an unapproved, archived, or dead horse.
+- Herd detachment is not a rule, it is an integrity requirement, so it applies on both paths. A herd row pointing at a horse someone else owns is a broken reference, and `horses.herd_id` is a real foreign key (`create_horses_table.php:25`) while `herds.herd_leader_id` is an unconstrained column (`create_herds_table.php:19`). Clear both.
+- Breeding requests survive a transfer untouched. `BreedingRequest.requester_id` owns the outcome, so a foal from a pending breeding goes to whoever submitted it, not to the horse's new owner. Nothing to cancel.
+- Equipment returns to the sender via a new `EquipmentService::returnAllToOwner`, stripped before `owner_id` moves so the inventory credit still resolves to the sender. Unlike `dequip` it cannot refuse, so a partly used unit, or one that would overflow the sender's `max_count`, is discarded rather than returned: `user_items` counts whole units only and there is nowhere else for those to land. This is why the item depends on [011]. `horses.equipment` is JSON that nothing currently writes, and there is no dequip path to call. Without [011] the strip would have to invent the relational-versus-JSON source of truth that [011] exists to decide.
+- One pending transfer per horse, enforced by the database, not by a service check alone. MySQL has no partial indexes, so this is a generated `pending_horse_id` column holding `horse_id` only while the row is pending and NULL otherwise, under a plain unique index: repeated NULLs are legal, so resolved rows never collide. The column is VIRTUAL rather than STORED because MySQL forbids an `ON DELETE CASCADE` foreign key on the base column of a stored generated column, and `horse_id` is both. It also has to be declared inside `Schema::create`, since MySQL cannot ALTER a generated column onto a table that already carries foreign keys. Two admins approving the same horse in the same second must not both write `owner_id`. The approval itself runs in a transaction and re-reads the horse, since nothing locks it while pending.
+- The recipient list reuses the trade rule at `TradeController.php:66`: every active player, excluding self, banned users, and the Sanctuary. Players cannot see each other's numeric ids anywhere, so the picker is a name-to-id list.
+- The Sanctuary is available to admins only, and the tab warns before confirming. `Horse::syncNpcFlagsFromOwner` (`app/Models/Horse.php:167`) fires on any dirty `owner_id` and sets both `is_npc` and `is_claimable` when the new owner is the Sanctuary, so a Sanctuary transfer publishes the horse to the claimable pool. This is the manual handover [030] leaves to an admin.
+- Messages go through `Message`, the channel `SubmissionController.php:113` already uses for design decisions. Rejection carries the admin's required reason. An admin-initiated transfer messages both the old and the new owner.
+- Admin actions log to `AdminSubmissionLog` the way archive does (`SubmissionController.php:33`), which needs new `AdminAction` cases for the transfer approval, rejection, and direct move.
+
+**Built:**
+
+- Routes: `horse-transfers.store` (`POST /horses/{horse}/transfers`), `horse-transfers.cancel`, `admin.horse-transfers.approve`, `admin.horse-transfers.reject`, `admin.horses.transfer`, `admin.horses.search`.
+- The Submissions status filter gained `rejected` and `cancelled` options. Transfer statuses map straight through rather than being squeezed into the design vocabulary, so a rejected transfer reads as rejected rather than archived.
+- `AdminAction` gained `TransferApproved`, `TransferRejected` and `TransferredDirectly`; `MessageType` gained `HorseTransfer`.
+
+**Diagrams:**
+
+```mermaid
+flowchart TD
+    A[Owner clicks Transfer] --> B{Approved and living?}
+    B -->|no| C[Refused at request time]
+    B -->|yes| D[Pending row in Submissions queue]
+    D -->|owner cancels| E[Cancelled]
+    D -->|admin rejects with reason| F[Rejected, sender messaged]
+    D -->|admin approves| G[Apply transfer]
+    H[Admin transfers from Horses tab] --> G
+    G --> I[owner_id moves, herd cleared, leader nulled, equipment stripped]
+    I --> J[Both parties messaged, action logged]
+```
+
+### Acceptance Criteria
+
+- [x] An owner can request a transfer of an approved, living horse to another player, and cannot request one for a horse that is unapproved, archived, dead, or not theirs
+      `tests/Feature/HorseTransferTest.php::it_lets_an_owner_request_a_transfer`
+      `tests/Feature/HorseTransferTest.php::it_refuses_requests_for_ineligible_horses`
+      `tests/Feature/HorseTransferTest.php::it_forbids_requesting_a_transfer_of_someone_elses_horse`
+- [x] A second pending transfer for the same horse is refused at the database level, and two concurrent approvals move the horse exactly once
+      `tests/Feature/HorseTransferTest.php::it_allows_only_one_pending_transfer_per_horse`
+      `tests/Feature/HorseTransferTest.php::it_moves_the_horse_exactly_once_under_concurrent_approval`
+- [x] The sender can cancel while pending, and a cancelled or rejected request leaves ownership untouched
+      `tests/Feature/HorseTransferTest.php::it_lets_the_sender_cancel_a_pending_transfer`
+      `tests/Feature/HorseTransferTest.php::it_leaves_ownership_untouched_on_rejection`
+- [x] Approval moves `owner_id`, clears `herd_id`, nulls `herd_leader_id` on any herd the horse led, and returns equipment to the sender
+      `tests/Feature/HorseTransferTest.php::it_moves_ownership_and_detaches_the_horse_from_its_herd`
+      `tests/Feature/HorseTransferTest.php::it_clears_herd_leadership_when_the_leader_is_transferred`
+      `tests/Feature/HorseTransferTest.php::it_returns_equipped_items_to_the_sender`
+- [x] A pending breeding request involving the horse survives the transfer, and its foal still goes to the requester
+      `tests/Feature/HorseTransferTest.php::it_leaves_pending_breeding_requests_with_the_original_requester`
+- [x] Rejection requires a reason, and approval, rejection, and admin transfer each send in-app messages to the right people
+      `tests/Feature/HorseTransferTest.php::it_requires_a_reason_to_reject`
+      `tests/Feature/HorseTransferTest.php::it_messages_both_parties_on_an_admin_transfer`
+- [x] An admin holding `horses` can transfer any horse immediately, including unapproved and dead ones, with a required reason, and the action is logged
+      `tests/Feature/HorseTransferTest.php::it_lets_an_admin_transfer_any_horse_immediately`
+      `tests/Feature/HorseTransferTest.php::it_requires_a_reason_for_an_admin_transfer`
+      `tests/Feature/HorseTransferTest.php::it_logs_admin_transfers`
+- [x] Transferring to the Sanctuary is available to admins only and leaves `is_npc` and `is_claimable` true
+      `tests/Feature/HorseTransferTest.php::it_marks_a_sanctuary_transfer_as_npc_and_claimable`
+      `tests/Feature/HorseTransferTest.php::it_excludes_the_sanctuary_from_the_player_recipient_list`
+- [x] Staff without `admin.submissions` cannot approve or reject, and staff without `horses` see no Horses tab and cannot transfer directly
+      `tests/Feature/HorseTransferTest.php::it_forbids_approving_without_the_submissions_capability`
+      `tests/Feature/HorseTransferTest.php::it_forbids_direct_transfer_without_the_horses_capability`
+- [x] `horses` is seeded on for Admin and appears in the role matrix
+      `tests/Feature/Admin/RoleCapabilityMatrixTest.php::it_seeds_horses_for_admin`
+- [x] Transfer rows appear in the Submissions queue alongside designs and breeding requests and respond to the existing type and status filters, confirmed in a browser as an admin
+- [x] The Horses tab warns before a Sanctuary transfer that the horse becomes an NPC and claimable, confirmed in a browser
+
+---
+
 ## [030] Designer NPC Design Flag
 
 **Status:** `done`

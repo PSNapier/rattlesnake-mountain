@@ -22,6 +22,7 @@ const roleLabels: Record<string, string> = {
 
 const areaLabels: Record<string, string> = {
 	submissions: 'Submissions',
+	horses: 'Horses',
 	rollers: 'Rollers',
 	lifecycle: 'Lifecycle',
 	users: 'Users',
@@ -34,6 +35,7 @@ const areaLabels: Record<string, string> = {
 
 const DEFAULT_CAPABILITY_AREAS = [
 	'submissions',
+	'horses',
 	'rollers',
 	'lifecycle',
 	'users',

@@ -4,6 +4,7 @@ import { Head, usePage } from '@inertiajs/vue3';
 import { computed, onMounted, ref, watch } from 'vue';
 import AnnouncementsSection from './AnnouncementsSection.vue';
 import CmsTab from './CmsTab.vue';
+import HorsesTab from './HorsesTab.vue';
 import ItemsTab from './ItemsTab.vue';
 import LifecycleTab from './LifecycleTab.vue';
 import RoleCapabilityMatrix from './RoleCapabilityMatrix.vue';
@@ -143,6 +144,28 @@ interface BreedingRequestAdminRow {
 	created_at?: string | null;
 }
 
+interface HorseTransferRow {
+	id: number;
+	horse_id: number;
+	horse_name: string;
+	from_user_id: number;
+	from_user_name: string;
+	to_user_id: number;
+	to_user_name: string;
+	notes: string | null;
+	reason: string | null;
+	status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+	created_at: string;
+	resolved_at: string | null;
+	acted_by_name: string | null;
+}
+
+interface TransferableUser {
+	id: number;
+	name: string;
+	is_sanctuary: boolean;
+}
+
 interface AdminAnnouncement {
 	id: number;
 	title: string;
@@ -153,6 +176,7 @@ interface AdminAnnouncement {
 
 type AdminTab =
 	| 'submissions'
+	| 'horses'
 	| 'rollers'
 	| 'users'
 	| 'items'
@@ -174,6 +198,8 @@ interface Props {
 	lifecycleSettings?: LifecycleSettings | null;
 	npcDeathProposals?: NpcDeathProposal[];
 	breedingRequests?: { data: BreedingRequestAdminRow[] } | null;
+	horseTransfers?: HorseTransferRow[];
+	transferableUsers?: TransferableUser[];
 	horsesMissingSex?: { id: number; name: string; geno: string }[];
 	sanctuarySlots?: {
 		id: number;
@@ -189,6 +215,7 @@ interface Props {
 
 const ALL_TABS: AdminTab[] = [
 	'submissions',
+	'horses',
 	'rollers',
 	'users',
 	'items',
@@ -295,6 +322,17 @@ onMounted(() => {
 					<span class="text-base">Submissions</span>
 				</button>
 				<button
+					v-if="canAccess('horses')"
+					@click="activeTab = 'horses'"
+					:class="[
+						'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
+						activeTab === 'horses'
+							? 'bg-shakespeare-500 text-white shadow-xs'
+							: 'border-shakespeare-300 text-shakespeare-600 hover:bg-shakespeare-50 hover:text-shakespeare-400 border',
+					]">
+					<span class="text-base">Horses</span>
+				</button>
+				<button
 					v-if="canAccess('rollers')"
 					@click="activeTab = 'rollers'"
 					:class="[
@@ -368,7 +406,12 @@ onMounted(() => {
 				"
 				:submissions="props.submissions"
 				:herds="props.herds"
-				:breeding-requests="props.breedingRequests" />
+				:breeding-requests="props.breedingRequests"
+				:horse-transfers="props.horseTransfers ?? []" />
+
+			<HorsesTab
+				v-if="activeTab === 'horses' && canAccess('horses')"
+				:recipients="props.transferableUsers ?? []" />
 
 			<RollersTab
 				v-if="activeTab === 'rollers' && canAccess('rollers')"

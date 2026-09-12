@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
@@ -56,6 +57,18 @@ interface EquippableItem {
 	uses_per_unit: number;
 }
 
+interface PendingTransfer {
+	id: number;
+	to_user_name: string;
+	notes: string | null;
+	created_at: string;
+}
+
+interface TransferRecipient {
+	id: number;
+	name: string;
+}
+
 interface Props {
 	horse: Horse;
 	equipment: EquippedItem[];
@@ -63,10 +76,16 @@ interface Props {
 	can: {
 		update: boolean;
 		delete: boolean;
+		transfer?: boolean;
 	};
+	pendingTransfer?: PendingTransfer | null;
+	transferRecipients?: TransferRecipient[];
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+	pendingTransfer: null,
+	transferRecipients: () => [],
+});
 
 const page = usePage();
 
@@ -100,6 +119,44 @@ const returnEquipment = (uid: string): void => {
 	router.delete(route('horses.equipment.destroy', [props.horse.id, uid]), {
 		preserveScroll: true,
 	});
+};
+
+const transferForm = useForm({
+	to_user_id: null as number | null,
+	notes: '',
+});
+
+const transferRecipientOptions = computed(() =>
+	props.transferRecipients.map((recipient) => ({
+		value: recipient.id,
+		label: recipient.name,
+	})),
+);
+
+const showTransferCard = computed(
+	() => Boolean(props.can.transfer) || props.pendingTransfer !== null,
+);
+
+const formatTransferDate = (value: string): string =>
+	new Date(value).toLocaleDateString();
+
+const submitTransfer = (): void => {
+	transferForm.post(route('horse-transfers.store', props.horse.id), {
+		preserveScroll: true,
+		onSuccess: () => transferForm.reset(),
+	});
+};
+
+const cancelTransfer = (): void => {
+	if (!props.pendingTransfer) {
+		return;
+	}
+
+	router.post(
+		route('horse-transfers.cancel', props.pendingTransfer.id),
+		{},
+		{ preserveScroll: true },
+	);
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -358,6 +415,115 @@ const deleteHorse = () => {
 									Equip
 								</Button>
 							</div>
+						</div>
+					</CardContent>
+				</Card>
+
+				<!-- Transfer -->
+				<Card
+					v-if="showTransferCard"
+					class="lg:col-span-2">
+					<CardHeader>
+						<CardTitle>Transfer</CardTitle>
+					</CardHeader>
+					<CardContent class="space-y-4">
+						<div v-if="props.pendingTransfer">
+							<p class="text-sm">
+								Pending transfer to
+								<strong>{{
+									props.pendingTransfer.to_user_name
+								}}</strong>
+								, offered
+								{{
+									formatTransferDate(
+										props.pendingTransfer
+											.created_at,
+									)
+								}}.
+							</p>
+							<p
+								v-if="props.pendingTransfer.notes"
+								class="mt-1 text-sm text-gray-600">
+								{{ props.pendingTransfer.notes }}
+							</p>
+							<p class="mt-1 text-sm text-gray-600">
+								Staff must approve this before ownership
+								changes.
+							</p>
+							<Button
+								variant="outline"
+								size="sm"
+								class="mt-3"
+								@click="cancelTransfer">
+								Cancel transfer
+							</Button>
+						</div>
+
+						<div
+							v-else-if="props.can.transfer"
+							class="space-y-3">
+							<p class="text-sm text-gray-600">
+								Offer this horse to another player.
+								Staff review the request before
+								ownership changes.
+							</p>
+
+							<p
+								v-if="transferForm.errors.to_user_id"
+								class="text-sm text-red-500">
+								{{ transferForm.errors.to_user_id }}
+							</p>
+							<p
+								v-if="transferForm.errors.notes"
+								class="text-sm text-red-500">
+								{{ transferForm.errors.notes }}
+							</p>
+
+							<p
+								v-if="
+									props.transferRecipients.length ===
+									0
+								"
+								class="text-sm text-gray-600">
+								No players are available to receive this
+								horse.
+							</p>
+							<template v-else>
+								<div>
+									<Label for="transfer-recipient"
+										>Recipient</Label
+									>
+									<Select
+										id="transfer-recipient"
+										v-model="
+											transferForm.to_user_id
+										"
+										:options="
+											transferRecipientOptions
+										"
+										placeholder="Select a player"
+										class="mt-1 w-64" />
+								</div>
+								<div>
+									<Label for="transfer-notes"
+										>Note (optional)</Label
+									>
+									<textarea
+										id="transfer-notes"
+										v-model="transferForm.notes"
+										rows="3"
+										class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 mt-1 flex w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+										placeholder="Why are you transferring this horse?" />
+								</div>
+								<Button
+									:disabled="
+										!transferForm.to_user_id ||
+										transferForm.processing
+									"
+									@click="submitTransfer">
+									Transfer this horse
+								</Button>
+							</template>
 						</div>
 					</CardContent>
 				</Card>

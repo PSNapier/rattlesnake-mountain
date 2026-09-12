@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\BreedingController as AdminBreedingController;
 use App\Http\Controllers\Admin\CmsController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\HorseTransferController as AdminHorseTransferController;
 use App\Http\Controllers\Admin\ItemController;
 use App\Http\Controllers\Admin\LifecycleController;
 use App\Http\Controllers\Admin\RoleCapabilityController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\DevPasswordController;
 use App\Http\Controllers\HerdController;
 use App\Http\Controllers\HorseController;
 use App\Http\Controllers\HorseEquipmentController;
+use App\Http\Controllers\HorseTransferController;
 use App\Http\Controllers\InboxController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LeaderboardController;
@@ -72,6 +74,16 @@ Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
         Route::post('/admin/horses/{horse}/unarchive', [SubmissionController::class, 'unarchive'])->name('admin.horses.unarchive');
         Route::post('/admin/horses/{horse}/contact', [SubmissionController::class, 'contact'])->name('admin.horses.contact');
         Route::post('/admin/horses/{horse}/priority', [SubmissionController::class, 'priority'])->name('admin.horses.priority');
+
+        Route::post('/admin/horse-transfers/{transfer}/approve', [AdminHorseTransferController::class, 'approve'])->name('admin.horse-transfers.approve');
+        Route::post('/admin/horse-transfers/{transfer}/reject', [AdminHorseTransferController::class, 'reject'])->name('admin.horse-transfers.reject');
+    });
+
+    // Horse Management. Separate from `submissions`: approving a queued transfer is a
+    // different power from rewriting ownership outright.
+    Route::middleware('can:admin.horses')->group(function () {
+        Route::get('/admin/horses/search', [AdminHorseTransferController::class, 'search'])->name('admin.horses.search');
+        Route::post('/admin/horses/{horse}/transfer', [AdminHorseTransferController::class, 'transfer'])->name('admin.horses.transfer');
     });
 
     // Item Management
@@ -158,6 +170,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/horses/{horse}/approve', [HorseController::class, 'approve'])->name('horses.approve');
     Route::post('/horses/{horse}/publish', [HorseController::class, 'publish'])->name('horses.publish');
     Route::post('/horses/upload-image', [HorseController::class, 'uploadImage'])->name('horses.upload-image')->middleware('rate.limit.uploads');
+
+    Route::post('/horses/{horse}/transfers', [HorseTransferController::class, 'store'])->name('horse-transfers.store');
+    Route::post('/horse-transfers/{transfer}/cancel', [HorseTransferController::class, 'cancel'])->name('horse-transfers.cancel');
 
     Route::post('/horses/{horse}/equipment', [HorseEquipmentController::class, 'store'])->name('horses.equipment.store');
     Route::delete('/horses/{horse}/equipment/{uid}', [HorseEquipmentController::class, 'destroy'])->name('horses.equipment.destroy');

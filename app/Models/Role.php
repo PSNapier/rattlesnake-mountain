@@ -27,6 +27,7 @@ enum Role: string
             'cms',
             'design_priority',
             'design_npc',
+            'horses',
         ];
     }
 
@@ -48,6 +49,7 @@ enum Role: string
                 'cms',
                 'design_priority',
                 'design_npc',
+                'horses',
             ],
             self::Designer => [
                 'submissions',
