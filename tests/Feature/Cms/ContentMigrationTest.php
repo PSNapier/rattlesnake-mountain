@@ -43,6 +43,13 @@ function cmsWidthMigration(): object
     return require $path;
 }
 
+function announcementBodyMigration(): object
+{
+    $path = collect(glob(database_path('migrations/*_convert_announcement_bodies_to_html.php')))->sole();
+
+    return require $path;
+}
+
 function cmsHomeMigration(): object
 {
     $path = collect(glob(database_path('migrations/*_create_home_cms_page.php')))->sole();
@@ -266,6 +273,46 @@ it('grandfathers existing pages to live', function () {
     $row = DB::table('cms_pages')->where('slug', 'rules')->first();
 
     expect($row->visibility)->toBe(CmsPage::VISIBILITY_LIVE);
+});
+
+it('converts plain text announcements to html', function () {
+    $id = DB::table('announcements')->insertGetId([
+        'title' => 'Plain',
+        'body' => "Line one\nline two\n\nSecond <b>para</b> & more",
+        'published_at' => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    announcementBodyMigration()->up();
+
+    // Typed angle brackets were text, so they stay text.
+    expect(DB::table('announcements')->where('id', $id)->value('body'))
+        ->toBe('<p>Line one<br>line two</p><p>Second &lt;b&gt;para&lt;/b&gt; &amp; more</p>');
+
+    // Already-converted bodies are left alone on a rerun.
+    announcementBodyMigration()->up();
+
+    expect(DB::table('announcements')->where('id', $id)->value('body'))
+        ->toBe('<p>Line one<br>line two</p><p>Second &lt;b&gt;para&lt;/b&gt; &amp; more</p>');
+});
+
+it('reverts announcement html to plain text', function () {
+    $original = "Line one\nline two\n\nSecond <b>para</b> & more";
+
+    $id = DB::table('announcements')->insertGetId([
+        'title' => 'Round Trip',
+        'body' => $original,
+        'published_at' => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $migration = announcementBodyMigration();
+    $migration->up();
+    $migration->down();
+
+    expect(DB::table('announcements')->where('id', $id)->value('body'))->toBe($original);
 });
 
 it('converts spans to named widths', function () {

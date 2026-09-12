@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Announcement;
 use App\Models\CmsPage;
 use App\Models\CmsPageRevision;
+use App\Support\CmsSanitizer;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -73,7 +74,16 @@ class StaticPageController extends Controller
                 'revisions' => $revisions,
             ],
             'isHome' => $page->isHome(),
-            'announcements' => $page->isHome() ? Announcement::publicFeed() : [],
+            // Home leads with the single newest post and links to the archive.
+            'announcements' => $page->isHome() ? Announcement::publicFeed(limit: 1) : [],
+            // Keyed off the slot rather than the slug, so the catch-all route
+            // needs no special case for `/news`.
+            'newsArchive' => $this->hasArchiveSlot($page) ? Announcement::archive() : null,
         ]);
+    }
+
+    private function hasArchiveSlot(CmsPage $page): bool
+    {
+        return in_array(CmsSanitizer::KIND_NEWS_ARCHIVE, array_column($page->content ?? [], 'kind'), true);
     }
 }

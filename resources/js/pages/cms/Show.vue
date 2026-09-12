@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import type { CmsAnnouncement, CmsBox } from '@/components/custom/cms/boxes';
+import type {
+	CmsAnnouncement,
+	CmsBox,
+	CmsNewsArchive,
+} from '@/components/custom/cms/boxes';
 import {
 	useInlineEditor,
 	type CmsRevision,
@@ -30,9 +34,11 @@ const props = withDefaults(
 		page: CmsPage;
 		/** Live feed for the home page's News slot. */
 		announcements?: CmsAnnouncement[];
+		/** Paginated archive, on a page carrying the archive slot. */
+		newsArchive?: CmsNewsArchive | null;
 		isHome?: boolean;
 	}>(),
-	{ announcements: () => [], isHome: false },
+	{ announcements: () => [], newsArchive: null, isHome: false },
 );
 
 // Always constructed: this component instance is reused across Inertia visits,
@@ -62,6 +68,7 @@ const hero = computed(() =>
 		:content="page.content"
 		:title="isHome ? page.title : null"
 		:announcements="announcements"
+		:news-archive="newsArchive"
 		:is-home="isHome"
 		:inline="canEdit ? inline : null" />
 </template>

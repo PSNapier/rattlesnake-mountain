@@ -13,6 +13,10 @@ beforeEach(function () {
     // Point the snapshot at a scratch path so a committed fixture cannot
     // change what these tests seed.
     CmsSnapshot::$pathOverride = base_path('tests/tmp/cms-snapshot-'.uniqid().'.json');
+
+    // News, like home, comes from its own data migration rather than the
+    // seeders these tests count.
+    CmsPage::withTrashed()->where('slug', CmsPage::NEWS_SLUG)->forceDelete();
 });
 
 afterEach(function () {

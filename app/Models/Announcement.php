@@ -2,15 +2,28 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
+/**
+ * `body` is sanitized HTML from [041] on. The form requests sanitize on the
+ * way in, so nothing here ever sees raw markup.
+ */
 class Announcement extends Model
 {
+    use SoftDeletes;
+
+    /**
+     * Archive page size on `/news`.
+     */
+    public const ARCHIVE_PER_PAGE = 10;
+
     protected $fillable = [
         'title',
         'body',
@@ -65,18 +78,48 @@ class Announcement extends Model
      */
     public static function publicFeed(int $limit = 3): Collection
     {
+        return static::newestPublished()
+            ->limit($limit)
+            ->get(['id', 'title', 'body', 'published_at'])
+            ->map(fn (Announcement $announcement) => $announcement->toPublicArray())
+            ->values();
+    }
+
+    /**
+     * Every published announcement for the `/news` archive, same shape as the
+     * feed. Author stays out of both.
+     *
+     * @return LengthAwarePaginator<int, array<string, mixed>>
+     */
+    public static function archive(): LengthAwarePaginator
+    {
+        return static::newestPublished()
+            ->paginate(self::ARCHIVE_PER_PAGE, ['id', 'title', 'body', 'published_at'])
+            ->withQueryString()
+            ->through(fn (Announcement $announcement) => $announcement->toPublicArray());
+    }
+
+    /**
+     * @return Builder<Announcement>
+     */
+    private static function newestPublished(): Builder
+    {
         return static::query()
             ->published()
             ->orderByDesc('published_at')
-            ->orderByDesc('id')
-            ->limit($limit)
-            ->get(['id', 'title', 'body', 'published_at'])
-            ->map(fn (Announcement $announcement) => [
-                'id' => $announcement->id,
-                'title' => $announcement->title,
-                'body' => $announcement->body,
-                'published_at' => $announcement->published_at?->toIso8601String(),
-            ])
-            ->values();
+            ->orderByDesc('id');
+    }
+
+    /**
+     * @return array{id: int, title: string, body: string, published_at: ?string}
+     */
+    private function toPublicArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'title' => $this->title,
+            'body' => $this->body,
+            'published_at' => $this->published_at?->toIso8601String(),
+        ];
     }
 }

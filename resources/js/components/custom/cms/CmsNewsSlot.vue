@@ -1,43 +1,83 @@
 <script setup lang="ts">
-import type { CmsAnnouncement } from './boxes';
+import { Link } from '@inertiajs/vue3';
+import {
+	computed,
+	nextTick,
+	onBeforeUnmount,
+	onMounted,
+	ref,
+	watch,
+} from 'vue';
+import { formatPublishedAt, type CmsAnnouncement } from './boxes';
 
 /**
- * Inner content of the home page's pinned News slot. The box wrapper and its
+ * Inner content of the home page's pinned News slot: the newest announcement,
+ * clamped, with a read-more link into the archive. The box wrapper and its
  * width come from the caller, so view and edit mode share this markup.
  */
-defineProps<{
+const props = defineProps<{
 	announcements: CmsAnnouncement[];
 }>();
 
-function formatPublishedAt(published: string | null): string {
-	if (!published) return '';
-	return new Date(published).toLocaleString('default', {
-		month: 'long',
-		day: 'numeric',
-		year: 'numeric',
-	});
+const latest = computed(() => props.announcements[0] ?? null);
+
+// A max-height clamp rather than a server excerpt, so lists and images in the
+// lead survive. The fade only shows when something is actually cut off.
+const bodyRef = ref<HTMLElement | null>(null);
+const clamped = ref(false);
+let observer: ResizeObserver | null = null;
+
+function measure() {
+	const el = bodyRef.value;
+	clamped.value = el !== null && el.scrollHeight > el.clientHeight + 1;
 }
+
+onMounted(() => {
+	measure();
+	if (typeof ResizeObserver !== 'undefined' && bodyRef.value) {
+		// Images load after mount and change the height.
+		observer = new ResizeObserver(measure);
+		observer.observe(bodyRef.value.firstElementChild ?? bodyRef.value);
+	}
+});
+
+onBeforeUnmount(() => observer?.disconnect());
+
+watch(latest, () => nextTick(measure));
 </script>
 
 <template>
 	<h2>News</h2>
 
-	<p v-if="announcements.length === 0">
-		No announcements right now. Check back soon.
-	</p>
+	<p v-if="!latest">No announcements right now. Check back soon.</p>
 
-	<div
-		v-for="announcement in announcements"
-		:key="announcement.id"
-		class="mb-4 last:mb-0">
+	<article
+		v-else
+		data-testid="home-news">
 		<h5 class="border-new-orleans-500 mb-2 border-b-1">
-			{{ announcement.title }}
+			{{ latest.title }}
 		</h5>
-		<p class="whitespace-pre-line">{{ announcement.body }}</p>
+		<div
+			ref="bodyRef"
+			class="max-h-64 overflow-hidden"
+			:class="{
+				'[mask-image:linear-gradient(to_bottom,#000_60%,transparent)]':
+					clamped,
+			}"
+			:data-clamped="clamped">
+			<div
+				class="cms-announcement space-y-2"
+				v-html="latest.body"></div>
+		</div>
 		<p
-			v-if="announcement.published_at"
+			v-if="latest.published_at"
 			class="mt-1 text-sm italic">
-			{{ formatPublishedAt(announcement.published_at) }}
+			{{ formatPublishedAt(latest.published_at) }}
 		</p>
-	</div>
+		<Link
+			href="/news"
+			class="mt-2 inline-block font-bold underline"
+			>Read more news</Link
+		>
+	</article>
 </template>

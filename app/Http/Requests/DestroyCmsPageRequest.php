@@ -8,8 +8,9 @@ use Illuminate\Foundation\Http\FormRequest;
 class DestroyCmsPageRequest extends FormRequest
 {
     /**
-     * Home is guarded here rather than in the UI alone: deleting the front
-     * door must be impossible through any route, not just hard to click.
+     * Home, news and the system pages are guarded here rather than in the UI
+     * alone: deleting them must be impossible through any route, not just
+     * hard to click.
      */
     public function authorize(): bool
     {
@@ -19,7 +20,7 @@ class DestroyCmsPageRequest extends FormRequest
 
         $page = $this->route('page');
 
-        return ! ($page instanceof CmsPage && $page->isHome());
+        return ! ($page instanceof CmsPage && ($page->isProtected() || $page->is_system));
     }
 
     /**

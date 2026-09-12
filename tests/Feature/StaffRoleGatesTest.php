@@ -146,8 +146,8 @@ it('scopes dashboard props to authorized areas only', function () {
             ->missing('users')
             ->missing('items')
             ->missing('shopListings')
-            ->missing('cmsPages')
-            ->missing('menuItems')
+            ->missing('systemPages')
+            ->missing('headerTree')
             ->missing('lifecycleSettings')
         );
 
@@ -161,7 +161,7 @@ it('scopes dashboard props to authorized areas only', function () {
             ->missing('users')
             ->missing('items')
             ->missing('shopListings')
-            ->missing('cmsPages')
+            ->missing('systemPages')
         );
 });
 

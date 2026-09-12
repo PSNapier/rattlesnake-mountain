@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\CmsPage;
 use App\Models\MenuItem;
 use App\Support\CmsSnapshot;
 use Illuminate\Database\Seeder;
@@ -46,6 +47,17 @@ class MenuItemSeeder extends Seeder
     private function createTree(array $items, ?int $parentId): void
     {
         foreach ($items as $index => $item) {
+            $page = $this->pageAt($item['path'] ?? null);
+
+            // System pages are reached without the navbar and carry no row.
+            if ($page?->is_system) {
+                continue;
+            }
+
+            $linkedPageId = $page !== null && ! MenuItem::query()->where('cms_page_id', $page->id)->exists()
+                ? $page->id
+                : null;
+
             $node = MenuItem::query()->firstOrCreate(
                 [
                     'label' => $item['label'],
@@ -54,11 +66,29 @@ class MenuItemSeeder extends Seeder
                 [
                     'path' => $item['path'] ?? null,
                     'sort_order' => $item['sort_order'] ?? $index + 1,
+                    'cms_page_id' => $linkedPageId,
                 ]
             );
 
+            if ($linkedPageId !== null && $node->cms_page_id === null) {
+                $node->update(['cms_page_id' => $linkedPageId]);
+            }
+
             $this->createTree(array_values($item['children'] ?? []), $node->id);
         }
+    }
+
+    /**
+     * Snapshots store page links as `/slug` paths, including ones captured
+     * before `cms_page_id` existed, so the link is re-resolved on every replay.
+     */
+    private function pageAt(?string $path): ?CmsPage
+    {
+        if ($path === null || ! preg_match('#^/([^/?\#]+)$#', $path, $matches)) {
+            return null;
+        }
+
+        return CmsPage::withTrashed()->where('slug', $matches[1])->first();
     }
 
     /**

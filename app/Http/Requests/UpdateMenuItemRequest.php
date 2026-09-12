@@ -2,8 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Models\MenuItem;
+use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateMenuItemRequest extends FormRequest
 {
@@ -22,10 +25,31 @@ class UpdateMenuItemRequest extends FormRequest
      */
     public function rules(): array
     {
+        /** @var MenuItem $menuItem */
+        $menuItem = $this->route('menuItem');
+
         return [
             'label' => ['required', 'string', 'max:255'],
-            'path' => ['nullable', 'string', 'max:2048'],
-            'parent_id' => ['nullable', 'integer', 'exists:menu_items,id'],
+            // A page row's target is its page. Only a top-level ghost row
+            // would be left pointing nowhere.
+            'path' => [
+                Rule::requiredIf(fn () => ! $menuItem->isPageRow() && $this->input('parent_id') === null),
+                'nullable',
+                'string',
+                'max:2048',
+            ],
+            'parent_id' => [
+                'nullable',
+                'integer',
+                'exists:menu_items,id',
+                function (string $attribute, mixed $value, Closure $fail) use ($menuItem) {
+                    if ((int) $value === $menuItem->id
+                        || $menuItem->children()->exists()
+                        || MenuItem::query()->whereKey($value)->whereNotNull('parent_id')->exists()) {
+                        $fail('Dropdowns only go one level deep.');
+                    }
+                },
+            ],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ];
     }

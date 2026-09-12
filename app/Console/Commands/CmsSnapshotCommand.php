@@ -84,7 +84,11 @@ class CmsSnapshotCommand extends Command
             ->get()
             ->map(fn (MenuItem $item) => [
                 'label' => $item->label,
-                'path' => $item->path,
+                // Page links are written as their `/slug` so the seeder can
+                // re-resolve them against whatever ids a fresh database hands out.
+                'path' => $item->isPageRow()
+                    ? '/'.$item->page()->withTrashed()->value('slug')
+                    : $item->path,
                 'sort_order' => $item->sort_order,
                 'children' => $this->menu($item->id),
             ])

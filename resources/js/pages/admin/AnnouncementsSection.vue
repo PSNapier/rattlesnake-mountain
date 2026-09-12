@@ -1,25 +1,27 @@
 <script setup lang="ts">
+import CmsRichTextField from '@/components/custom/cms/CmsRichTextField.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { router } from '@inertiajs/vue3';
-import { reactive } from 'vue';
+import { router, usePage } from '@inertiajs/vue3';
+import { computed, reactive, ref } from 'vue';
 
 interface Announcement {
 	id: number;
 	title: string;
+	/** Sanitized HTML. */
 	body: string;
 	published_at: string | null;
 	author_name: string | null;
 }
-
-/** Editable row: published_at coerced to the datetime-local string the input needs. */
-type AnnouncementEditable = {
-	title: string;
-	body: string;
-	published_at: string;
-};
 
 const props = withDefaults(
 	defineProps<{
@@ -27,9 +29,6 @@ const props = withDefaults(
 	}>(),
 	{ announcements: () => [] },
 );
-
-const textareaClass =
-	'border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 mt-1 flex w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm';
 
 /** ISO string to the `YYYY-MM-DDTHH:MM` local value a datetime-local input accepts. */
 const toLocalInput = (iso: string | null): string => {
@@ -60,69 +59,6 @@ const toIsoInstant = (local: string): string | null => {
 	return Number.isNaN(date.getTime()) ? null : date.toISOString();
 };
 
-const createForm = reactive<AnnouncementEditable>({
-	title: '',
-	body: '',
-	published_at: nowLocalInput(),
-});
-
-const editableRows = reactive<Record<number, AnnouncementEditable>>({});
-
-const getRowState = (announcement: Announcement): AnnouncementEditable => {
-	if (!editableRows[announcement.id]) {
-		editableRows[announcement.id] = {
-			title: announcement.title,
-			body: announcement.body,
-			published_at: toLocalInput(announcement.published_at),
-		};
-	}
-
-	return editableRows[announcement.id];
-};
-
-const createAnnouncement = (): void => {
-	router.post(
-		route('admin.announcements.store'),
-		{
-			title: createForm.title,
-			body: createForm.body,
-			published_at: toIsoInstant(createForm.published_at),
-		},
-		{
-			onSuccess: () => {
-				createForm.title = '';
-				createForm.body = '';
-				createForm.published_at = nowLocalInput();
-			},
-		},
-	);
-};
-
-const saveAnnouncement = (
-	announcement: Announcement,
-	overrides: Partial<AnnouncementEditable> = {},
-): void => {
-	const row = getRowState(announcement);
-	const merged = { ...row, ...overrides };
-	Object.assign(row, merged);
-
-	router.put(route('admin.announcements.update', announcement.id), {
-		title: merged.title,
-		body: merged.body,
-		published_at: toIsoInstant(merged.published_at),
-	});
-};
-
-const publishNow = (announcement: Announcement): void =>
-	saveAnnouncement(announcement, { published_at: nowLocalInput() });
-
-const unpublish = (announcement: Announcement): void =>
-	saveAnnouncement(announcement, { published_at: '' });
-
-const removeAnnouncement = (announcement: Announcement): void => {
-	router.delete(route('admin.announcements.destroy', announcement.id));
-};
-
 const statusLabel = (announcement: Announcement): string => {
 	if (!announcement.published_at) {
 		return 'Draft';
@@ -132,138 +68,264 @@ const statusLabel = (announcement: Announcement): string => {
 		? 'Scheduled'
 		: 'Published';
 };
+
+const formatDate = (iso: string | null): string =>
+	iso
+		? new Date(iso).toLocaleString('default', {
+				dateStyle: 'medium',
+				timeStyle: 'short',
+			})
+		: 'Not scheduled';
+
+// One dialog, one editor mounted at a time. The rich-text field is keyed on
+// the announcement so opening a different one starts a fresh editor.
+const dialogOpen = ref(false);
+const saving = ref(false);
+const form = reactive({
+	id: null as number | null,
+	title: '',
+	body: '',
+	published_at: '',
+});
+
+const page = usePage<{ errors: Record<string, string> }>();
+const errors = computed(() => page.props.errors ?? {});
+
+// tiptap leaves `<p></p>` behind in an emptied editor, which is not a body.
+const bodyIsEmpty = computed(
+	() =>
+		form.body.replace(/<(?!img)[^>]*>/g, '').trim() === '' &&
+		!form.body.includes('<img'),
+);
+
+function openCreate() {
+	Object.assign(form, {
+		id: null,
+		title: '',
+		body: '',
+		published_at: nowLocalInput(),
+	});
+	dialogOpen.value = true;
+}
+
+function openEdit(announcement: Announcement) {
+	Object.assign(form, {
+		id: announcement.id,
+		title: announcement.title,
+		body: announcement.body,
+		published_at: toLocalInput(announcement.published_at),
+	});
+	dialogOpen.value = true;
+}
+
+function save() {
+	const payload = {
+		title: form.title,
+		body: form.body,
+		published_at: toIsoInstant(form.published_at),
+	};
+	const options = {
+		preserveScroll: true,
+		onStart: () => (saving.value = true),
+		onFinish: () => (saving.value = false),
+		onSuccess: () => (dialogOpen.value = false),
+	};
+
+	if (form.id === null) {
+		router.post(route('admin.announcements.store'), payload, options);
+	} else {
+		router.put(
+			route('admin.announcements.update', form.id),
+			payload,
+			options,
+		);
+	}
+}
+
+const deleteTarget = ref<Announcement | null>(null);
+const deleteOpen = ref(false);
+
+function openDelete(announcement: Announcement) {
+	deleteTarget.value = announcement;
+	deleteOpen.value = true;
+}
+
+function confirmDelete() {
+	if (!deleteTarget.value) return;
+	router.delete(
+		route('admin.announcements.destroy', deleteTarget.value.id),
+		{
+			preserveScroll: true,
+			onSuccess: () => (deleteOpen.value = false),
+		},
+	);
+}
 </script>
 
 <template>
-	<div>
-		<Card class="mb-6">
-			<CardHeader>
-				<CardTitle>Create Announcement</CardTitle>
-			</CardHeader>
-			<CardContent class="space-y-4">
-				<div>
-					<Label for="announcement-create-title">Title</Label>
-					<Input
-						id="announcement-create-title"
-						v-model="createForm.title"
-						class="mt-1" />
-				</div>
-
-				<div>
-					<Label for="announcement-create-body">Body</Label>
-					<textarea
-						id="announcement-create-body"
-						v-model="createForm.body"
-						rows="4"
-						:class="textareaClass" />
-				</div>
-
-				<div>
-					<Label for="announcement-create-published-at">
-						Publish At (leave blank to save as a draft)
-					</Label>
-					<Input
-						id="announcement-create-published-at"
-						v-model="createForm.published_at"
-						type="datetime-local"
-						class="mt-1" />
-				</div>
-
-				<Button
-					:disabled="!createForm.title || !createForm.body"
-					@click="createAnnouncement">
-					Create Announcement
-				</Button>
-			</CardContent>
-		</Card>
-
-		<Card>
-			<CardHeader>
+	<Card>
+		<CardHeader
+			class="flex flex-row flex-wrap items-start justify-between gap-2">
+			<div>
 				<CardTitle>Announcements</CardTitle>
-			</CardHeader>
-			<CardContent class="space-y-6">
-				<p
-					v-if="props.announcements.length === 0"
-					class="text-cape-palliser-700 text-sm">
-					No announcements yet.
+				<p class="text-cape-palliser-600 text-sm">
+					The newest published post leads on home. Every
+					published post is listed on /news.
 				</p>
+			</div>
+			<Button
+				size="sm"
+				@click="openCreate"
+				>New announcement</Button
+			>
+		</CardHeader>
+		<CardContent>
+			<p
+				v-if="props.announcements.length === 0"
+				class="text-cape-palliser-700 text-sm">
+				No announcements yet.
+			</p>
 
-				<div
+			<ul
+				v-else
+				class="space-y-2"
+				data-testid="announcement-list">
+				<li
 					v-for="announcement in props.announcements"
 					:key="announcement.id"
-					class="border-shakespeare-200 space-y-3 rounded-lg border p-4">
-					<div class="flex items-center justify-between gap-2">
-						<span
-							class="text-shakespeare-400 text-sm font-semibold">
-							{{ statusLabel(announcement) }}
-						</span>
-						<span
-							v-if="announcement.author_name"
-							class="text-cape-palliser-700 text-sm">
-							by {{ announcement.author_name }}
-						</span>
-					</div>
-
-					<div>
-						<Label
-							:for="`announcement-title-${announcement.id}`"
-							>Title</Label
-						>
-						<Input
-							:id="`announcement-title-${announcement.id}`"
-							v-model="getRowState(announcement).title"
-							class="mt-1" />
-					</div>
-
-					<div>
-						<Label
-							:for="`announcement-body-${announcement.id}`"
-							>Body</Label
-						>
-						<textarea
-							:id="`announcement-body-${announcement.id}`"
-							v-model="getRowState(announcement).body"
-							rows="4"
-							:class="textareaClass" />
-					</div>
-
-					<div>
-						<Label
-							:for="`announcement-published-at-${announcement.id}`"
-							>Publish At</Label
-						>
-						<Input
-							:id="`announcement-published-at-${announcement.id}`"
-							v-model="
-								getRowState(announcement).published_at
-							"
-							type="datetime-local"
-							class="mt-1" />
-					</div>
-
-					<div class="flex flex-wrap gap-2">
-						<Button @click="saveAnnouncement(announcement)"
-							>Save</Button
-						>
+					class="flex flex-wrap items-center gap-3 rounded border border-gray-200 p-3">
+					<span class="min-w-40 flex-1 font-medium">{{
+						announcement.title
+					}}</span>
+					<span class="text-cape-palliser-600 text-sm">{{
+						formatDate(announcement.published_at)
+					}}</span>
+					<span
+						class="rounded bg-gray-100 px-1.5 py-0.5 text-xs uppercase"
+						>{{ statusLabel(announcement) }}</span
+					>
+					<div class="flex gap-2">
 						<Button
 							variant="outline"
-							@click="publishNow(announcement)">
-							Publish Now
-						</Button>
-						<Button
-							variant="outline"
-							:disabled="!announcement.published_at"
-							@click="unpublish(announcement)">
-							Unpublish
-						</Button>
+							size="sm"
+							@click="openEdit(announcement)"
+							>Edit</Button
+						>
 						<Button
 							variant="destructive"
-							@click="removeAnnouncement(announcement)">
-							Delete
-						</Button>
+							size="sm"
+							@click="openDelete(announcement)"
+							>Delete</Button
+						>
 					</div>
+				</li>
+			</ul>
+		</CardContent>
+	</Card>
+
+	<Dialog v-model:open="dialogOpen">
+		<DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+			<DialogHeader>
+				<DialogTitle>{{
+					form.id === null
+						? 'New announcement'
+						: 'Edit announcement'
+				}}</DialogTitle>
+			</DialogHeader>
+
+			<form
+				class="space-y-4"
+				@submit.prevent="save">
+				<div>
+					<Label for="announcement-title">Title</Label>
+					<Input
+						id="announcement-title"
+						v-model="form.title"
+						class="mt-1"
+						required />
+					<p
+						v-if="errors.title"
+						class="mt-1 text-sm text-red-600">
+						{{ errors.title }}
+					</p>
 				</div>
-			</CardContent>
-		</Card>
-	</div>
+
+				<div>
+					<Label for="announcement-published-at">
+						Publish at (leave blank to save as a draft)
+					</Label>
+					<Input
+						id="announcement-published-at"
+						v-model="form.published_at"
+						type="datetime-local"
+						class="mt-1" />
+					<p
+						v-if="errors.published_at"
+						class="mt-1 text-sm text-red-600">
+						{{ errors.published_at }}
+					</p>
+				</div>
+
+				<div>
+					<span
+						id="announcement-body-label"
+						class="text-sm leading-none font-medium"
+						>Body</span
+					>
+					<div class="mt-1">
+						<CmsRichTextField
+							v-if="dialogOpen"
+							:key="form.id ?? 'new'"
+							v-model="form.body"
+							labelledby="announcement-body-label" />
+					</div>
+					<p
+						v-if="errors.body"
+						class="mt-1 text-sm text-red-600">
+						{{ errors.body }}
+					</p>
+				</div>
+
+				<DialogFooter>
+					<Button
+						type="button"
+						variant="outline"
+						@click="dialogOpen = false"
+						>Cancel</Button
+					>
+					<Button
+						type="submit"
+						:disabled="saving || !form.title || bodyIsEmpty"
+						>Save announcement</Button
+					>
+				</DialogFooter>
+			</form>
+		</DialogContent>
+	</Dialog>
+
+	<Dialog v-model:open="deleteOpen">
+		<DialogContent>
+			<DialogHeader>
+				<DialogTitle
+					>Delete "{{ deleteTarget?.title }}"?</DialogTitle
+				>
+			</DialogHeader>
+			<p>
+				It leaves home and /news straight away. Staff can recover it
+				if needed.
+			</p>
+			<DialogFooter>
+				<Button
+					variant="outline"
+					@click="deleteOpen = false"
+					>Cancel</Button
+				>
+				<Button
+					variant="destructive"
+					@click="confirmDelete"
+					>Delete</Button
+				>
+			</DialogFooter>
+		</DialogContent>
+	</Dialog>
 </template>

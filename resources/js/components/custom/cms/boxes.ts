@@ -15,15 +15,38 @@ export interface CmsBox {
 	width: CmsBoxWidth;
 	style: CmsBoxStyle;
 	html: string;
-	/** Present only on the home page's pinned News slot, whose html is empty. */
-	kind?: 'news';
+	/**
+	 * Present only on a pinned slot, whose html is empty: `news` on home,
+	 * `news-archive` on the news page.
+	 */
+	kind?: 'news' | 'news-archive';
 }
 
 export interface CmsAnnouncement {
 	id: number;
 	title: string;
+	/** Sanitized HTML. */
 	body: string;
 	published_at: string | null;
+}
+
+/** Laravel's length-aware paginator, as `/news` serialises it. */
+export interface CmsNewsArchive {
+	data: CmsAnnouncement[];
+	current_page: number;
+	last_page: number;
+	total: number;
+	prev_page_url: string | null;
+	next_page_url: string | null;
+}
+
+export function formatPublishedAt(published: string | null): string {
+	if (!published) return '';
+	return new Date(published).toLocaleString('default', {
+		month: 'long',
+		day: 'numeric',
+		year: 'numeric',
+	});
 }
 
 /** Widths on the lg:grid-cols-6 grid. Below lg every box stacks. */

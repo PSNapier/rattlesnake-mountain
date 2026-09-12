@@ -123,7 +123,6 @@ Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
         Route::post('/admin/cms/pages/{page}/revisions/{revision}/restore', [CmsController::class, 'restoreCmsPageRevision'])->name('admin.cms.pages.revisions.restore');
         Route::patch('/admin/cms/pages/{page}/visibility', [CmsController::class, 'updateCmsPageVisibility'])->name('admin.cms.pages.visibility');
         Route::delete('/admin/cms/pages/{page}', [CmsController::class, 'destroyCmsPage'])->name('admin.cms.pages.destroy');
-        Route::post('/admin/cms/pages/reorder', [CmsController::class, 'reorderCmsPages'])->name('admin.cms.pages.reorder');
         Route::post('/admin/cms/menu', [CmsController::class, 'storeMenuItem'])->name('admin.cms.menu.store');
         Route::post('/admin/cms/menu/reorder', [CmsController::class, 'reorderMenuItems'])->name('admin.cms.menu.reorder');
         Route::put('/admin/cms/menu/{menuItem}', [CmsController::class, 'updateMenuItem'])->name('admin.cms.menu.update');

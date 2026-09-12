@@ -21,6 +21,21 @@ class CmsPage extends Model
      */
     public const HOME_SLUG = 'home';
 
+    /**
+     * The announcement archive. Linked from home's read-more, so hiding or
+     * deleting it would break the front page the same way.
+     */
+    public const NEWS_SLUG = 'news';
+
+    /**
+     * Pages reached without the navbar. They render in their own admin card,
+     * carry no menu row and cannot be deleted. `is_system` is set by migration
+     * and seeder only, never by an admin.
+     *
+     * @var list<string>
+     */
+    public const SYSTEM_SLUGS = [self::HOME_SLUG, 'privacy-policy'];
+
     protected $fillable = [
         'slug',
         'title',
@@ -36,6 +51,7 @@ class CmsPage extends Model
     protected $casts = [
         'content' => 'array',
         'coming_soon' => 'boolean',
+        'is_system' => 'boolean',
     ];
 
     protected $attributes = [
@@ -58,6 +74,14 @@ class CmsPage extends Model
     public function isHome(): bool
     {
         return $this->slug === self::HOME_SLUG;
+    }
+
+    /**
+     * Pages that can be neither hidden nor deleted.
+     */
+    public function isProtected(): bool
+    {
+        return in_array($this->slug, [self::HOME_SLUG, self::NEWS_SLUG], true);
     }
 
     public function isLive(): bool

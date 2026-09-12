@@ -4,9 +4,11 @@ import {
 	segmentBoxes,
 	type CmsAnnouncement,
 	type CmsBox,
+	type CmsNewsArchive as CmsNewsArchiveData,
 } from '@/components/custom/cms/boxes';
 import CmsBoxEditor from '@/components/custom/cms/CmsBoxEditor.vue';
 import CmsEditBar from '@/components/custom/cms/CmsEditBar.vue';
+import CmsNewsArchive from '@/components/custom/cms/CmsNewsArchive.vue';
 import CmsNewsSlot from '@/components/custom/cms/CmsNewsSlot.vue';
 import CmsNewsSlotEditor from '@/components/custom/cms/CmsNewsSlotEditor.vue';
 import PlainTextEdit from '@/components/custom/cms/PlainTextEdit.vue';
@@ -26,6 +28,8 @@ const props = withDefaults(
 		title?: string | null;
 		/** Live feed for the home page's News slot. */
 		announcements?: CmsAnnouncement[];
+		/** Paginated archive, present on a page carrying the archive slot. */
+		newsArchive?: CmsNewsArchiveData | null;
 		isHome?: boolean;
 		/**
 		 * Present only when the viewer may edit this page inline. Omitted (or
@@ -38,6 +42,7 @@ const props = withDefaults(
 		notPublic: false,
 		title: null,
 		announcements: () => [],
+		newsArchive: null,
 		isHome: false,
 		inline: null,
 	},
@@ -192,10 +197,11 @@ onBeforeUnmount(destroySortable);
 				v-for="(box, index) in draft.content"
 				:key="box.id">
 				<CmsNewsSlotEditor
-					v-if="box.kind === 'news'"
+					v-if="box.kind"
 					v-model="draft.content[index]"
 					:data-id="box.id"
-					:announcements="announcements" />
+					:announcements="announcements"
+					:archive="newsArchive" />
 				<CmsBoxEditor
 					v-else
 					v-model="draft.content[index]"
@@ -225,6 +231,15 @@ onBeforeUnmount(destroySortable);
 									:announcements="announcements" />
 							</div>
 							<div
+								v-else-if="box.kind === 'news-archive'"
+								:class="[
+									...boxClasses(box),
+									'space-y-6',
+								]">
+								<CmsNewsArchive
+									:archive="newsArchive" />
+							</div>
+							<div
 								v-else
 								:class="boxClasses(box)"
 								v-html="box.html"></div>
@@ -243,6 +258,11 @@ onBeforeUnmount(destroySortable);
 							:class="newsClasses(box)">
 							<CmsNewsSlot
 								:announcements="announcements" />
+						</div>
+						<div
+							v-else-if="box.kind === 'news-archive'"
+							:class="[...boxClasses(box), 'space-y-6']">
+							<CmsNewsArchive :archive="newsArchive" />
 						</div>
 						<div
 							v-else

@@ -1,9 +1,14 @@
 <?php
 
+use App\Models\CmsPage;
 use App\Models\MenuItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
+
+// The [041] data migration adds a News page and header row. These tests build
+// their own menu, so it goes (its row cascades with it).
+beforeEach(fn () => CmsPage::withTrashed()->where('slug', 'news')->forceDelete());
 
 it('shares nav menu with inertia response', function () {
     MenuItem::create([

@@ -11,6 +11,10 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     CmsSnapshot::$pathOverride = base_path('tests/tmp/cms-snapshot-'.uniqid().'.json');
+
+    // News, like home, comes from its own data migration rather than the
+    // seeders these tests count.
+    CmsPage::withTrashed()->where('slug', CmsPage::NEWS_SLUG)->forceDelete();
 });
 
 afterEach(function () {
@@ -53,6 +57,32 @@ it('writes pages and menu to the fixture', function () {
         ->and($gettingStarted['children'][0]['label'])->toBe('Rules');
 });
 
+it('resolves page links when replaying an old snapshot', function () {
+    // Captured before [042]: menu rows carry a path and nothing else.
+    CmsSnapshot::write([
+        'pages' => [
+            ['slug' => 'rules', 'title' => 'Rules', 'hero_title' => 'Rules', 'content' => [], 'visibility' => 'live'],
+            ['slug' => 'privacy-policy', 'title' => 'Privacy', 'hero_title' => 'Privacy', 'content' => [], 'visibility' => 'live'],
+        ],
+        'menu' => [
+            ['label' => 'Home', 'path' => '/', 'sort_order' => 1],
+            ['label' => 'Rules', 'path' => '/rules', 'sort_order' => 2, 'children' => []],
+            ['label' => 'Privacy', 'path' => '/privacy-policy', 'sort_order' => 3],
+        ],
+    ]);
+
+    $this->seed(CmsPageSeeder::class);
+    $this->seed(MenuItemSeeder::class);
+
+    $rules = CmsPage::query()->where('slug', 'rules')->sole();
+    $privacy = CmsPage::query()->where('slug', 'privacy-policy')->sole();
+
+    expect(MenuItem::query()->where('label', 'Rules')->value('cms_page_id'))->toBe($rules->id)
+        ->and(MenuItem::query()->where('label', 'Home')->value('cms_page_id'))->toBeNull()
+        ->and((bool) $privacy->is_system)->toBeTrue()
+        ->and(MenuItem::query()->where('label', 'Privacy')->exists())->toBeFalse();
+});
+
 it('restores snapshot content when seeding a fresh database', function () {
     $this->seed(CmsPageSeeder::class);
     $this->seed(MenuItemSeeder::class);
@@ -61,7 +91,9 @@ it('restores snapshot content when seeding a fresh database', function () {
         'title' => 'House Rules',
         'hero_description' => 'Edited after launch.',
     ]);
-    MenuItem::query()->where('label', 'Contact Us')->update(['path' => '/say-hello']);
+    // Home is a ghost row, so its path is the target. Page rows follow their
+    // page's slug instead.
+    MenuItem::query()->where('label', 'Home')->update(['path' => '/say-hello']);
 
     $this->artisan('cms:snapshot')->assertSuccessful();
 
@@ -81,7 +113,7 @@ it('restores snapshot content when seeding a fresh database', function () {
         ->and($rules->title)->toBe('House Rules')
         ->and($rules->hero_description)->toBe('Edited after launch.')
         ->and(MenuItem::query()->count())->toBe(16)
-        ->and(MenuItem::query()->where('label', 'Contact Us')->value('path'))->toBe('/say-hello');
+        ->and(MenuItem::query()->where('label', 'Home')->value('path'))->toBe('/say-hello');
 
     $gettingStarted = MenuItem::query()->where('label', 'Getting Started')->firstOrFail();
 

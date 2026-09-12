@@ -5,15 +5,19 @@ import {
 	widthOptions,
 	type CmsAnnouncement,
 	type CmsBox,
+	type CmsNewsArchive as CmsNewsArchiveData,
 } from './boxes';
+import CmsNewsArchive from './CmsNewsArchive.vue';
 import CmsNewsSlot from './CmsNewsSlot.vue';
 
-// The pinned News slot can be dragged and resized, nothing else: its content
-// is the live announcement feed, so there is no editor and no remove.
+// A pinned slot (home's News, or the news page's archive) can be dragged and
+// resized, nothing else: its content is live announcements, so there is no
+// editor and no remove.
 const box = defineModel<CmsBox>({ required: true });
 
 defineProps<{
 	announcements: CmsAnnouncement[];
+	archive?: CmsNewsArchiveData | null;
 }>();
 </script>
 
@@ -48,10 +52,21 @@ defineProps<{
 			<span
 				class="text-cape-palliser-700 ml-auto flex items-center gap-1 text-xs">
 				<Newspaper class="size-4" />
-				Live announcements
+				{{
+					box.kind === 'news-archive'
+						? 'Announcement archive'
+						: 'Live announcements'
+				}}
 			</span>
 		</div>
 
-		<CmsNewsSlot :announcements="announcements" />
+		<div
+			v-if="box.kind === 'news-archive'"
+			class="space-y-6">
+			<CmsNewsArchive :archive="archive ?? null" />
+		</div>
+		<CmsNewsSlot
+			v-else
+			:announcements="announcements" />
 	</div>
 </template>

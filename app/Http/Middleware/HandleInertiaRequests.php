@@ -50,20 +50,28 @@ class HandleInertiaRequests extends Middleware
                 ->count();
         }
 
-        $navMenu = MenuItem::with('children')
+        // Visibility coupling lives in the query: a hidden or deleted page's
+        // row drops out, ghost rows always show.
+        $navMenu = MenuItem::query()
+            ->with([
+                'page',
+                'children' => fn ($query) => $query->shownInHeader()->with('page'),
+            ])
             ->whereNull('parent_id')
+            ->shownInHeader()
             ->orderBy('sort_order')
+            ->orderBy('id')
             ->get()
             ->map(function (MenuItem $item) {
                 return [
                     'id' => $item->id,
                     'label' => (string) $item->label,
-                    'path' => $item->path !== null && $item->path !== '' ? $item->path : null,
+                    'path' => $item->targetPath(),
                     'children' => $item->children->map(function (MenuItem $child) {
                         return [
                             'id' => $child->id,
                             'label' => (string) $child->label,
-                            'path' => $child->path !== null && $child->path !== '' ? $child->path : null,
+                            'path' => $child->targetPath(),
                         ];
                     })->values()->all(),
                 ];

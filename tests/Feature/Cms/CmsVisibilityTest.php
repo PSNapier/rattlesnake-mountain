@@ -87,3 +87,16 @@ it('refuses to hide the home page', function () {
 
     expect($home->fresh()->visibility)->toBe(CmsPage::VISIBILITY_LIVE);
 });
+
+it('refuses to hide the news page', function () {
+    // Created by the [041] data migration.
+    $news = CmsPage::query()->where('slug', 'news')->firstOrFail();
+
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    actingAs($admin)->patch(route('admin.cms.pages.visibility', $news), [
+        'visibility' => CmsPage::VISIBILITY_HIDDEN,
+    ])->assertForbidden();
+
+    expect($news->fresh()->visibility)->toBe(CmsPage::VISIBILITY_LIVE);
+});

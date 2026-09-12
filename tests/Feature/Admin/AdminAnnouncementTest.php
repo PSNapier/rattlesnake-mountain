@@ -45,6 +45,61 @@ it('lets staff create and unpublish announcements', function () {
     expect(Announcement::find($announcement->id))->toBeNull();
 });
 
+it('sanitizes html in the body', function () {
+    $admin = User::factory()->create(['role' => Role::Admin]);
+
+    $dirty = '<p>Hello <strong>range</strong></p><script>alert(1)</script>'
+        .'<p onclick="steal()">Read <a href="/rules">the rules</a>.</p>'
+        .'<ul><li>One</li></ul><img src="/images/group-logo.png" alt="logo">';
+
+    actingAs($admin)->post(route('admin.announcements.store'), [
+        'title' => 'Formatted',
+        'body' => $dirty,
+        'published_at' => now()->subMinute()->toIso8601String(),
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    $announcement = Announcement::where('title', 'Formatted')->firstOrFail();
+
+    expect($announcement->body)->not->toContain('<script')
+        ->not->toContain('alert(1)')
+        ->not->toContain('onclick')
+        ->toContain('<strong>range</strong>')
+        ->toContain('href="/rules"')
+        ->toContain('<li>One</li>')
+        ->toContain('<img');
+
+    // Same guarantee on update.
+    actingAs($admin)->put(route('admin.announcements.update', $announcement), [
+        'title' => 'Formatted',
+        'body' => '<p>Edited.</p><script>alert(2)</script>',
+        'published_at' => null,
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    expect($announcement->fresh()->body)->toBe('<p>Edited.</p>');
+});
+
+it('soft deletes an announcement', function () {
+    $admin = User::factory()->create(['role' => Role::Admin]);
+    $announcement = Announcement::create([
+        'title' => 'Short Lived',
+        'body' => '<p>Gone soon.</p>',
+        'published_at' => now()->subMinute(),
+    ]);
+
+    actingAs($admin)->delete(route('admin.announcements.destroy', $announcement))
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    expect(Announcement::find($announcement->id))->toBeNull()
+        ->and(Announcement::withTrashed()->find($announcement->id)?->deleted_at)->not->toBeNull();
+
+    $this->get('/')->assertInertia(fn ($page) => $page->has('announcements', 0));
+    $this->get('/news')->assertInertia(fn ($page) => $page->has('newsArchive.data', 0));
+
+    actingAs($admin)->get(route('admin.index'))
+        ->assertInertia(fn ($page) => $page->has('announcements', 0));
+});
+
 it('stores an offset aware publish time as the correct instant', function () {
     $admin = User::factory()->create(['role' => Role::Admin]);
 

@@ -64,6 +64,21 @@ class CmsSanitizer
      */
     public const KIND_NEWS = 'news';
 
+    /**
+     * The paginated announcement archive. No html of its own, only on `news`.
+     */
+    public const KIND_NEWS_ARCHIVE = 'news-archive';
+
+    /**
+     * Which pinned slot each page keeps. Every other page keeps none.
+     *
+     * @var array<string, string>
+     */
+    private const PINNED_KIND = [
+        CmsPage::HOME_SLUG => self::KIND_NEWS,
+        CmsPage::NEWS_SLUG => self::KIND_NEWS_ARCHIVE,
+    ];
+
     private static ?HtmlSanitizer $sanitizer = null;
 
     public static function sanitize(string $html): string
@@ -76,23 +91,25 @@ class CmsSanitizer
      * normalise the rest of the box, so a hand-edited JSON payload cannot
      * store a box without an id or with an unknown width or style.
      *
-     * The slug decides the news slot: home keeps exactly one (restored at the
-     * end if the payload dropped it), every other page loses it.
+     * The slug decides the pinned slot: home keeps exactly one news slot and
+     * `news` exactly one archive slot (each restored at the end if the payload
+     * dropped it). Every other page loses both.
      *
      * @param  array<int, array<string, mixed>>  $boxes
      * @return list<array{id: string, width: string, style: string, html: string, kind?: string}>
      */
     public static function sanitizeBoxes(array $boxes, ?string $slug = null): array
     {
-        $isHome = $slug === CmsPage::HOME_SLUG;
+        $pinnedKind = $slug !== null ? (self::PINNED_KIND[$slug] ?? null) : null;
         $normalised = [];
-        $hasNews = false;
+        $hasPinned = false;
 
         foreach (array_values($boxes) as $index => $box) {
             $box = is_array($box) ? $box : [];
-            $isNews = ($box['kind'] ?? null) === self::KIND_NEWS;
+            $kind = $box['kind'] ?? null;
+            $isPinned = in_array($kind, self::PINNED_KIND, true);
 
-            if ($isNews && (! $isHome || $hasNews)) {
+            if ($isPinned && ($kind !== $pinnedKind || $hasPinned)) {
                 continue;
             }
 
@@ -104,19 +121,19 @@ class CmsSanitizer
                     : 'b'.($index + 1),
                 'width' => static::width($box),
                 'style' => in_array($style, self::STYLES, true) ? $style : 'box',
-                'html' => $isNews ? '' : static::sanitize((string) ($box['html'] ?? '')),
+                'html' => $isPinned ? '' : static::sanitize((string) ($box['html'] ?? '')),
             ];
 
-            if ($isNews) {
-                $clean['kind'] = self::KIND_NEWS;
-                $hasNews = true;
+            if ($isPinned) {
+                $clean['kind'] = $kind;
+                $hasPinned = true;
             }
 
             $normalised[] = $clean;
         }
 
-        if ($isHome && ! $hasNews) {
-            $normalised[] = static::newsBox(array_column($normalised, 'id'));
+        if ($pinnedKind !== null && ! $hasPinned) {
+            $normalised[] = static::pinnedBox($pinnedKind, array_column($normalised, 'id'));
         }
 
         return $normalised;
@@ -145,20 +162,22 @@ class CmsSanitizer
      * @param  list<string>  $takenIds
      * @return array{id: string, width: string, style: string, html: string, kind: string}
      */
-    private static function newsBox(array $takenIds): array
+    private static function pinnedBox(string $kind, array $takenIds): array
     {
-        $id = 'news';
+        $isNews = $kind === self::KIND_NEWS;
+        $base = $isNews ? 'news' : 'archive';
+        $id = $base;
 
         for ($suffix = 2; in_array($id, $takenIds, true); $suffix++) {
-            $id = 'news-'.$suffix;
+            $id = $base.'-'.$suffix;
         }
 
         return [
             'id' => $id,
-            'width' => 'third',
-            'style' => 'box-centered',
+            'width' => $isNews ? 'third' : 'full',
+            'style' => $isNews ? 'box-centered' : 'box',
             'html' => '',
-            'kind' => self::KIND_NEWS,
+            'kind' => $kind,
         ];
     }
 

@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\CmsPage;
-use App\Models\MenuItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -42,30 +41,6 @@ it('soft deletes a page', function () {
         ->assertInertia(fn ($inertia) => $inertia->component('NotFound'));
 });
 
-it('reports menu items pointing at the deleted slug', function () {
-    $page = CmsPage::create([
-        'slug' => 'rules',
-        'title' => 'Rules',
-        'hero_title' => 'Rules',
-        'content' => [],
-        'visibility' => CmsPage::VISIBILITY_LIVE,
-    ]);
-
-    $menuItem = MenuItem::create([
-        'label' => 'Rules',
-        'path' => '/rules',
-        'sort_order' => 0,
-    ]);
-
-    $admin = User::factory()->create(['role' => 'admin']);
-
-    actingAs($admin)->delete(route('admin.cms.pages.destroy', $page))
-        ->assertRedirect()
-        ->assertSessionHas('menu_links', [
-            ['id' => $menuItem->id, 'label' => 'Rules', 'path' => '/rules'],
-        ]);
-});
-
 it('refuses to delete the home page', function () {
     // The home data migration has usually created the row already.
     $home = CmsPage::query()->updateOrCreate(['slug' => 'home'], [
@@ -81,4 +56,16 @@ it('refuses to delete the home page', function () {
         ->assertForbidden();
 
     expect(CmsPage::find($home->id))->not->toBeNull();
+});
+
+it('refuses to delete the news page', function () {
+    // Created by the [041] data migration.
+    $news = CmsPage::query()->where('slug', 'news')->firstOrFail();
+
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    actingAs($admin)->delete(route('admin.cms.pages.destroy', $news))
+        ->assertForbidden();
+
+    expect(CmsPage::find($news->id))->not->toBeNull();
 });

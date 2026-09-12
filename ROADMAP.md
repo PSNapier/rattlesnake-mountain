@@ -609,7 +609,7 @@ Site artwork carries structured artist attribution again. Uploading a site image
 
 ## [041] Rich-Text Announcements and News Archive
 
-**Status:** `next`
+**Status:** `done`
 **Depends On:** [040] (done, see ROADMAP_DONE.md)
 **Spec:** none
 
@@ -649,6 +649,16 @@ Announcements are written in the same WYSIWYG editor as CMS page content and sto
 - `publicFeed()` keeps its shape but home calls it with `limit: 1`. Author stays out of the public payload.
 - Future-dated announcements remain hidden from both surfaces: `scopePublished()` already handles it and the archive reuses the same scope.
 
+**As built (2026-09-12):**
+
+- The archive paginator ships as `newsArchive`, not `announcements`: home already uses `announcements` for a plain array, and one key with two shapes would break the shared `cms/Show` props. `newsArchive` is null on pages without the archive slot.
+- `CmsPage::isHome()` keeps meaning home, since home rendering reads it. A new `CmsPage::isProtected()` covers `home` and `NEWS_SLUG` and backs the delete and visibility guards.
+- The news page's header row is created in the same data migration (`2026_09_13_100002_create_news_cms_page`), as a [042] page row at the end of the top level. Its Hide and Delete controls are disabled in the tree.
+- The home clamp is `max-h-64` with a CSS mask fade, shown only when the body overflows, rather than a coloured overlay. It needs no knowledge of the box background.
+- The admin dialog mounts `CmsRichTextField.vue` (the `cmsExtensions()` and `CmsEditToolbar.vue` stack) only while open. Save is disabled for an empty editor.
+- The legacy body migration skips bodies already starting with `<p>`, so a rerun does not double-wrap.
+- Browser check found tiptap's `<li><p>` markup put the text on the line below `.box li:before` bullets. `app.css` now keeps a list item's first paragraph inline. The same fix applies to lists typed into CMS pages with the inline editor, while migrated `<li>text</li>` lists are unchanged.
+
 **Diagrams:**
 
 ```mermaid
@@ -663,111 +673,24 @@ flowchart LR
 
 ### Acceptance Criteria
 
-- [ ] Announcement bodies save as sanitized HTML and a script tag is stripped on write
+- [x] Announcement bodies save as sanitized HTML and a script tag is stripped on write
       `tests/Feature/Admin/AdminAnnouncementTest.php::it_sanitizes_html_in_the_body`
-- [ ] The migration converts plain-text bodies to paragraphs and rolls back cleanly
+- [x] The migration converts plain-text bodies to paragraphs and rolls back cleanly
       `tests/Feature/Cms/ContentMigrationTest.php::it_converts_plain_text_announcements_to_html`
       `tests/Feature/Cms/ContentMigrationTest.php::it_reverts_announcement_html_to_plain_text`
-- [ ] Deleting an announcement soft-deletes it and drops it from both public surfaces
+- [x] Deleting an announcement soft-deletes it and drops it from both public surfaces
       `tests/Feature/Admin/AdminAnnouncementTest.php::it_soft_deletes_an_announcement`
-- [ ] The migration creates a published `news` page with a header menu link, and does nothing if one exists
+- [x] The migration creates a published `news` page with a header menu link, and does nothing if one exists
       `tests/Feature/Cms/NewsArchiveTest.php::it_creates_the_news_page_once`
-- [ ] `/news` lists published announcements newest first, 10 per page, and hides future-dated ones
+- [x] `/news` lists published announcements newest first, 10 per page, and hides future-dated ones
       `tests/Feature/Cms/NewsArchiveTest.php::it_paginates_published_announcements`
       `tests/Feature/Cms/NewsArchiveTest.php::it_hides_future_dated_announcements_from_the_archive`
-- [ ] The archive slot is kept on `news`, restored if omitted from a save, and stripped from other pages
+- [x] The archive slot is kept on `news`, restored if omitted from a save, and stripped from other pages
       `tests/Feature/Cms/CmsSanitizerTest.php::it_keeps_the_archive_slot_on_news_only`
-- [ ] `news` cannot be deleted or hidden, matching the home guards
+- [x] `news` cannot be deleted or hidden, matching the home guards
       `tests/Feature/Cms/CmsPageDeletionTest.php::it_refuses_to_delete_the_news_page`
       `tests/Feature/Cms/CmsVisibilityTest.php::it_refuses_to_hide_the_news_page`
-- [ ] Home shows only the newest announcement with a read-more link to `/news`
+- [x] Home shows only the newest announcement with a read-more link to `/news`
       `tests/Feature/Cms/HomePageTest.php::it_shows_only_the_newest_announcement`
-- [ ] Staff can write bold, links, a list and an image in the admin dialog and see them render on home and `/news`, confirmed in a browser
-- [ ] A long announcement is clamped on home and full on `/news` at desktop and phone widths, confirmed in a browser
-
----
-
-## [042] Navbar Tree in the Admin Pages List
-
-**Status:** `next`
-**Depends On:** [040] (done, see ROADMAP_DONE.md)
-**Spec:** none
-
-### Goal
-
-The admin CMS tab splits its pages into two cards. **System Pages** holds the fixed pages reached without the navbar (`home`, `privacy-policy`): editable, never draggable, never deletable. **Header Pages** is the navbar itself, a two-level drag-and-drop tree where every non-system page is a nav row, dropdown headers and non-page links live as ghost rows, and a hidden page drops out of the public header automatically. This restores the top-level-entry and dropdown control that was dropped with the old menu manager, without bringing back a second surface to keep in sync.
-
-### Scope
-
-- `menu_items` gains nullable `cms_page_id` (FK, cascade with the page's soft delete); `path` stays for external and non-CMS route links
-- Two-level depth enforced in validation: a grandchild is rejected
-- Every top-level entry must have a target (page link or path); no bare labels
-- `CmsTab.vue` pages list splits into two cards: **System Pages** (flat, no drag, no delete) and **Header Pages** (nested sortable tree driven by `menu_items.sort_order`); `cms_pages.sort_order` retired
-- Ghost rows: nav entries with no page (external or app-route links) edited inline in the same list
-- Mandatory membership for non-system pages: creating a CMS page creates its nav row in the Header Pages tree, with the page created `hidden`
-- `is_system` column on `cms_pages` decides which card a page renders in; a system page has no `menu_items` row at all
-- Public header derives from page visibility: hidden or soft-deleted page means no nav entry; restore brings the entry back in place
-- Migration backfills `cms_page_id` by matching `path` against `/slug`; unmatched non-system pages get a top-level row with visibility untouched, and any menu row pointing at a system page is dropped
-- `MenuItemSeeder` re-resolves page links by path on replay, so pre-change `CmsSnapshot` fixtures still seed
-- NOT in scope: third-level flyouts in `HeaderNav.vue`; footer link management; per-role nav visibility; reworking the surviving admin menu routes or controller methods
-
-### Technical Notes
-
-**User flows:**
-
-- **Admin:** CMS tab. Drag a page under a header to put it in that dropdown, drag it out to make it top-level, drag to reorder within either.
-- **Admin:** "Add link" in the pages list. Create a ghost row pointing at `/horses` or an external URL, with the same drag and dropdown behaviour as a page row.
-- **Admin:** hide a page. It disappears from the public header immediately, its row stays in the tree greyed out.
-- **Visitor:** header shows only live, non-deleted entries in admin order.
-
-**Details:**
-
-- Backend survived c11319c intact: `MenuItem`, the four routes at `routes/web.php:128-131`, `CmsController::storeMenuItem/updateMenuItem/destroyMenuItem/reorderMenuItems`, and the `navMenu` share at `HandleInertiaRequests.php:53-68`. Only the Vue was deleted (523 lines). Reuse the endpoints; the reorder route already accepts a full ordered list.
-- `CmsController.php:126-147` currently warns that nothing links a menu row to a page and returns `menu_links` as a text hint on delete. With `cms_page_id` that hint becomes unnecessary and the delete response can drop it.
-- `sortablejs` and `@types/sortablejs` are already dependencies. Use nested Sortable groups rather than adding a new drag library.
-- Visibility coupling belongs in the `navMenu` query, not the component: filter to pages that are live and not soft-deleted, and keep ghost rows unconditional. A header whose children are all hidden still renders, because headers always have their own target.
-- The old deleted UI is recoverable at `git show c11319c^:resources/js/pages/admin/CmsTab.vue` for reference on the edit/create dialogs, but the flat list-plus-dropdown layout is deliberately not being restored.
-- Creating a page and creating its nav row must happen in one transaction in `StoreCmsPageRequest`'s controller path, so a failed nav insert cannot leave an unlinked page.
-- `is_system` backfills true for `home` and `privacy-policy`. The migration in `2026_09_12_110000_create_home_cms_page.php` sets it for fresh installs. **Spec-flag:** `contact-us` is arguably system too, since it is a footer destination rather than a header one — confirm before the backfill runs.
-- The two cards are separate components over one controller payload: `systemPages` and `headerTree`. The System Pages card reuses the existing row layout minus the drag handle and delete control; only Header Pages mounts Sortable.
-- Flipping `is_system` is not an admin action. It is set by migration and seeder, so no UI moves a page between cards.
-
-**Diagrams:**
-
-```mermaid
-flowchart TD
-    A[cms_pages row] --> S{is_system?}
-    S -->|yes| T[System Pages card, no menu_items row]
-    S -->|no| B[menu_items row, Header Pages card]
-    B --> C{parent_id null?}
-    C -->|yes| D[Top-level entry, target required]
-    C -->|no| E[Dropdown child]
-    A --> F{visibility / deleted_at}
-    F -->|hidden or deleted| G[Omitted from navMenu]
-    F -->|live| H[Rendered in header]
-    I[Ghost row: path only] --> B
-```
-
-### Acceptance Criteria
-
-- [ ] Migration adds `cms_page_id` and backfills it by matching `path` to `/slug`, appending a top-level row for unmatched pages without changing their visibility
-      `tests/Feature/Cms/NavigationTreeTest.php::it_backfills_page_links_from_paths`
-      `tests/Feature/Cms/NavigationTreeTest.php::it_appends_unmatched_pages_at_top_level`
-- [ ] A third-level entry is rejected and a top-level entry with no target is rejected
-      `tests/Feature/Cms/NavigationTreeTest.php::it_rejects_a_third_level_entry`
-      `tests/Feature/Cms/NavigationTreeTest.php::it_requires_a_target_on_top_level_entries`
-- [ ] Creating a CMS page creates a hidden page with a nav row in the same transaction
-      `tests/Feature/Cms/NavigationTreeTest.php::it_creates_a_nav_row_with_every_new_page`
-- [ ] Hidden and soft-deleted pages are absent from `navMenu`, and restoring a page returns its entry in place
-      `tests/Feature/Cms/NavigationTreeTest.php::it_omits_hidden_and_deleted_pages_from_the_header`
-      `tests/Feature/Cms/NavigationTreeTest.php::it_restores_a_nav_entry_with_its_page`
-- [ ] System pages render in their own card, have no `menu_items` row, and cannot be dragged or deleted
-      `tests/Feature/Cms/NavigationTreeTest.php::it_keeps_system_pages_out_of_the_tree`
-      `tests/Feature/Cms/NavigationTreeTest.php::it_refuses_to_delete_a_system_page`
-- [ ] Reordering persists through the existing reorder endpoint for both levels
-      `tests/Feature/Cms/NavigationTreeTest.php::it_reorders_entries_at_both_levels`
-- [ ] `MenuItemSeeder` replays a snapshot with no `cms_page_id` and resolves page links by path
-      `tests/Feature/Cms/CmsSnapshotCommandTest.php::it_resolves_page_links_when_replaying_an_old_snapshot`
-- [ ] The CMS tab shows System Pages and Header Pages as two distinct cards, with home and privacy policy in the former and no drag handles on them, confirmed in a browser
-- [ ] An admin can drag a page into a dropdown, add a ghost link to `/horses`, and see both reflected in the public header, confirmed in a browser
-- [ ] The tree drags correctly at desktop width and remains usable at tablet width, confirmed in a browser
+- [x] Staff can write bold, links, a list and an image in the admin dialog and see them render on home and `/news`, confirmed in a browser
+- [x] A long announcement is clamped on home and full on `/news` at desktop and phone widths, confirmed in a browser

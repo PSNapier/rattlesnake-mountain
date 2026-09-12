@@ -191,8 +191,8 @@ interface Props {
 	shopListings?: ShopListing[];
 	users?: PaginatedUsers;
 	userSearch?: string;
-	cmsPages?: unknown[];
-	menuItems?: unknown[];
+	systemPages?: unknown[];
+	headerTree?: unknown[];
 	announcements?: AdminAnnouncement[];
 	lifecycleSettings?: LifecycleSettings | null;
 	npcDeathProposals?: NpcDeathProposal[];
@@ -229,8 +229,8 @@ const props = withDefaults(defineProps<Props>(), {
 	herds: () => [],
 	items: () => [],
 	shopListings: () => [],
-	cmsPages: () => [],
-	menuItems: () => [],
+	systemPages: () => [],
+	headerTree: () => [],
 	announcements: () => [],
 	userSearch: '',
 	canManageRoleMatrix: false,
@@ -446,7 +446,10 @@ onMounted(() => {
 			<div
 				v-if="activeTab === 'cms' && canAccess('cms')"
 				class="space-y-6">
-				<CmsTab :cms-pages="props.cmsPages" />
+				<CmsTab
+					:system-pages="props.systemPages as never"
+					:header-tree="props.headerTree as never"
+					:announcements="props.announcements" />
 			</div>
 		</div>
 	</AppLayout>

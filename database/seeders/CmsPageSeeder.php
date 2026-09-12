@@ -47,6 +47,10 @@ class CmsPageSeeder extends Seeder
 
             CmsPage::query()->firstOrCreate(['slug' => $page['slug']], $page);
         }
+
+        // Not fillable: which card a page lives in is decided here and in
+        // the [042] migration, never by an admin.
+        CmsPage::query()->whereIn('slug', CmsPage::SYSTEM_SLUGS)->update(['is_system' => true]);
     }
 
     /**

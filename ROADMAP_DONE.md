@@ -1,5 +1,105 @@
 # Roadmap Done
 
+## [042] Navbar Tree in the Admin Pages List
+
+**Status:** `done`
+**Depends On:** [040] (done, see ROADMAP_DONE.md)
+**Spec:** none
+
+### Goal
+
+The admin CMS tab splits its pages into two cards. **System Pages** holds the fixed pages reached without the navbar (`home`, `privacy-policy`): editable, never draggable, never deletable. **Header Pages** is the navbar itself, a two-level drag-and-drop tree where every non-system page is a nav row, dropdown headers and non-page links live as ghost rows, and a hidden page drops out of the public header automatically. This restores the top-level-entry and dropdown control that was dropped with the old menu manager, without bringing back a second surface to keep in sync.
+
+### Scope
+
+- `menu_items` gains nullable `cms_page_id` (FK, cascade with the page's soft delete); `path` stays for external and non-CMS route links
+- Two-level depth enforced in validation: a grandchild is rejected
+- Every top-level entry must have a target (page link or path); no bare labels
+- `CmsTab.vue` pages list splits into two cards: **System Pages** (flat, no drag, no delete) and **Header Pages** (nested sortable tree driven by `menu_items.sort_order`); `cms_pages.sort_order` retired
+- Ghost rows: nav entries with no page (external or app-route links) edited inline in the same list
+- Mandatory membership for non-system pages: creating a CMS page creates its nav row in the Header Pages tree, with the page created `hidden`
+- `is_system` column on `cms_pages` decides which card a page renders in; a system page has no `menu_items` row at all
+- Public header derives from page visibility: hidden or soft-deleted page means no nav entry; restore brings the entry back in place
+- Migration backfills `cms_page_id` by matching `path` against `/slug`; unmatched non-system pages get a top-level row with visibility untouched, and any menu row pointing at a system page is dropped
+- `MenuItemSeeder` re-resolves page links by path on replay, so pre-change `CmsSnapshot` fixtures still seed
+- NOT in scope: third-level flyouts in `HeaderNav.vue`; footer link management; per-role nav visibility; reworking the surviving admin menu routes or controller methods
+
+### Technical Notes
+
+**User flows:**
+
+**Flows:** `verified`
+
+- **Admin:** "System Pages" card on the CMS tab at `/admin`. Toggle Live or Hidden on Privacy Policy. Home and Privacy Policy cannot be dragged or deleted.
+- **Admin:** "Header Pages" card on the CMS tab at `/admin`. Drag a row by its handle under a header to put it in that dropdown, drag it out to make it top-level, or drag to reorder within either.
+- **Admin:** "Add link" on the Header Pages card. Enter a Label and Link such as `/horses` or an external URL, then drag it like any page row.
+- **Admin:** Edit, Delete and Live/Hidden on a Header Pages row. A hidden page leaves the public header at once and its row stays in the tree greyed out.
+- **Visitor:** header on every page. Shows only live, non-deleted entries in admin order.
+
+**Details:**
+
+- Backend survived c11319c intact: `MenuItem`, the four routes at `routes/web.php:128-131`, `CmsController::storeMenuItem/updateMenuItem/destroyMenuItem/reorderMenuItems`, and the `navMenu` share at `HandleInertiaRequests.php:53-68`. Only the Vue was deleted (523 lines). Reuse the endpoints; the reorder route already accepts a full ordered list.
+- `CmsController.php:126-147` currently warns that nothing links a menu row to a page and returns `menu_links` as a text hint on delete. With `cms_page_id` that hint becomes unnecessary and the delete response can drop it.
+- `sortablejs` and `@types/sortablejs` are already dependencies. Use nested Sortable groups rather than adding a new drag library.
+- Visibility coupling belongs in the `navMenu` query, not the component: filter to pages that are live and not soft-deleted, and keep ghost rows unconditional. A header whose children are all hidden still renders, because headers always have their own target.
+- The old deleted UI is recoverable at `git show c11319c^:resources/js/pages/admin/CmsTab.vue` for reference on the edit/create dialogs, but the flat list-plus-dropdown layout is deliberately not being restored.
+- Creating a page and creating its nav row must happen in one transaction in `StoreCmsPageRequest`'s controller path, so a failed nav insert cannot leave an unlinked page.
+- `is_system` backfills true for `home` and `privacy-policy`. The migration in `2026_09_12_110000_create_home_cms_page.php` sets it for fresh installs. **Spec-flag:** `contact-us` is arguably system too, since it is a footer destination rather than a header one — confirm before the backfill runs.
+- The two cards are separate components over one controller payload: `systemPages` and `headerTree`. The System Pages card reuses the existing row layout minus the drag handle and delete control; only Header Pages mounts Sortable.
+- Flipping `is_system` is not an admin action. It is set by migration and seeder, so no UI moves a page between cards.
+
+**As built (2026-09-12):**
+
+- Spec-flag resolved by default: `contact-us` stays a Header page. `CmsPage::SYSTEM_SLUGS` is `home` and `privacy-policy` only, matching the Goal.
+- Migration `2026_09_13_090000_link_menu_items_to_cms_pages` exposes a public `backfill()` so tests replay the data half without DDL. Soft-deleted pages also get a row, so a restore returns the entry.
+- `cms_pages.sort_order` is retired in use but the column stays. `POST /admin/cms/pages/reorder` and `ReorderCmsPagesRequest` are removed.
+- `destroyMenuItem` refuses a page row (delete the page instead) and promotes page-row children of a deleted ghost header to top level. This was the one controller change needed to keep membership mandatory.
+- `cms:snapshot` writes page rows as `/slug` paths, so `MenuItemSeeder` re-resolves them on replay.
+- The tree uses Sortable `forceFallback` (pointer events). Native HTML5 drag did not resolve nested drop targets. Drop zones keep a constant size, and the drag cue is an outline, because resizing lists mid-drag shifted rows out from under the pointer.
+- `destroyCmsPage` no longer returns `menu_links`.
+
+**Diagrams:**
+
+```mermaid
+flowchart TD
+    A[cms_pages row] --> S{is_system?}
+    S -->|yes| T[System Pages card, no menu_items row]
+    S -->|no| B[menu_items row, Header Pages card]
+    B --> C{parent_id null?}
+    C -->|yes| D[Top-level entry, target required]
+    C -->|no| E[Dropdown child]
+    A --> F{visibility / deleted_at}
+    F -->|hidden or deleted| G[Omitted from navMenu]
+    F -->|live| H[Rendered in header]
+    I[Ghost row: path only] --> B
+```
+
+### Acceptance Criteria
+
+- [x] Migration adds `cms_page_id` and backfills it by matching `path` to `/slug`, appending a top-level row for unmatched pages without changing their visibility
+      `tests/Feature/Cms/NavigationTreeTest.php::it_backfills_page_links_from_paths`
+      `tests/Feature/Cms/NavigationTreeTest.php::it_appends_unmatched_pages_at_top_level`
+- [x] A third-level entry is rejected and a top-level entry with no target is rejected
+      `tests/Feature/Cms/NavigationTreeTest.php::it_rejects_a_third_level_entry`
+      `tests/Feature/Cms/NavigationTreeTest.php::it_requires_a_target_on_top_level_entries`
+- [x] Creating a CMS page creates a hidden page with a nav row in the same transaction
+      `tests/Feature/Cms/NavigationTreeTest.php::it_creates_a_nav_row_with_every_new_page`
+- [x] Hidden and soft-deleted pages are absent from `navMenu`, and restoring a page returns its entry in place
+      `tests/Feature/Cms/NavigationTreeTest.php::it_omits_hidden_and_deleted_pages_from_the_header`
+      `tests/Feature/Cms/NavigationTreeTest.php::it_restores_a_nav_entry_with_its_page`
+- [x] System pages render in their own card, have no `menu_items` row, and cannot be dragged or deleted
+      `tests/Feature/Cms/NavigationTreeTest.php::it_keeps_system_pages_out_of_the_tree`
+      `tests/Feature/Cms/NavigationTreeTest.php::it_refuses_to_delete_a_system_page`
+- [x] Reordering persists through the existing reorder endpoint for both levels
+      `tests/Feature/Cms/NavigationTreeTest.php::it_reorders_entries_at_both_levels`
+- [x] `MenuItemSeeder` replays a snapshot with no `cms_page_id` and resolves page links by path
+      `tests/Feature/Cms/CmsSnapshotCommandTest.php::it_resolves_page_links_when_replaying_an_old_snapshot`
+- [x] The CMS tab shows System Pages and Header Pages as two distinct cards, with home and privacy policy in the former and no drag handles on them, confirmed in a browser
+- [x] An admin can drag a page into a dropdown, add a ghost link to `/horses`, and see both reflected in the public header, confirmed in a browser
+- [x] The tree drags correctly at desktop width and remains usable at tablet width, confirmed in a browser
+
+---
+
 ## [040] Editable Home Page, Half-Width and Band Boxes
 
 **Status:** `done`

@@ -33,7 +33,7 @@ class UpdateCmsPageInlineRequest extends FormRequest
             'content.*.id' => ['nullable', 'string', 'max:64'],
             'content.*.width' => ['required', 'string', 'in:third,half,two-thirds,full'],
             'content.*.style' => ['required', 'string', 'in:box,box-alt,box-centered,band'],
-            'content.*.kind' => ['nullable', 'string', 'in:news'],
+            'content.*.kind' => ['nullable', 'string', 'in:news,news-archive'],
             'content.*.html' => ['present', 'nullable', 'string'],
         ];
     }

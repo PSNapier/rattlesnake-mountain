@@ -66,6 +66,21 @@ it('renders home from the cms page', function () {
             ->where('announcements', []));
 });
 
+it('shows only the newest announcement', function () {
+    freshHomePage();
+
+    Announcement::create(['title' => 'Older', 'body' => '<p>Last week.</p>', 'published_at' => now()->subWeek()]);
+    Announcement::create(['title' => 'Newest', 'body' => '<p>Today.</p>', 'published_at' => now()->subHour()]);
+    Announcement::create(['title' => 'Scheduled', 'body' => '<p>Tomorrow.</p>', 'published_at' => now()->addDay()]);
+
+    $this->get('/')
+        ->assertInertia(fn ($inertia) => $inertia
+            ->has('announcements', 1)
+            ->where('announcements.0.title', 'Newest')
+            ->where('announcements.0.body', '<p>Today.</p>')
+            ->missing('announcements.0.author_id'));
+});
+
 it('redirects the home slug to root', function () {
     freshHomePage();
 

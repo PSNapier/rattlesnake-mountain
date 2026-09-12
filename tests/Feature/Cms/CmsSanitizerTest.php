@@ -136,6 +136,48 @@ it('restores a missing news slot on home', function () {
     expect(CmsSanitizer::sanitizeBoxes([], 'home'))->toHaveCount(1);
 });
 
+it('keeps the archive slot on news only', function () {
+    $boxes = [
+        ['id' => 'intro', 'width' => 'full', 'style' => 'box', 'html' => '<p>All the news.</p>'],
+        ['id' => 'archive', 'width' => 'full', 'style' => 'box', 'kind' => 'news-archive', 'html' => '<p>Typed into.</p>'],
+        ['id' => 'archive-2', 'width' => 'half', 'style' => 'box', 'kind' => 'news-archive', 'html' => ''],
+    ];
+
+    $news = CmsSanitizer::sanitizeBoxes($boxes, 'news');
+
+    // One slot, never carrying html.
+    expect($news)->toHaveCount(2)
+        ->and($news[1])->toBe([
+            'id' => 'archive',
+            'width' => 'full',
+            'style' => 'box',
+            'html' => '',
+            'kind' => 'news-archive',
+        ]);
+
+    // Restored when a save on news leaves it out.
+    $restored = CmsSanitizer::sanitizeBoxes([$boxes[0]], 'news');
+
+    expect(array_column($restored, 'kind'))->toBe(['news-archive'])
+        ->and($restored[1]['html'])->toBe('');
+
+    // Stripped everywhere else, and home keeps only its own news slot.
+    expect(array_column(CmsSanitizer::sanitizeBoxes($boxes, 'rules'), 'kind'))->toBe([])
+        ->and(array_column(CmsSanitizer::sanitizeBoxes($boxes, 'home'), 'kind'))->toBe(['news']);
+
+    // Through the inline save endpoint, which validates the kind.
+    $admin = User::factory()->create(['role' => 'admin']);
+    $page = CmsPage::query()->where('slug', 'news')->firstOrFail();
+
+    actingAs($admin)->put(route('admin.cms.pages.inline', $page), [
+        'title' => 'News',
+        'hero_title' => 'News',
+        'content' => [$boxes[0], $boxes[1]],
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    expect(array_column($page->fresh()->content, 'kind'))->toBe(['news-archive']);
+});
+
 it('accepts half width and band style', function () {
     $boxes = CmsSanitizer::sanitizeBoxes([
         ['id' => 'b1', 'width' => 'half', 'style' => 'band', 'html' => '<p>Band.</p>'],

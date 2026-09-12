@@ -93,35 +93,33 @@ class DashboardController extends Controller
         }
 
         if ($user->can('admin.cms')) {
-            $menuPaths = MenuItem::query()->get(['id', 'label', 'path'])->groupBy('path');
+            $props['systemPages'] = CmsPage::query()
+                ->where('is_system', true)
+                ->orderByRaw('slug <> ?', [CmsPage::HOME_SLUG])
+                ->orderBy('title')
+                ->get(['id', 'slug', 'title', 'visibility'])
+                ->map(fn (CmsPage $page) => $this->navPage($page))
+                ->values()
+                ->all();
 
-            $props['cmsPages'] = CmsPage::orderBy('sort_order')
-                ->get(['id', 'slug', 'title', 'description', 'hero_title', 'hero_description', 'content', 'coming_soon', 'visibility', 'sort_order'])
-                ->map(fn (CmsPage $page) => array_merge($page->toArray(), [
-                    // `MenuItem.path` is free text, so this is the only link
-                    // between a menu row and a page: the delete confirm lists
-                    // what would be left pointing at a dead slug.
-                    'menu_links' => $menuPaths->get('/'.$page->slug, collect())
-                        ->map(fn (MenuItem $item) => [
-                            'id' => $item->id,
-                            'label' => $item->label,
-                            'path' => $item->path,
-                        ])->values()->all(),
-                ]))
-                ->values();
-            $props['menuItems'] = MenuItem::with('children')->whereNull('parent_id')->orderBy('sort_order')->get()
+            // Rows for soft-deleted pages stay in the table so a restore puts
+            // them back, but the admin tree does not show them meanwhile.
+            $props['headerTree'] = MenuItem::query()
+                ->with([
+                    'page',
+                    'children' => fn ($query) => $query->withoutTrashedPages()->with('page'),
+                ])
+                ->whereNull('parent_id')
+                ->withoutTrashedPages()
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->get()
                 ->map(fn (MenuItem $item) => [
-                    'id' => $item->id,
-                    'label' => $item->label,
-                    'path' => $item->path,
-                    'sort_order' => $item->sort_order,
-                    'children' => $item->children->map(fn (MenuItem $child) => [
-                        'id' => $child->id,
-                        'label' => $child->label,
-                        'path' => $child->path,
-                        'sort_order' => $child->sort_order,
-                    ])->values()->all(),
-                ])->values()->all();
+                    ...$this->navNode($item),
+                    'children' => $item->children->map(fn (MenuItem $child) => $this->navNode($child))->values()->all(),
+                ])
+                ->values()
+                ->all();
 
             $props['announcements'] = Announcement::query()
                 ->with('author:id,name')
@@ -272,6 +270,34 @@ class DashboardController extends Controller
         }
 
         return Inertia::render('admin/Index', $props);
+    }
+
+    /**
+     * @return array{id: int, slug: string, title: string, visibility: string}
+     */
+    private function navPage(CmsPage $page): array
+    {
+        return [
+            'id' => $page->id,
+            'slug' => $page->slug,
+            'title' => $page->title,
+            'visibility' => $page->visibility,
+        ];
+    }
+
+    /**
+     * One row of the Header Pages tree. `page` is null for a ghost row.
+     *
+     * @return array<string, mixed>
+     */
+    private function navNode(MenuItem $item): array
+    {
+        return [
+            'id' => $item->id,
+            'label' => $item->label,
+            'path' => $item->isPageRow() ? null : $item->path,
+            'page' => $item->page ? $this->navPage($item->page) : null,
+        ];
     }
 
     /**

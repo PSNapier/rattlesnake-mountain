@@ -76,6 +76,11 @@
 	content: '•';
 	@apply pr-2 pl-6;
 }
+/* The tiptap editor wraps list item text in a paragraph. Keep the first one
+   on the bullet's line, as the migrated `<li>text</li>` markup renders. */
+.box li > p:first-child {
+	display: inline;
+}
 .box no-bullets li:before {
 	content: '';
 	@apply pr-0;

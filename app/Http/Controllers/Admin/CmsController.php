@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DestroyCmsPageRequest;
-use App\Http\Requests\ReorderCmsPagesRequest;
 use App\Http\Requests\ReorderMenuItemsRequest;
 use App\Http\Requests\StoreCmsPageRequest;
 use App\Http\Requests\StoreMenuItemRequest;
@@ -18,20 +17,32 @@ use App\Models\MenuItem;
 use App\Support\CmsSanitizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class CmsController extends Controller
 {
+    /**
+     * Every non-system page is a navbar row, so the page and its row are
+     * created together or not at all.
+     */
     public function storeCmsPage(StoreCmsPageRequest $request): RedirectResponse
     {
-        $maxSort = CmsPage::max('sort_order') ?? -1;
         $data = $this->sanitized($request->validated(), $request->validated('slug'));
 
-        // New pages start hidden. Publishing is a deliberate second step from
-        // the page list.
-        CmsPage::create(array_merge($data, [
-            'sort_order' => $maxSort + 1,
-            'visibility' => CmsPage::VISIBILITY_HIDDEN,
-        ]));
+        DB::transaction(function () use ($data) {
+            // New pages start hidden. Publishing is a deliberate second step
+            // from the page list, and until then the row stays out of the
+            // public header.
+            $page = CmsPage::create(array_merge($data, [
+                'visibility' => CmsPage::VISIBILITY_HIDDEN,
+            ]));
+
+            MenuItem::create([
+                'cms_page_id' => $page->id,
+                'label' => $page->title,
+                'sort_order' => (MenuItem::query()->whereNull('parent_id')->max('sort_order') ?? -1) + 1,
+            ]);
+        });
 
         return redirect()->back()->with('success', 'Page created successfully.');
     }
@@ -123,28 +134,15 @@ class CmsController extends Controller
     }
 
     /**
-     * Soft delete, so a page can be brought back. `MenuItem.path` is free
-     * text, so nothing links a menu row to a page: the response names the menu
-     * items that pointed at the slug rather than cascading through them.
+     * Soft delete, so a page can be brought back. Its navbar row stays put
+     * and drops out of the header on its own, so a restore returns the entry
+     * to the same place.
      */
     public function destroyCmsPage(DestroyCmsPageRequest $request, CmsPage $page): RedirectResponse
     {
-        $menuLinks = MenuItem::query()
-            ->where('path', '/'.$page->slug)
-            ->get(['id', 'label', 'path'])
-            ->map(fn (MenuItem $item) => [
-                'id' => $item->id,
-                'label' => $item->label,
-                'path' => $item->path,
-            ])
-            ->values()
-            ->all();
-
         $page->delete();
 
-        return redirect()->back()
-            ->with('success', 'Page deleted.')
-            ->with('menu_links', $menuLinks);
+        return redirect()->back()->with('success', 'Page deleted.');
     }
 
     /**
@@ -193,19 +191,27 @@ class CmsController extends Controller
         if (! Auth::user()->can('admin.cms')) {
             abort(403);
         }
-        $menuItem->children()->delete();
-        $menuItem->delete();
 
-        return redirect()->back()->with('success', 'Menu item deleted successfully.');
-    }
-
-    public function reorderCmsPages(ReorderCmsPagesRequest $request): RedirectResponse
-    {
-        foreach ($request->validated('order') as $index => $id) {
-            CmsPage::where('id', $id)->update(['sort_order' => $index]);
+        // A page's row lives and dies with the page.
+        if ($menuItem->isPageRow()) {
+            return redirect()->back()->with('error', 'Delete the page itself to remove its entry.');
         }
 
-        return redirect()->back()->with('success', 'Pages reordered.');
+        DB::transaction(function () use ($menuItem) {
+            // Page rows under a removed header move to top level rather than
+            // vanishing, since every page keeps its row.
+            $nextSort = (MenuItem::query()->whereNull('parent_id')->max('sort_order') ?? -1) + 1;
+
+            foreach ($menuItem->children as $child) {
+                $child->isPageRow()
+                    ? $child->update(['parent_id' => null, 'sort_order' => $nextSort++])
+                    : $child->delete();
+            }
+
+            $menuItem->delete();
+        });
+
+        return redirect()->back()->with('success', 'Menu item deleted successfully.');
     }
 
     public function reorderMenuItems(ReorderMenuItemsRequest $request): RedirectResponse

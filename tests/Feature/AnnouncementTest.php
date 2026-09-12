@@ -6,7 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-it('shows the latest published announcement on home', function () {
+it('shows only the latest published announcement on home', function () {
     $author = User::factory()->create();
 
     Announcement::create([
@@ -28,10 +28,10 @@ it('shows the latest published announcement on home', function () {
         ->assertInertia(fn ($page) => $page
             ->component('cms/Show')
             ->where('isHome', true)
-            ->has('announcements', 2)
+            // [041]: home leads with one post, the rest live on /news.
+            ->has('announcements', 1)
             ->where('announcements.0.title', 'Newest News')
-            ->where('announcements.0.body', 'The range is open.')
-            ->where('announcements.1.title', 'Older News'));
+            ->where('announcements.0.body', 'The range is open.'));
 });
 
 it('hides unpublished announcements from guests', function () {
