@@ -1,5 +1,80 @@
 # Roadmap Done
 
+## [037] Inline WYSIWYG Page Editing
+
+**Status:** `done`
+**Depends On:** [036]
+**Spec:** none
+
+### Goal
+
+An admin editing a CMS page does it on the page itself. A cog beside the header enters edit mode, where hero text, page title and every box become directly editable rich text, boxes can be added, removed, resized and dragged, and a save publishes immediately while keeping the previous version recoverable.
+
+### Scope
+
+- Tiptap 3 with Vue 3 bindings, one editor instance per box
+- Toolbar: bold, italic, headings, bullet and ordered lists, links, images, blockquote, horizontal rule
+- Cog toggle beside the header; discard and save buttons with confirmation modals
+- Add, remove, resize (span 1/2/3), restyle and drag-reorder boxes via `sortablejs`
+- Editable in place: hero title, hero description, page title. Slug and visibility stay in admin
+- Revisions: last 10 full-page snapshots per page, pruned beyond, restorable
+- Navigation guard on unsaved changes, Inertia router plus `beforeunload`
+- NOT in scope: image picking from the library ([038]); `cms/Shop.vue`, which stays a hardcoded dynamic page with no cog
+
+### Technical Notes
+
+**User flows:**
+
+**Flows:** `verified`
+
+- **Admin:** cog beside the header on any CMS page. Enters edit mode.
+- **Admin, in edit mode:** each box shows a toolbar, a size control, a style control, a drag handle and its own "Remove" button. Hero title and hero description are editable in place as plain text.
+- **Admin, in edit mode:** "Add box", "History", "Discard" and "Save" sit together in a sticky bar, alongside a labelled "Page title" field. Save and Discard each confirm first; Save publishes immediately. ("Add box" lives in the bar rather than under the grid, so every global action is in one place.)
+- **Admin:** "History" in the edit bar. Lists the last 10 saves with timestamp and author, restores any of them behind a confirmation.
+
+**Details:**
+
+- Tiptap 3 core is MIT and ships first-class Vue 3 bindings. Only the Pro extensions are paid; none are needed here.
+- One Tiptap document per box, serialized to HTML on save. The server sanitizes with the [036] allowlist before writing, so a crafted request cannot bypass the editor's constraints.
+- `sortablejs` is already a dependency and already drives reorder in `admin/CmsTab.vue`. Reuse it rather than adding a drag library.
+- Save writes the page and pushes the previous state into `cms_page_revisions` (page_id, content, hero fields, title, user_id, created_at), then prunes to the 10 newest for that page. Restoring is a normal save, so it is itself revisioned.
+- Discard reverts to the last saved server state without a request. The guard covers browser navigation and tab close; the Inertia router guard covers in-app navigation.
+- Edit mode is client state only. There is no draft on the server, so two admins editing at once means last save wins. Acceptable at this scale; not worth locking.
+- The cog appears only to a holder of `admin.cms`, matching the existing route guard at `routes/web.php:106`.
+
+**As built:**
+
+- Link support comes from StarterKit 3.31, which now bundles it, so no `@tiptap/extension-link`. `code`, `codeBlock`, `strike` and `underline` are disabled explicitly because none are in the [036] allowlist.
+- `title` has no on-page surface: `Layout` renders `hero_title` in the `<h1>` and `<Head>`. It is therefore edited as a labelled field in the sticky bar, not in place. Hero title and description are plain-text contenteditable, since both are flat string columns.
+- Tiptap editors are drop targets. A SortableJS box drag ends over another box's editable area, and ProseMirror parsed the dragged markup into the document, filing the toolbar's own text as a paragraph. Fixed with `editorProps.handleDrop: () => true` in `CmsBoxEditor.vue`. Nothing in this editor wants a drop.
+- The grid takes `pb-32` in edit mode so the sticky bar never covers the last row of boxes.
+- Endpoints: `PUT /admin/cms/pages/{page}/inline` and `POST /admin/cms/pages/{page}/revisions/{revision}/restore`. A revision belonging to another page 404s. `StaticPageController` emits `can_edit` and `revisions` on the page prop.
+- A revision snapshots `description` and `coming_soon` alongside the edited fields, so a restore writes them back even though inline editing cannot change either.
+- `admin/CmsTab.vue` still has a raw "Content (JSON)" textarea writing the same `content` column through `admin.cms.pages.update`, which does not create a revision. Two write paths for one field; worth its own item.
+
+### Acceptance Criteria
+
+- [x] Saving a page persists edited hero text, page title and box HTML, and the page renders the change
+      `tests/Feature/Cms/CmsInlineEditTest.php::it_saves_edited_hero_and_box_content`
+- [x] Adding, removing, resizing and reordering boxes persists across a save
+      `tests/Feature/Cms/CmsInlineEditTest.php::it_persists_added_and_removed_boxes`
+      `tests/Feature/Cms/CmsInlineEditTest.php::it_persists_box_order_and_spans`
+- [x] A save request carrying script tags or non-allowlisted markup is sanitized before it is stored
+      `tests/Feature/Cms/CmsInlineEditTest.php::it_sanitizes_content_submitted_directly_to_the_endpoint`
+- [x] The slug cannot be changed through the inline editing endpoint
+      `tests/Feature/Cms/CmsInlineEditTest.php::it_ignores_a_slug_submitted_to_the_inline_editor`
+- [x] Each save records the previous version, history keeps only the 10 newest, and restoring one returns the page to that state
+      `tests/Feature/Cms/CmsRevisionTest.php::it_records_the_previous_version_on_save`
+      `tests/Feature/Cms/CmsRevisionTest.php::it_prunes_revisions_beyond_ten`
+      `tests/Feature/Cms/CmsRevisionTest.php::it_restores_a_previous_revision`
+- [x] A user without `admin.cms` gets no cog and cannot reach the save or restore endpoints
+      `tests/Feature/Cms/CmsInlineEditTest.php::it_forbids_saving_without_the_cms_capability`
+      `tests/Feature/Cms/CmsRevisionTest.php::it_forbids_restoring_without_the_cms_capability`
+- [x] Toolbar formatting, box drag/drop, resize and the save and discard confirmations behave correctly, confirmed in a browser
+- [x] Navigating away or closing the tab with unsaved edits prompts before discarding, confirmed in a browser
+
+---
+
 ## [034] Horse Ownership Transfer
 
 **Status:** `done`

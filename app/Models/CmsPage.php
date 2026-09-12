@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CmsPage extends Model
@@ -40,6 +41,19 @@ class CmsPage extends Model
     protected $attributes = [
         'visibility' => self::VISIBILITY_HIDDEN,
     ];
+
+    /**
+     * Newest first. Ten saves in the same second are plausible, so the id
+     * breaks the tie rather than leaving the order to the database.
+     *
+     * @return HasMany<CmsPageRevision, $this>
+     */
+    public function revisions(): HasMany
+    {
+        return $this->hasMany(CmsPageRevision::class)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
+    }
 
     public function isHome(): bool
     {

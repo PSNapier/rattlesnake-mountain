@@ -120,6 +120,8 @@ Route::middleware(['auth', 'verified', 'can:access-admin'])->group(function () {
     Route::middleware('can:admin.cms')->group(function () {
         Route::post('/admin/cms/pages', [CmsController::class, 'storeCmsPage'])->name('admin.cms.pages.store');
         Route::put('/admin/cms/pages/{page}', [CmsController::class, 'updateCmsPage'])->name('admin.cms.pages.update');
+        Route::put('/admin/cms/pages/{page}/inline', [CmsController::class, 'updateInlineCmsPage'])->name('admin.cms.pages.inline');
+        Route::post('/admin/cms/pages/{page}/revisions/{revision}/restore', [CmsController::class, 'restoreCmsPageRevision'])->name('admin.cms.pages.revisions.restore');
         Route::patch('/admin/cms/pages/{page}/visibility', [CmsController::class, 'updateCmsPageVisibility'])->name('admin.cms.pages.visibility');
         Route::delete('/admin/cms/pages/{page}', [CmsController::class, 'destroyCmsPage'])->name('admin.cms.pages.destroy');
         Route::post('/admin/cms/pages/reorder', [CmsController::class, 'reorderCmsPages'])->name('admin.cms.pages.reorder');
