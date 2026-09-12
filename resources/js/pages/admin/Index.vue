@@ -2,7 +2,6 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import { computed, onMounted, ref, watch } from 'vue';
-import AnnouncementsSection from './AnnouncementsSection.vue';
 import CmsTab from './CmsTab.vue';
 import HorsesTab from './HorsesTab.vue';
 import ItemsTab from './ItemsTab.vue';
@@ -447,12 +446,7 @@ onMounted(() => {
 			<div
 				v-if="activeTab === 'cms' && canAccess('cms')"
 				class="space-y-6">
-				<CmsTab
-					:cms-pages="props.cmsPages"
-					:menu-items="props.menuItems" />
-
-				<AnnouncementsSection
-					:announcements="props.announcements" />
+				<CmsTab :cms-pages="props.cmsPages" />
 			</div>
 		</div>
 	</AppLayout>
