@@ -33,7 +33,7 @@ const navMenu = computed<NavMenuItem[]>(() => page.props.navMenu ?? []);
 <template>
 	<!-- Desktop -->
 	<nav
-		class="font-amaranth bg-new-orleans-300 [&>ul]:hover:bg-shakespeare-100 [&>ul]:hover:text-shakespeare-400 border-new-orleans-400 hidden flex-row flex-wrap items-center justify-around border-b-4 text-2xl font-bold select-none lg:flex xl:justify-center [&>ul]:rounded-t-lg [&>ul]:p-2 xl:[&>ul]:mx-4">
+		class="font-amaranth bg-new-orleans-300 text-cape-palliser-600 [&>ul]:hover:bg-shakespeare-100 [&>ul]:hover:text-shakespeare-400 border-new-orleans-400 hidden flex-row flex-wrap items-center justify-around border-b-4 text-2xl font-bold select-none lg:flex xl:justify-center [&>ul]:rounded-t-lg [&>ul]:p-2 xl:[&>ul]:mx-4">
 		<ul
 			v-for="item in navMenu"
 			:key="item.id"
@@ -123,7 +123,7 @@ const navMenu = computed<NavMenuItem[]>(() => page.props.navMenu ?? []);
 	<!-- Mobile -->
 	<nav class="relative text-xl lg:hidden">
 		<div
-			class="bg-new-orleans-300 border-new-orleans-400 flex flex-row items-center justify-end gap-4 border-b-4">
+			class="bg-new-orleans-300 border-new-orleans-400 text-cape-palliser-600 flex flex-row items-center justify-end gap-4 border-b-4">
 			<!-- Guest buttons -->
 			<template v-if="!auth.user">
 				<a
