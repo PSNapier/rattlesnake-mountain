@@ -24,7 +24,7 @@ class CmsController extends Controller
     public function storeCmsPage(StoreCmsPageRequest $request): RedirectResponse
     {
         $maxSort = CmsPage::max('sort_order') ?? -1;
-        $data = $this->sanitized($request->validated());
+        $data = $this->sanitized($request->validated(), $request->validated('slug'));
 
         // New pages start hidden. Publishing is a deliberate second step from
         // the page list.
@@ -38,7 +38,7 @@ class CmsController extends Controller
 
     public function updateCmsPage(UpdateCmsPageRequest $request, CmsPage $page): RedirectResponse
     {
-        $page->update($this->sanitized($request->validated()));
+        $page->update($this->sanitized($request->validated(), $page->slug));
 
         return redirect()->back()->with('success', 'Page updated successfully.');
     }
@@ -52,7 +52,7 @@ class CmsController extends Controller
     {
         $this->recordRevision($page);
 
-        $page->update($this->sanitized($request->validated()));
+        $page->update($this->sanitized($request->validated(), $page->slug));
 
         return redirect()->back()->with('success', 'Page saved.');
     }
@@ -78,7 +78,7 @@ class CmsController extends Controller
             'description' => $revision->description,
             'hero_title' => $revision->hero_title,
             'hero_description' => $revision->hero_description,
-            'content' => CmsSanitizer::sanitizeBoxes($revision->content ?? []),
+            'content' => CmsSanitizer::sanitizeBoxes($revision->content ?? [], $page->slug),
             'coming_soon' => $revision->coming_soon,
         ]);
 
@@ -151,13 +151,16 @@ class CmsController extends Controller
      * Every write runs the box HTML through the allowlist. It is the only
      * thing standing between an admin account and stored XSS.
      *
+     * The slug decides whether the news slot survives, so it is always the
+     * stored page's slug, never one read back out of the payload on update.
+     *
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
-    private function sanitized(array $data): array
+    private function sanitized(array $data, ?string $slug): array
     {
         if (isset($data['content']) && is_array($data['content'])) {
-            $data['content'] = CmsSanitizer::sanitizeBoxes($data['content']);
+            $data['content'] = CmsSanitizer::sanitizeBoxes($data['content'], $slug);
         }
 
         return $data;

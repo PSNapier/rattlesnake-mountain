@@ -25,7 +25,7 @@ it('strips script tags and event handlers', function () {
         'title' => 'Rules',
         'hero_title' => 'Rules',
         'content' => [
-            ['id' => 'b1', 'span' => 3, 'style' => 'box', 'html' => '<p>Original</p>'],
+            ['id' => 'b1', 'width' => 'full', 'style' => 'box', 'html' => '<p>Original</p>'],
         ],
     ]);
 
@@ -33,7 +33,7 @@ it('strips script tags and event handlers', function () {
         'title' => 'Rules',
         'hero_title' => 'Rules',
         'content' => [
-            ['id' => 'b1', 'span' => 3, 'style' => 'box', 'html' => $dirty],
+            ['id' => 'b1', 'width' => 'full', 'style' => 'box', 'html' => $dirty],
         ],
     ])->assertRedirect();
 
@@ -74,4 +74,99 @@ it('keeps allowlisted formatting tags', function () {
         ->not->toContain('cell')
         ->not->toContain('style=')
         ->toContain('<p>styled</p>');
+});
+
+it('keeps the news slot on home only', function () {
+    $boxes = [
+        ['id' => 'b1', 'width' => 'two-thirds', 'style' => 'box', 'html' => '<p>Hello.</p>'],
+        ['id' => 'news', 'width' => 'third', 'style' => 'box-centered', 'kind' => 'news', 'html' => '<p>Typed into.</p>'],
+        ['id' => 'news-2', 'width' => 'full', 'style' => 'box', 'kind' => 'news', 'html' => ''],
+    ];
+
+    $home = CmsSanitizer::sanitizeBoxes($boxes, 'home');
+
+    // At most one slot, and it never carries html.
+    expect($home)->toHaveCount(2)
+        ->and($home[1])->toBe([
+            'id' => 'news',
+            'width' => 'third',
+            'style' => 'box-centered',
+            'html' => '',
+            'kind' => 'news',
+        ]);
+
+    foreach (['rules', null] as $slug) {
+        $other = CmsSanitizer::sanitizeBoxes($boxes, $slug);
+
+        expect($other)->toHaveCount(1)
+            ->and($other[0])->not->toHaveKey('kind');
+    }
+
+    // The endpoint passes the page's slug, so a slot cannot be smuggled onto
+    // another page.
+    $admin = User::factory()->create(['role' => 'admin']);
+    $page = CmsPage::create([
+        'slug' => 'rules',
+        'title' => 'Rules',
+        'hero_title' => 'Rules',
+        'content' => [],
+        'visibility' => CmsPage::VISIBILITY_LIVE,
+    ]);
+
+    actingAs($admin)->put(route('admin.cms.pages.inline', $page), [
+        'title' => 'Rules',
+        'hero_title' => 'Rules',
+        'content' => $boxes,
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    expect($page->fresh()->content)->toHaveCount(1)
+        ->and(array_column($page->fresh()->content, 'kind'))->toBe([]);
+});
+
+it('restores a missing news slot on home', function () {
+    $home = CmsSanitizer::sanitizeBoxes([
+        ['id' => 'b1', 'width' => 'full', 'style' => 'box', 'html' => '<p>Hello.</p>'],
+    ], 'home');
+
+    expect($home)->toHaveCount(2)
+        ->and($home[1]['kind'])->toBe('news')
+        ->and($home[1]['html'])->toBe('')
+        ->and($home[1]['id'])->not->toBe('b1');
+
+    expect(CmsSanitizer::sanitizeBoxes([], 'home'))->toHaveCount(1);
+});
+
+it('accepts half width and band style', function () {
+    $boxes = CmsSanitizer::sanitizeBoxes([
+        ['id' => 'b1', 'width' => 'half', 'style' => 'band', 'html' => '<p>Band.</p>'],
+        ['id' => 'b2', 'width' => 'huge', 'style' => 'sparkly', 'html' => '<p>Fallback.</p>'],
+        ['id' => 'b3', 'span' => 1, 'style' => 'box', 'html' => '<p>Legacy third.</p>'],
+        ['id' => 'b4', 'span' => 2, 'style' => 'box', 'html' => '<p>Legacy two thirds.</p>'],
+        ['id' => 'b5', 'width' => 'third', 'style' => 'box', 'kind' => 'banner', 'html' => '<p>Unknown kind.</p>'],
+    ], 'rules');
+
+    expect(array_column($boxes, 'width'))->toBe(['half', 'full', 'third', 'two-thirds', 'third'])
+        ->and(array_column($boxes, 'style'))->toBe(['band', 'box', 'box', 'box', 'box'])
+        ->and($boxes[2])->not->toHaveKey('span')
+        ->and($boxes[4])->not->toHaveKey('kind');
+
+    // The form requests accept the new values too.
+    $admin = User::factory()->create(['role' => 'admin']);
+    $page = CmsPage::create([
+        'slug' => 'rules',
+        'title' => 'Rules',
+        'hero_title' => 'Rules',
+        'content' => [],
+        'visibility' => CmsPage::VISIBILITY_LIVE,
+    ]);
+
+    actingAs($admin)->put(route('admin.cms.pages.inline', $page), [
+        'title' => 'Rules',
+        'hero_title' => 'Rules',
+        'content' => [
+            ['id' => 'b1', 'width' => 'half', 'style' => 'band', 'html' => '<p>Band.</p>'],
+        ],
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    expect($page->fresh()->content[0])->toMatchArray(['width' => 'half', 'style' => 'band']);
 });

@@ -1,6 +1,6 @@
 # Roadmap
 
-<!-- Next task number: [040] -->
+<!-- Next task number: [043] -->
 
 ## [008] Design Upload Terms and Graveyard Option
 
@@ -518,7 +518,7 @@ Deterministic genotype → phenotype mapping reused by breeding results and the 
 
 ### Goal
 
-Admin gets a single Site Settings tab holding pages, menu and site resources. Resources lists the site's non-character images, accepts uploads, and feeds an image picker in the page editor. The home page becomes a CMS page so it is editable like any other, without changing how it looks.
+Admin gets a single Site Settings tab holding pages, menu and site resources. Resources lists the site's non-character images, accepts uploads, and feeds an image picker in the page editor.
 
 ### Scope
 
@@ -527,8 +527,7 @@ Admin gets a single Site Settings tab holding pages, menu and site resources. Re
 - Upload pipeline: WebP conversion with a dimension cap for png/jpg, GIF passthrough, SVG sanitized on upload
 - Delete scans `cms_pages.content` for the filename and names every page using it before confirming
 - Image picker in the [037] editor, sourced from the library
-- Convert `/` to a CMS page with slug `home`; hero stays app chrome, CTA and feature grid become boxes styled to match
-- NOT in scope: artist attribution on assets ([039]); horse and character images, which stay on the `public` disk and never appear here
+- NOT in scope: home page conversion (split out to [040]); artist attribution on assets ([039]); horse and character images, which stay on the `public` disk and never appear here
 
 ### Technical Notes
 
@@ -537,7 +536,6 @@ Admin gets a single Site Settings tab holding pages, menu and site resources. Re
 - **Admin:** "Site settings" tab at `/admin`. Cards for Pages, Menu and Site resources.
 - **Admin:** Site resources card. Upload an image, copy its path, delete an upload.
 - **Admin:** image button in the page editor toolbar. Picks from the library or uploads inline.
-- **Admin:** cog on `/`. Edits home exactly like any other CMS page.
 
 **Details:**
 
@@ -546,7 +544,6 @@ Admin gets a single Site Settings tab holding pages, menu and site resources. Re
 - Horse uploads at `HorseController.php:508` write WebP to the `public` disk under `horse-images/`. Site assets follow the same conversion approach but a different destination, and the library must never surface the horse directory.
 - SVG is the only real XSS surface in this item: served from your own origin, an unsanitized SVG runs with the viewer's session. Strip `script`, event attributes and external references on upload, or reject the file.
 - Delete safety is a `LIKE` query against `cms_pages.content` for the filename, cheap at this page count. It warns, it does not block.
-- Home conversion: `Welcome.vue:88-128` already uses a three-column grid with `col-span-1/2/3`, so the CTA and feature grid map onto boxes directly. The hero stays in the component as app chrome. Home cannot be hidden or deleted, per [036].
 - `public/assets/` needs a deploy note: it is outside git, so it is not restored by a Forge deploy and needs its own backup.
 
 ### Acceptance Criteria
@@ -565,10 +562,6 @@ Admin gets a single Site Settings tab holding pages, menu and site resources. Re
       `tests/Feature/Cms/SiteResourcesTest.php::it_refuses_to_delete_a_tracked_site_image`
 - [ ] A user without `admin.cms` cannot list, upload to, or delete from the library
       `tests/Feature/Cms/SiteResourcesTest.php::it_forbids_library_access_without_the_cms_capability`
-- [ ] Home resolves to the `home` CMS page and is editable through the same endpoints as any other page
-      `tests/Feature/Cms/HomePageConversionTest.php::it_renders_home_from_the_cms_page`
-      `tests/Feature/Cms/HomePageConversionTest.php::it_saves_edits_to_the_home_page`
-- [ ] Home looks unchanged after conversion at desktop and phone widths, confirmed in a browser
 - [ ] The Site settings tab, its three cards and the editor's image picker work end to end, confirmed in a browser
 
 ---
@@ -611,3 +604,170 @@ Site artwork carries structured artist attribution again. Uploading a site image
 - [ ] The archived credits from [036] are re-imported onto the matching assets, and unmatched entries are reported rather than dropped
 - [ ] Credits render from stored attribution wherever an attributed asset is used
 - [ ] Horse and character images are untouched by this system
+
+---
+
+## [041] Rich-Text Announcements and News Archive
+
+**Status:** `next`
+**Depends On:** [040] (done, see ROADMAP_DONE.md)
+**Spec:** none
+
+### Goal
+
+Announcements are written in the same WYSIWYG editor as CMS page content and stored as sanitized HTML. The admin section, hidden when the old menu manager was removed, comes back as a compact list with a dialog editor. Home shows the newest announcement clamped with a read-more link into a new `/news` archive page.
+
+### Scope
+
+- `announcements.body` becomes sanitized HTML, written through `CmsSanitizer` with the full page allowlist
+- Data migration converts existing plain-text bodies to `<p>` paragraphs, reversible
+- `AnnouncementsSection` resurfaced in the admin CMS tab: compact rows, edit in a dialog carrying the tiptap editor and existing toolbar
+- Soft deletes on `Announcement` so a deleted post is recoverable by staff
+- `news` CMS page created by data migration, with a header menu link, guarded against delete and hide like `home`
+- Archive slot on `news` renders published announcements newest first, paginated 10 per page
+- Home News slot from [040] narrows to the single newest announcement, clamped with a read-more link to `/news`
+- NOT in scope: inline editing of announcements on the rendered page, announcement revision history, an image picker ([038]), author bylines
+
+### Technical Notes
+
+**User flows:**
+
+- **Admin:** Announcements section on the CMS tab at `/admin`. Sees title, publish date and status per row. Create or Edit opens a dialog with title, publish datetime and a rich-text body. Delete soft-deletes.
+- **Visitor:** `/`. Reads the newest announcement, clamped, with a read-more link.
+- **Visitor:** `/news`. Reads staff intro copy above a paginated list of every published announcement.
+
+**Details:**
+
+- Body sanitizing goes in `StoreAnnouncementRequest` and `UpdateAnnouncementRequest` via `prepareForValidation()`, so the controller keeps a single write path and the model never sees raw HTML. Raise the `body` cap from `max:10000` to `max:30000`: the same prose costs more characters once it carries tags.
+- The editor reuses `cmsExtensions()` and `CmsEditToolbar.vue` as-is. The full page allowlist was chosen deliberately, so headings, images, `hr` and `blockquote` all stay available. Images still use the toolbar's URL prompt at `CmsEditToolbar.vue:56-62`; [038] upgrades both surfaces at once.
+- Legacy body migration: `e()` each body, split on blank lines, wrap each block in `<p>`, convert single newlines to `<br>`. The `down()` strips tags and turns `</p><p>` back into a blank line.
+- Dialog editing means one tiptap instance mounted at a time. Today's section mounts an editable row per announcement, which does not survive the swap to a real editor.
+- `CmsPage::isHome()` at `CmsPage.php:58` becomes a broader guard covering `home` and a new `NEWS_SLUG`. The existing delete and visibility guards from [036] read through it, so they extend without new call sites.
+- The archive slot is a box with kind `news-archive` and empty html, mirroring [040]'s `news` kind. The sanitizer keeps it only on the `news` slug, drops it elsewhere, and re-adds it if a save on `news` leaves it out.
+- The archive list is paginated server-side. `/news` renders through the shared CMS page controller, which passes an extra `announcements` paginator prop when the page carries the archive slot, so the `/{slug}` catch-all needs no special case.
+- Home's clamp is a max-height with a fade overlay, not a server-side excerpt, so lists and images in the lead survive.
+- `publicFeed()` keeps its shape but home calls it with `limit: 1`. Author stays out of the public payload.
+- Future-dated announcements remain hidden from both surfaces: `scopePublished()` already handles it and the archive reuses the same scope.
+
+**Diagrams:**
+
+```mermaid
+flowchart LR
+    A[Admin dialog] --> B[tiptap HTML]
+    B --> C[FormRequest sanitize]
+    C --> D[(announcements.body)]
+    D --> E[Home news slot, newest 1, clamped]
+    D --> F[/news archive slot, paginated 10/]
+    E -->|read more| F
+```
+
+### Acceptance Criteria
+
+- [ ] Announcement bodies save as sanitized HTML and a script tag is stripped on write
+      `tests/Feature/Admin/AdminAnnouncementTest.php::it_sanitizes_html_in_the_body`
+- [ ] The migration converts plain-text bodies to paragraphs and rolls back cleanly
+      `tests/Feature/Cms/ContentMigrationTest.php::it_converts_plain_text_announcements_to_html`
+      `tests/Feature/Cms/ContentMigrationTest.php::it_reverts_announcement_html_to_plain_text`
+- [ ] Deleting an announcement soft-deletes it and drops it from both public surfaces
+      `tests/Feature/Admin/AdminAnnouncementTest.php::it_soft_deletes_an_announcement`
+- [ ] The migration creates a published `news` page with a header menu link, and does nothing if one exists
+      `tests/Feature/Cms/NewsArchiveTest.php::it_creates_the_news_page_once`
+- [ ] `/news` lists published announcements newest first, 10 per page, and hides future-dated ones
+      `tests/Feature/Cms/NewsArchiveTest.php::it_paginates_published_announcements`
+      `tests/Feature/Cms/NewsArchiveTest.php::it_hides_future_dated_announcements_from_the_archive`
+- [ ] The archive slot is kept on `news`, restored if omitted from a save, and stripped from other pages
+      `tests/Feature/Cms/CmsSanitizerTest.php::it_keeps_the_archive_slot_on_news_only`
+- [ ] `news` cannot be deleted or hidden, matching the home guards
+      `tests/Feature/Cms/CmsPageDeletionTest.php::it_refuses_to_delete_the_news_page`
+      `tests/Feature/Cms/CmsVisibilityTest.php::it_refuses_to_hide_the_news_page`
+- [ ] Home shows only the newest announcement with a read-more link to `/news`
+      `tests/Feature/Cms/HomePageTest.php::it_shows_only_the_newest_announcement`
+- [ ] Staff can write bold, links, a list and an image in the admin dialog and see them render on home and `/news`, confirmed in a browser
+- [ ] A long announcement is clamped on home and full on `/news` at desktop and phone widths, confirmed in a browser
+
+---
+
+## [042] Navbar Tree in the Admin Pages List
+
+**Status:** `next`
+**Depends On:** [040] (done, see ROADMAP_DONE.md)
+**Spec:** none
+
+### Goal
+
+The admin CMS tab splits its pages into two cards. **System Pages** holds the fixed pages reached without the navbar (`home`, `privacy-policy`): editable, never draggable, never deletable. **Header Pages** is the navbar itself, a two-level drag-and-drop tree where every non-system page is a nav row, dropdown headers and non-page links live as ghost rows, and a hidden page drops out of the public header automatically. This restores the top-level-entry and dropdown control that was dropped with the old menu manager, without bringing back a second surface to keep in sync.
+
+### Scope
+
+- `menu_items` gains nullable `cms_page_id` (FK, cascade with the page's soft delete); `path` stays for external and non-CMS route links
+- Two-level depth enforced in validation: a grandchild is rejected
+- Every top-level entry must have a target (page link or path); no bare labels
+- `CmsTab.vue` pages list splits into two cards: **System Pages** (flat, no drag, no delete) and **Header Pages** (nested sortable tree driven by `menu_items.sort_order`); `cms_pages.sort_order` retired
+- Ghost rows: nav entries with no page (external or app-route links) edited inline in the same list
+- Mandatory membership for non-system pages: creating a CMS page creates its nav row in the Header Pages tree, with the page created `hidden`
+- `is_system` column on `cms_pages` decides which card a page renders in; a system page has no `menu_items` row at all
+- Public header derives from page visibility: hidden or soft-deleted page means no nav entry; restore brings the entry back in place
+- Migration backfills `cms_page_id` by matching `path` against `/slug`; unmatched non-system pages get a top-level row with visibility untouched, and any menu row pointing at a system page is dropped
+- `MenuItemSeeder` re-resolves page links by path on replay, so pre-change `CmsSnapshot` fixtures still seed
+- NOT in scope: third-level flyouts in `HeaderNav.vue`; footer link management; per-role nav visibility; reworking the surviving admin menu routes or controller methods
+
+### Technical Notes
+
+**User flows:**
+
+- **Admin:** CMS tab. Drag a page under a header to put it in that dropdown, drag it out to make it top-level, drag to reorder within either.
+- **Admin:** "Add link" in the pages list. Create a ghost row pointing at `/horses` or an external URL, with the same drag and dropdown behaviour as a page row.
+- **Admin:** hide a page. It disappears from the public header immediately, its row stays in the tree greyed out.
+- **Visitor:** header shows only live, non-deleted entries in admin order.
+
+**Details:**
+
+- Backend survived c11319c intact: `MenuItem`, the four routes at `routes/web.php:128-131`, `CmsController::storeMenuItem/updateMenuItem/destroyMenuItem/reorderMenuItems`, and the `navMenu` share at `HandleInertiaRequests.php:53-68`. Only the Vue was deleted (523 lines). Reuse the endpoints; the reorder route already accepts a full ordered list.
+- `CmsController.php:126-147` currently warns that nothing links a menu row to a page and returns `menu_links` as a text hint on delete. With `cms_page_id` that hint becomes unnecessary and the delete response can drop it.
+- `sortablejs` and `@types/sortablejs` are already dependencies. Use nested Sortable groups rather than adding a new drag library.
+- Visibility coupling belongs in the `navMenu` query, not the component: filter to pages that are live and not soft-deleted, and keep ghost rows unconditional. A header whose children are all hidden still renders, because headers always have their own target.
+- The old deleted UI is recoverable at `git show c11319c^:resources/js/pages/admin/CmsTab.vue` for reference on the edit/create dialogs, but the flat list-plus-dropdown layout is deliberately not being restored.
+- Creating a page and creating its nav row must happen in one transaction in `StoreCmsPageRequest`'s controller path, so a failed nav insert cannot leave an unlinked page.
+- `is_system` backfills true for `home` and `privacy-policy`. The migration in `2026_09_12_110000_create_home_cms_page.php` sets it for fresh installs. **Spec-flag:** `contact-us` is arguably system too, since it is a footer destination rather than a header one — confirm before the backfill runs.
+- The two cards are separate components over one controller payload: `systemPages` and `headerTree`. The System Pages card reuses the existing row layout minus the drag handle and delete control; only Header Pages mounts Sortable.
+- Flipping `is_system` is not an admin action. It is set by migration and seeder, so no UI moves a page between cards.
+
+**Diagrams:**
+
+```mermaid
+flowchart TD
+    A[cms_pages row] --> S{is_system?}
+    S -->|yes| T[System Pages card, no menu_items row]
+    S -->|no| B[menu_items row, Header Pages card]
+    B --> C{parent_id null?}
+    C -->|yes| D[Top-level entry, target required]
+    C -->|no| E[Dropdown child]
+    A --> F{visibility / deleted_at}
+    F -->|hidden or deleted| G[Omitted from navMenu]
+    F -->|live| H[Rendered in header]
+    I[Ghost row: path only] --> B
+```
+
+### Acceptance Criteria
+
+- [ ] Migration adds `cms_page_id` and backfills it by matching `path` to `/slug`, appending a top-level row for unmatched pages without changing their visibility
+      `tests/Feature/Cms/NavigationTreeTest.php::it_backfills_page_links_from_paths`
+      `tests/Feature/Cms/NavigationTreeTest.php::it_appends_unmatched_pages_at_top_level`
+- [ ] A third-level entry is rejected and a top-level entry with no target is rejected
+      `tests/Feature/Cms/NavigationTreeTest.php::it_rejects_a_third_level_entry`
+      `tests/Feature/Cms/NavigationTreeTest.php::it_requires_a_target_on_top_level_entries`
+- [ ] Creating a CMS page creates a hidden page with a nav row in the same transaction
+      `tests/Feature/Cms/NavigationTreeTest.php::it_creates_a_nav_row_with_every_new_page`
+- [ ] Hidden and soft-deleted pages are absent from `navMenu`, and restoring a page returns its entry in place
+      `tests/Feature/Cms/NavigationTreeTest.php::it_omits_hidden_and_deleted_pages_from_the_header`
+      `tests/Feature/Cms/NavigationTreeTest.php::it_restores_a_nav_entry_with_its_page`
+- [ ] System pages render in their own card, have no `menu_items` row, and cannot be dragged or deleted
+      `tests/Feature/Cms/NavigationTreeTest.php::it_keeps_system_pages_out_of_the_tree`
+      `tests/Feature/Cms/NavigationTreeTest.php::it_refuses_to_delete_a_system_page`
+- [ ] Reordering persists through the existing reorder endpoint for both levels
+      `tests/Feature/Cms/NavigationTreeTest.php::it_reorders_entries_at_both_levels`
+- [ ] `MenuItemSeeder` replays a snapshot with no `cms_page_id` and resolves page links by path
+      `tests/Feature/Cms/CmsSnapshotCommandTest.php::it_resolves_page_links_when_replaying_an_old_snapshot`
+- [ ] The CMS tab shows System Pages and Header Pages as two distinct cards, with home and privacy policy in the former and no drag handles on them, confirmed in a browser
+- [ ] An admin can drag a page into a dropdown, add a ghost link to `/horses`, and see both reflected in the public header, confirmed in a browser
+- [ ] The tree drags correctly at desktop width and remains usable at tablet width, confirmed in a browser

@@ -26,7 +26,8 @@ it('shows the latest published announcement on home', function () {
     $this->get('/')
         ->assertSuccessful()
         ->assertInertia(fn ($page) => $page
-            ->component('Welcome')
+            ->component('cms/Show')
+            ->where('isHome', true)
             ->has('announcements', 2)
             ->where('announcements.0.title', 'Newest News')
             ->where('announcements.0.body', 'The range is open.')

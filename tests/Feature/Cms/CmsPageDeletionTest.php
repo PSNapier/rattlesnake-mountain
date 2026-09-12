@@ -67,8 +67,8 @@ it('reports menu items pointing at the deleted slug', function () {
 });
 
 it('refuses to delete the home page', function () {
-    $home = CmsPage::create([
-        'slug' => 'home',
+    // The home data migration has usually created the row already.
+    $home = CmsPage::query()->updateOrCreate(['slug' => 'home'], [
         'title' => 'Home',
         'hero_title' => 'Home',
         'content' => [],

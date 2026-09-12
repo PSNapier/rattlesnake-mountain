@@ -34,7 +34,8 @@ it('writes pages and menu to the fixture', function () {
     $snapshot = json_decode(file_get_contents(CmsSnapshot::path()), true, flags: JSON_THROW_ON_ERROR);
 
     expect($snapshot)->toHaveKeys(['pages', 'menu'])
-        ->and($snapshot['pages'])->toHaveCount(16)
+        // Home comes from its own data migration, not the seeder.
+        ->and(collect($snapshot['pages'])->where('slug', '!=', 'home'))->toHaveCount(16)
         ->and(collect($snapshot['pages'])->firstWhere('slug', 'rules')['title'])->toBe('House Rules');
 
     $rules = collect($snapshot['pages'])->firstWhere('slug', 'rules');
@@ -76,7 +77,7 @@ it('restores snapshot content when seeding a fresh database', function () {
 
     $rules = CmsPage::query()->where('slug', 'rules')->firstOrFail();
 
-    expect(CmsPage::query()->count())->toBe(16)
+    expect(CmsPage::query()->where('slug', '!=', 'home')->count())->toBe(16)
         ->and($rules->title)->toBe('House Rules')
         ->and($rules->hero_description)->toBe('Edited after launch.')
         ->and(MenuItem::query()->count())->toBe(16)

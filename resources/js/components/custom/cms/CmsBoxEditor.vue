@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { EditorContent, useEditor } from '@tiptap/vue-3';
 import { GripVertical, Trash2 } from 'lucide-vue-next';
-import { watch } from 'vue';
-import { boxClasses, type CmsBox } from './boxes';
+import { computed, watch } from 'vue';
+import { boxClasses, styleOptions, widthOptions, type CmsBox } from './boxes';
 import CmsEditToolbar from './CmsEditToolbar.vue';
 import { cmsExtensions } from './tiptapExtensions';
 
-// The model holds the very object the draft array holds, so edits to span,
+// The model holds the very object the draft array holds, so edits to width,
 // style and html land straight in the save payload.
 const box = defineModel<CmsBox>({ required: true });
 
@@ -41,21 +41,17 @@ watch(
 	},
 );
 
-const spanOptions = [
-	1,
-	2,
-	3,
-] as const;
-
-const styleOptions = [
-	{ value: 'box', label: 'Box' },
-	{ value: 'box-alt', label: 'Box (alt)' },
-	{ value: 'box-centered', label: 'Box (centered)' },
-] as const;
+// Edit mode keeps one flat grid so drag order stays true, so a band box can't
+// sit in its strip here. A thick strip-coloured ring stands in for it.
+const indicator = computed(() =>
+	box.value.style === 'band'
+		? 'ring-cape-palliser-500 ring-8'
+		: 'ring-shakespeare-300 ring-2',
+);
 </script>
 
 <template>
-	<div :class="[...boxClasses(box), 'ring-shakespeare-300 ring-2']">
+	<div :class="[...boxClasses(box), indicator]">
 		<div
 			class="border-cape-palliser-300 -mt-1 mb-2 flex flex-wrap items-center gap-2 border-b pb-2 text-left">
 			<button
@@ -66,15 +62,15 @@ const styleOptions = [
 			</button>
 
 			<select
-				v-model.number="box.span"
+				v-model="box.width"
 				title="Box width"
 				aria-label="Box width"
 				class="border-input rounded-md border bg-white px-2 py-1 text-xs">
 				<option
-					v-for="option in spanOptions"
-					:key="option"
-					:value="option">
-					Width {{ option }}/3
+					v-for="option in widthOptions"
+					:key="option.value"
+					:value="option.value">
+					Width {{ option.label }}
 				</option>
 			</select>
 

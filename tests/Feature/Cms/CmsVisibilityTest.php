@@ -61,7 +61,7 @@ it('defaults new pages to hidden', function () {
         'description' => null,
         'hero_description' => 'Trading hub.',
         'content' => [
-            ['id' => 'b1', 'span' => 3, 'style' => 'box', 'html' => '<p>Welcome.</p>'],
+            ['id' => 'b1', 'width' => 'full', 'style' => 'box', 'html' => '<p>Welcome.</p>'],
         ],
     ])->assertRedirect();
 
@@ -71,8 +71,8 @@ it('defaults new pages to hidden', function () {
 });
 
 it('refuses to hide the home page', function () {
-    $home = CmsPage::create([
-        'slug' => 'home',
+    // The home data migration has usually created the row already.
+    $home = CmsPage::query()->updateOrCreate(['slug' => 'home'], [
         'title' => 'Home',
         'hero_title' => 'Home',
         'content' => [],

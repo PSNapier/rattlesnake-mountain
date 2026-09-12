@@ -36,6 +36,50 @@ function cmsContentMigration(): object
     return require $path;
 }
 
+function cmsWidthMigration(): object
+{
+    $path = collect(glob(database_path('migrations/*_convert_cms_box_spans_to_widths.php')))->sole();
+
+    return require $path;
+}
+
+function cmsHomeMigration(): object
+{
+    $path = collect(glob(database_path('migrations/*_create_home_cms_page.php')))->sole();
+
+    return require $path;
+}
+
+/**
+ * A page and one revision, both holding the given raw box list.
+ *
+ * @param  list<array<string, mixed>>  $boxes
+ */
+function insertPageWithRevision(array $boxes): int
+{
+    $pageId = DB::table('cms_pages')->insertGetId([
+        'slug' => 'rules',
+        'title' => 'Rules',
+        'hero_title' => 'Rules',
+        'content' => json_encode($boxes),
+        'visibility' => 'live',
+        'sort_order' => 0,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    DB::table('cms_page_revisions')->insert([
+        'cms_page_id' => $pageId,
+        'title' => 'Rules',
+        'hero_title' => 'Rules',
+        'content' => json_encode($boxes),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return $pageId;
+}
+
 beforeEach(function () {
     Artisan::call('migrate:fresh');
 
@@ -55,7 +99,12 @@ afterEach(function () {
     if (! Schema::hasColumn('cms_pages', 'deleted_at')) {
         Schema::table('cms_pages', fn (Blueprint $t) => $t->softDeletes());
     }
+    DB::table('cms_page_revisions')->delete();
     DB::table('cms_pages')->delete();
+
+    // migrate:fresh created the home row, and the RefreshDatabase files that
+    // run after this one expect it to still be there.
+    cmsHomeMigration()->up();
 
     $directory = CmsContentArchive::$directoryOverride;
 
@@ -96,12 +145,12 @@ it('converts markdown boxes to html boxes', function () {
 
     expect($boxes[0]['id'])->toBe('b1')
         ->and($boxes[0]['style'])->toBe('box')
-        ->and($boxes[0]['span'])->toBe(3)
+        ->and($boxes[0]['width'])->toBe('full')
         ->and($boxes[0]['html'])->toContain('<strong>Be kind</strong>');
 
     expect($boxes[1]['id'])->toBe('b2')
         ->and($boxes[1]['style'])->toBe('box')
-        ->and($boxes[1]['span'])->toBe(3)
+        ->and($boxes[1]['width'])->toBe('full')
         ->and($boxes[1]['html'])->toContain('Second box content.');
 });
 
@@ -159,7 +208,7 @@ it('converts image credits into captioned image boxes', function () {
     $imageBox = collect($boxes)->firstWhere('style', 'box-centered');
 
     expect($imageBox)->not->toBeNull()
-        ->and($imageBox['span'])->toBe(1)
+        ->and($imageBox['width'])->toBe('third')
         ->and($imageBox['html'])->toContain('<img src="/images/art-empiredog.png"')
         ->and($imageBox['html'])->toContain('Art by')
         ->and($imageBox['html'])->toContain('empiredog')
@@ -217,4 +266,52 @@ it('grandfathers existing pages to live', function () {
     $row = DB::table('cms_pages')->where('slug', 'rules')->first();
 
     expect($row->visibility)->toBe(CmsPage::VISIBILITY_LIVE);
+});
+
+it('converts spans to named widths', function () {
+    $pageId = insertPageWithRevision([
+        ['id' => 'b1', 'span' => 1, 'style' => 'box', 'html' => '<p>One.</p>'],
+        ['id' => 'b2', 'span' => 2, 'style' => 'box-alt', 'html' => '<p>Two.</p>'],
+        ['id' => 'b3', 'span' => 3, 'style' => 'box-centered', 'html' => '<p>Three.</p>'],
+    ]);
+
+    cmsWidthMigration()->up();
+
+    $pageBoxes = json_decode(DB::table('cms_pages')->where('id', $pageId)->value('content'), true);
+    $revisionBoxes = json_decode(DB::table('cms_page_revisions')->where('cms_page_id', $pageId)->value('content'), true);
+
+    foreach ([$pageBoxes, $revisionBoxes] as $boxes) {
+        expect(array_column($boxes, 'width'))->toBe(['third', 'two-thirds', 'full'])
+            ->and(array_column($boxes, 'span'))->toBe([])
+            ->and(array_column($boxes, 'style'))->toBe(['box', 'box-alt', 'box-centered'])
+            ->and($boxes[1]['html'])->toBe('<p>Two.</p>');
+    }
+});
+
+it('reverts named widths to spans', function () {
+    $pageId = insertPageWithRevision([
+        ['id' => 'b1', 'width' => 'third', 'style' => 'box', 'html' => '<p>One.</p>'],
+        ['id' => 'b2', 'width' => 'half', 'style' => 'band', 'html' => '<p>Half.</p>'],
+        ['id' => 'b3', 'width' => 'two-thirds', 'style' => 'box', 'html' => '<p>Two.</p>'],
+        ['id' => 'b4', 'width' => 'full', 'style' => 'box', 'html' => '<p>Three.</p>'],
+    ]);
+
+    $migration = cmsWidthMigration();
+    $migration->down();
+
+    $pageBoxes = json_decode(DB::table('cms_pages')->where('id', $pageId)->value('content'), true);
+    $revisionBoxes = json_decode(DB::table('cms_page_revisions')->where('cms_page_id', $pageId)->value('content'), true);
+
+    foreach ([$pageBoxes, $revisionBoxes] as $boxes) {
+        // Half has no three-column equivalent, so it rounds up to two thirds.
+        expect(array_column($boxes, 'span'))->toBe([1, 2, 2, 3])
+            ->and(array_column($boxes, 'width'))->toBe([]);
+    }
+
+    // And back up again lands on the three widths the old grid could express.
+    $migration->up();
+
+    $boxes = json_decode(DB::table('cms_pages')->where('id', $pageId)->value('content'), true);
+
+    expect(array_column($boxes, 'width'))->toBe(['third', 'two-thirds', 'two-thirds', 'full']);
 });

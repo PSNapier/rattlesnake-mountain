@@ -17,7 +17,7 @@ function inlineEditablePage(array $overrides = []): CmsPage
         'hero_title' => 'Rules',
         'hero_description' => 'Read them.',
         'content' => [
-            ['id' => 'b1', 'span' => 3, 'style' => 'box', 'html' => '<p>Old copy.</p>'],
+            ['id' => 'b1', 'width' => 'full', 'style' => 'box', 'html' => '<p>Old copy.</p>'],
         ],
         'visibility' => CmsPage::VISIBILITY_LIVE,
     ], $overrides));
@@ -32,7 +32,7 @@ it('saves edited hero and box content', function () {
         'hero_title' => 'House Rules',
         'hero_description' => 'Read them twice.',
         'content' => [
-            ['id' => 'b1', 'span' => 3, 'style' => 'box', 'html' => '<p>New copy.</p>'],
+            ['id' => 'b1', 'width' => 'full', 'style' => 'box', 'html' => '<p>New copy.</p>'],
         ],
     ])->assertRedirect();
 
@@ -57,8 +57,8 @@ it('saves edited hero and box content', function () {
 it('persists added and removed boxes', function () {
     $page = inlineEditablePage([
         'content' => [
-            ['id' => 'b1', 'span' => 3, 'style' => 'box', 'html' => '<p>Keep me.</p>'],
-            ['id' => 'b2', 'span' => 3, 'style' => 'box', 'html' => '<p>Delete me.</p>'],
+            ['id' => 'b1', 'width' => 'full', 'style' => 'box', 'html' => '<p>Keep me.</p>'],
+            ['id' => 'b2', 'width' => 'full', 'style' => 'box', 'html' => '<p>Delete me.</p>'],
         ],
     ]);
     $admin = User::factory()->create(['role' => 'admin']);
@@ -68,8 +68,8 @@ it('persists added and removed boxes', function () {
         'hero_title' => 'Rules',
         'hero_description' => 'Read them.',
         'content' => [
-            ['id' => 'b1', 'span' => 3, 'style' => 'box', 'html' => '<p>Keep me.</p>'],
-            ['id' => 'b3', 'span' => 2, 'style' => 'box-alt', 'html' => '<p>Brand new.</p>'],
+            ['id' => 'b1', 'width' => 'full', 'style' => 'box', 'html' => '<p>Keep me.</p>'],
+            ['id' => 'b3', 'width' => 'two-thirds', 'style' => 'box-alt', 'html' => '<p>Brand new.</p>'],
         ],
     ])->assertRedirect();
 
@@ -80,12 +80,12 @@ it('persists added and removed boxes', function () {
         ->and($content[1]['html'])->toBe('<p>Brand new.</p>');
 });
 
-it('persists box order and spans', function () {
+it('persists box order and widths', function () {
     $page = inlineEditablePage([
         'content' => [
-            ['id' => 'b1', 'span' => 3, 'style' => 'box', 'html' => '<p>First.</p>'],
-            ['id' => 'b2', 'span' => 3, 'style' => 'box', 'html' => '<p>Second.</p>'],
-            ['id' => 'b3', 'span' => 3, 'style' => 'box', 'html' => '<p>Third.</p>'],
+            ['id' => 'b1', 'width' => 'full', 'style' => 'box', 'html' => '<p>First.</p>'],
+            ['id' => 'b2', 'width' => 'full', 'style' => 'box', 'html' => '<p>Second.</p>'],
+            ['id' => 'b3', 'width' => 'full', 'style' => 'box', 'html' => '<p>Third.</p>'],
         ],
     ]);
     $admin = User::factory()->create(['role' => 'admin']);
@@ -95,16 +95,16 @@ it('persists box order and spans', function () {
         'hero_title' => 'Rules',
         'hero_description' => 'Read them.',
         'content' => [
-            ['id' => 'b3', 'span' => 1, 'style' => 'box', 'html' => '<p>Third.</p>'],
-            ['id' => 'b1', 'span' => 2, 'style' => 'box-centered', 'html' => '<p>First.</p>'],
-            ['id' => 'b2', 'span' => 3, 'style' => 'box', 'html' => '<p>Second.</p>'],
+            ['id' => 'b3', 'width' => 'third', 'style' => 'box', 'html' => '<p>Third.</p>'],
+            ['id' => 'b1', 'width' => 'two-thirds', 'style' => 'box-centered', 'html' => '<p>First.</p>'],
+            ['id' => 'b2', 'width' => 'full', 'style' => 'box', 'html' => '<p>Second.</p>'],
         ],
     ])->assertRedirect();
 
     $content = $page->fresh()->content;
 
     expect(array_column($content, 'id'))->toBe(['b3', 'b1', 'b2'])
-        ->and(array_column($content, 'span'))->toBe([1, 2, 3])
+        ->and(array_column($content, 'width'))->toBe(['third', 'two-thirds', 'full'])
         ->and($content[1]['style'])->toBe('box-centered');
 });
 
@@ -119,7 +119,7 @@ it('sanitizes content submitted directly to the endpoint', function () {
         'content' => [
             [
                 'id' => 'b1',
-                'span' => 3,
+                'width' => 'full',
                 'style' => 'box',
                 'html' => '<p onclick="steal()">Hi</p><script>alert(1)</script><table><tr><td>no</td></tr></table>',
             ],
@@ -145,7 +145,7 @@ it('ignores a slug submitted to the inline editor', function () {
         'hero_title' => 'Rules',
         'hero_description' => 'Read them.',
         'content' => [
-            ['id' => 'b1', 'span' => 3, 'style' => 'box', 'html' => '<p>Copy.</p>'],
+            ['id' => 'b1', 'width' => 'full', 'style' => 'box', 'html' => '<p>Copy.</p>'],
         ],
     ])->assertRedirect();
 

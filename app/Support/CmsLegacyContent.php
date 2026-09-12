@@ -9,12 +9,12 @@ use League\CommonMark\CommonMarkConverter;
  *
  * Old shape: `content` was `{box1: [markdown, ...], box2: [...]}` rendered in a
  * 2fr column, with a separate `images` array rendered as a 1fr column of
- * credited art. New shape: one ordered list of `{id, span, style, html}` boxes
- * on a three-column grid.
+ * credited art. New shape: one ordered list of `{id, width, style, html}` boxes.
  *
- * Text boxes and image boxes are interleaved so each row reads text (span 2)
- * then art (span 1), which is how the two-column layout looked. Once the art
- * runs out the remaining text boxes widen to span 3 rather than leaving a hole.
+ * Text boxes and image boxes are interleaved so each row reads text (two
+ * thirds) then art (a third), which is how the two-column layout looked. Once
+ * the art runs out the remaining text boxes go full width rather than leaving
+ * a hole.
  */
 class CmsLegacyContent
 {
@@ -29,7 +29,7 @@ class CmsLegacyContent
     /**
      * @param  array<string, mixed>  $content  legacy `{box1: [markdown]}` map
      * @param  array<int, array<string, mixed>>  $images  legacy image credits
-     * @return list<array{id: string, span: int, style: string, html: string}>
+     * @return list<array{id: string, width: string, style: string, html: string}>
      */
     public static function toBoxes(array $content, array $images = []): array
     {
@@ -57,18 +57,18 @@ class CmsLegacyContent
 
         for ($i = 0; $i < $rows; $i++) {
             if (isset($textBoxes[$i])) {
-                $ordered[] = $textBoxes[$i] + ['span' => isset($imageBoxes[$i]) ? 2 : 3];
+                $ordered[] = $textBoxes[$i] + ['width' => isset($imageBoxes[$i]) ? 'two-thirds' : 'full'];
             }
 
             if (isset($imageBoxes[$i])) {
-                $ordered[] = $imageBoxes[$i] + ['span' => 1];
+                $ordered[] = $imageBoxes[$i] + ['width' => 'third'];
             }
         }
 
         return array_values(array_map(
             fn (array $box, int $index) => [
                 'id' => 'b'.($index + 1),
-                'span' => $box['span'],
+                'width' => $box['width'],
                 'style' => $box['style'],
                 'html' => $box['html'],
             ],

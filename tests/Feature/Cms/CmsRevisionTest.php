@@ -18,7 +18,7 @@ function revisablePage(): CmsPage
         'hero_title' => 'Rules',
         'hero_description' => 'Read them.',
         'content' => [
-            ['id' => 'b1', 'span' => 3, 'style' => 'box', 'html' => '<p>Version one.</p>'],
+            ['id' => 'b1', 'width' => 'full', 'style' => 'box', 'html' => '<p>Version one.</p>'],
         ],
         'visibility' => CmsPage::VISIBILITY_LIVE,
     ]);
@@ -31,7 +31,7 @@ function inlinePayload(string $title, string $html): array
         'hero_title' => $title,
         'hero_description' => 'Read them.',
         'content' => [
-            ['id' => 'b1', 'span' => 3, 'style' => 'box', 'html' => $html],
+            ['id' => 'b1', 'width' => 'full', 'style' => 'box', 'html' => $html],
         ],
     ];
 }

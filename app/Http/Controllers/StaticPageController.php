@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Announcement;
 use App\Models\CmsPage;
 use App\Models\CmsPageRevision;
 use Illuminate\Http\Request;
@@ -12,7 +13,20 @@ class StaticPageController extends Controller
 {
     public function show(Request $request): Response
     {
-        $slug = $request->route('slug');
+        return $this->render($request, (string) $request->route('slug'));
+    }
+
+    /**
+     * `/` is the `home` CMS page, rendered by the same component as every
+     * other page, plus the live announcements its news slot shows.
+     */
+    public function home(Request $request): Response
+    {
+        return $this->render($request, CmsPage::HOME_SLUG);
+    }
+
+    private function render(Request $request, string $slug): Response
+    {
         $page = CmsPage::query()->where('slug', $slug)->first();
 
         if (! $page) {
@@ -58,6 +72,8 @@ class StaticPageController extends Controller
                 'can_edit' => $mayPreview,
                 'revisions' => $revisions,
             ],
+            'isHome' => $page->isHome(),
+            'announcements' => $page->isHome() ? Announcement::publicFeed() : [],
         ]);
     }
 }

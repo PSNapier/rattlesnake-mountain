@@ -88,6 +88,16 @@
 	@apply flex justify-center text-center;
 }
 
+/* Band boxes: logo-sized centred images, as the old landing link cards had. */
+.cms-band img {
+	@apply mx-auto my-2 max-h-[100px] max-w-[100px];
+}
+
+/* Home: a box holding only a heading is a callout ("New? Get started"). */
+.cms-home .box > h2:only-child {
+	@apply text-4xl;
+}
+
 .max-container {
 	@apply m-auto max-w-[1080px];
 }

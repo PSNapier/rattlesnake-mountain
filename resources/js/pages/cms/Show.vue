@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CmsBox } from '@/components/custom/cms/boxes';
+import type { CmsAnnouncement, CmsBox } from '@/components/custom/cms/boxes';
 import {
 	useInlineEditor,
 	type CmsRevision,
@@ -25,9 +25,15 @@ interface CmsPage {
 	revisions?: CmsRevision[];
 }
 
-const props = defineProps<{
-	page: CmsPage;
-}>();
+const props = withDefaults(
+	defineProps<{
+		page: CmsPage;
+		/** Live feed for the home page's News slot. */
+		announcements?: CmsAnnouncement[];
+		isHome?: boolean;
+	}>(),
+	{ announcements: () => [], isHome: false },
+);
 
 // Always constructed: this component instance is reused across Inertia visits,
 // so the lifecycle hooks inside must be registered on every page, editable or
@@ -54,5 +60,8 @@ const hero = computed(() =>
 		:coming-soon="page.coming_soon"
 		:not-public="page.not_public"
 		:content="page.content"
+		:title="isHome ? page.title : null"
+		:announcements="announcements"
+		:is-home="isHome"
 		:inline="canEdit ? inline : null" />
 </template>

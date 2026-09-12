@@ -15,9 +15,10 @@ import { onMounted, ref } from 'vue';
 
 interface CmsBox {
 	id: string;
-	span: 1 | 2 | 3;
-	style: 'box' | 'box-alt' | 'box-centered';
+	width: 'third' | 'half' | 'two-thirds' | 'full';
+	style: 'box' | 'box-alt' | 'box-centered' | 'band';
 	html: string;
+	kind?: 'news';
 }
 
 interface CmsMenuLink {
@@ -129,13 +130,15 @@ function confirmDeletePage() {
 					>
 					<div class="flex gap-2">
 						<Button
-							v-if="page.slug !== 'home'"
 							variant="outline"
 							size="sm"
+							:disabled="page.slug === 'home'"
 							:title="
-								page.visibility === 'live'
-									? 'Click to hide this page from the public'
-									: 'Click to make this page live'
+								page.slug === 'home'
+									? 'The home page can\'t be hidden'
+									: page.visibility === 'live'
+										? 'Click to hide this page from the public'
+										: 'Click to make this page live'
 							"
 							@click="toggleVisibility(page)">
 							{{
@@ -145,9 +148,14 @@ function confirmDeletePage() {
 							}}
 						</Button>
 						<Button
-							v-if="page.slug !== 'home'"
 							variant="destructive"
 							size="sm"
+							:disabled="page.slug === 'home'"
+							:title="
+								page.slug === 'home'
+									? 'The home page can\'t be deleted'
+									: undefined
+							"
 							@click="openDeletePage(page)"
 							>Delete</Button
 						>

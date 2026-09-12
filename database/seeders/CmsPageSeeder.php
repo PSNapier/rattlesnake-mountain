@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\CmsPage;
 use App\Support\CmsLegacyContent;
+use App\Support\CmsSanitizer;
 use App\Support\CmsSnapshot;
 use Illuminate\Database\Seeder;
 
@@ -64,6 +65,20 @@ class CmsPageSeeder extends Seeder
 
         if ($isLegacy) {
             $page['content'] = CmsLegacyContent::toBoxes($content, $page['images'] ?? []);
+        } else {
+            // A fixture captured between [036] and [040] carries int `span`
+            // boxes. Only the width key changes, so the stored html is
+            // replayed byte for byte.
+            $page['content'] = array_map(function ($box) {
+                if (! is_array($box) || ! array_key_exists('span', $box)) {
+                    return $box;
+                }
+
+                $width = CmsSanitizer::width($box);
+                unset($box['span']);
+
+                return ['width' => $width] + $box;
+            }, $content);
         }
 
         unset($page['images']);

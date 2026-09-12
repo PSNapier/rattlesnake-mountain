@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\CmsPage;
 use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\CmsPageSeeder;
@@ -96,7 +97,11 @@ it('renders key pages without a theme toggle', function () {
 });
 
 it('omits obsolete toyhouse and admin account links from home', function () {
-    $home = file_get_contents(resource_path('js/pages/Welcome.vue'));
+    // Home's copy is the `home` CMS page from [040], seeded by its data
+    // migration. Check both the source of that copy and what `/` serves.
+    $homeMigration = collect(glob(database_path('migrations/*_create_home_cms_page.php')))->sole();
+    $home = file_get_contents($homeMigration)
+        .json_encode(CmsPage::query()->where('slug', CmsPage::HOME_SLUG)->value('content'), JSON_UNESCAPED_SLASHES);
 
     expect($home)->not->toContain('rattlesnakeadmin');
     expect($home)->not->toContain('toyhou.se');

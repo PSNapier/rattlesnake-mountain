@@ -59,7 +59,8 @@ it('seeds every page and the menu tree from empty', function () {
     $this->seed(CmsPageSeeder::class);
     $this->seed(MenuItemSeeder::class);
 
-    expect(CmsPage::query()->count())->toBe(16)
+    // Home comes from its own data migration, not the seeder.
+    expect(CmsPage::query()->where('slug', '!=', 'home')->count())->toBe(16)
         ->and(CmsPage::query()->where('slug', 'privacy-policy')->exists())->toBeTrue();
 
     $roots = MenuItem::query()->whereNull('parent_id')->orderBy('sort_order')->get();

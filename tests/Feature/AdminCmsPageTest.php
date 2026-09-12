@@ -18,7 +18,7 @@ it('creates a new CMS page', function () {
         'description' => null,
         'hero_description' => 'Trading hub.',
         'content' => [
-            ['id' => 'b1', 'span' => 3, 'style' => 'box', 'html' => '<p>Welcome to the black market.</p>'],
+            ['id' => 'b1', 'width' => 'full', 'style' => 'box', 'html' => '<p>Welcome to the black market.</p>'],
         ],
     ])
         ->assertRedirect()
@@ -30,7 +30,7 @@ it('creates a new CMS page', function () {
     // toEqual, not toBe: MySQL's JSON column type does not preserve object
     // key insertion order on round trip.
     expect($page->content)->toEqual([
-        ['id' => 'b1', 'span' => 3, 'style' => 'box', 'html' => '<p>Welcome to the black market.</p>'],
+        ['id' => 'b1', 'width' => 'full', 'style' => 'box', 'html' => '<p>Welcome to the black market.</p>'],
     ]);
     expect($page->visibility)->toBe(CmsPage::VISIBILITY_HIDDEN);
 });

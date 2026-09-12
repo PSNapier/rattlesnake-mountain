@@ -5,11 +5,14 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-it('renders Welcome page for home', function () {
+it('renders the home cms page at root', function () {
     $response = $this->get('/');
 
     $response->assertSuccessful()
-        ->assertInertia(fn ($page) => $page->component('Welcome'));
+        ->assertInertia(fn ($page) => $page
+            ->component('cms/Show')
+            ->where('page.slug', 'home')
+            ->where('isHome', true));
 });
 
 it('renders static page for getting-started when seeded', function () {
@@ -20,7 +23,7 @@ it('renders static page for getting-started when seeded', function () {
         'hero_title' => 'Getting Started',
         'hero_description' => 'A quick guide.',
         'content' => [
-            ['id' => 'b1', 'span' => 3, 'style' => 'box', 'html' => '<p>Content here.</p>'],
+            ['id' => 'b1', 'width' => 'full', 'style' => 'box', 'html' => '<p>Content here.</p>'],
         ],
         'visibility' => CmsPage::VISIBILITY_LIVE,
         'sort_order' => 2,

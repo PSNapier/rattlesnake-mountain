@@ -1,5 +1,89 @@
 # Roadmap Done
 
+## [040] Editable Home Page, Half-Width and Band Boxes
+
+**Status:** `done`
+**Depends On:** [037] (done, see ROADMAP_DONE.md)
+**Spec:** none
+
+### Goal
+
+Admins edit `/` inline like any other CMS page, without it looking different from today. Home can't be hidden or deleted. To fit the current layout, boxes get a 1/2 width and a full-bleed "band" style on every CMS page.
+
+### Scope
+
+- `home` CMS page created by a data migration from the current `Welcome.vue` content, public visibility
+- `/` renders through the shared CMS page and inline editor, with a home hero variant (arch shape, click-to-cycle season background) whose title and tagline are editable
+- Pinned News slot on home: renders live announcements, can be moved and resized, can't be typed into or deleted
+- Box width becomes a named `width` (`third`, `half`, `two-thirds`, `full`) on a 6-column grid, replacing int `span`, offered on every CMS page
+- New `band` box style on every CMS page: consecutive band boxes share one full-bleed darker strip
+- `/home` 301-redirects to `/`
+- NOT in scope: image uploads and picker ([038]), news slot on other pages, sections or per-section backgrounds
+
+### Technical Notes
+
+**User flows:**
+
+**Flows:** `verified`
+
+- **Admin:** cog on `/`. Edit hero title and tagline, edit, add, reorder and resize boxes, move and resize the News slot, save and restore revisions.
+- **Admin:** width menu on any box. Pick Width 1/3, 1/2, 2/3 or Full.
+- **Admin:** style menu on any box. Pick "Band" to put the box in a full-bleed strip.
+- **Visitor:** `/`. Looks the same as it does today. `/home` redirects here.
+
+**Details:**
+
+- Split out of [038], which no longer converts home.
+- Hero text already exists: `hero_title` and `hero_description` on `cms_pages` and `cms_page_revisions`, edited through `PlainTextEdit` in `DynamicInfo.vue`. No home hero variant was needed: `Layout.vue` already renders the arch hero and season cycling for every CMS page. `Welcome.vue` and `LandingLinkBox.vue` are deleted.
+- Home is served by `StaticPageController::home` (route name `home` kept), which passes `isHome` and `announcements` to `cms/Show`. Home drops `items-start` so row boxes share a height, and the tab title comes from the page title ("Home - Rattlesnake Mountain").
+- The sanitizer strips `class` and unlisted tags, so the Get started box is a plain `<h2>` sized by `.cms-home .box > h2:only-child`, and band logos are sized by `.cms-band img` in `app.css`.
+- `content.*.html` is `nullable` in all three CMS requests: `ConvertEmptyStringsToNull` turns the News slot's empty html into null, which failed validation on every home save.
+- `CmsPageSeeder` converts int `span` boxes to `width`, so `database/data/cms-snapshot.json` still seeds. The width migration's `down` rounds `half` up to span 2. The home migration's `down` is empty so a rollback never deletes admin edits.
+- The admin page list labels home's URL `/home`, which redirects to `/`.
+- Browser verification (2026-09-12, 1280px and 390px): home as a visitor matched the old layout, with 2/3 About and 1/3 News at equal height, full Get started, and both link cards as halves in the dark strip. As admin on `/`, changed News to 1/2, saved, then restored through History, and News went back to a third. The News editor has no style menu, Remove or text editor. On `/admin`, home's Live and Delete are disabled. On `/wildlife`, two added 1/2 Band boxes saved and rendered in a full-width strip, then that page was restored through History.
+- Width migration: rewrite every box in `cms_pages.content` and `cms_page_revisions.content` from `span` 1/2/3 to `width` `third`/`two-thirds`/`full`, with a reversible `down`. Update `CmsBox` and `spanClasses` in `boxes.ts`, the span select in `CmsBoxEditor.vue:44`, `CmsSanitizer.php:62-69` (unknown width falls back to `full`), and `CmsLegacyContent.php:60-64`. Grid goes to `lg:grid-cols-6` with widths mapping to `lg:col-span-2/3/4/6`. Below `lg` everything stacks, as now.
+- News slot: a box marked as kind `news` with empty html. The sanitizer keeps it only on the `home` slug, drops it elsewhere, and re-adds it at the end if a home save leaves it out. The renderer fills it from `Announcement::publicFeed()`, which today is passed at `web.php:239-241`.
+- Band: style value `band`. The renderer groups runs of adjacent band boxes, closes the `max-container` grid, and renders the run inside a `bg-cape-palliser-500` full-width strip with its own inner grid. Each card inside uses `box-alt`, matching `LandingLinkBox.vue`. The DeviantArt and Discord cards become two `half` band boxes, and their `h3 > a > img` markup already passes the sanitizer allowlist.
+- "New? Get started here" hardcodes `/getting-started` in box HTML instead of `linkDict`.
+- The hide and delete guards for `home` already exist from [036] (`CmsVisibilityTest`, `CmsPageDeletionTest`). No new guard is needed, but the admin page list must show home with hide and delete disabled.
+- The data migration skips creating the row if `home` already exists, so reruns are safe.
+- `/home` redirect goes above the `/{slug}` catch-all at `web.php:312`.
+
+**Diagrams:**
+
+```mermaid
+flowchart LR
+    A[Box list] --> B{style = band?}
+    B -->|no| C[6-col max-container grid]
+    B -->|yes, run of adjacent| D[Full-bleed strip with inner grid]
+    A --> E{kind = news?}
+    E -->|home| F[Announcements feed]
+    E -->|other slug| G[Dropped by sanitizer]
+```
+
+### Acceptance Criteria
+
+- [x] `/` renders the `home` CMS page with announcements, and `/home` 301-redirects to `/`
+      `tests/Feature/Cms/HomePageTest.php::it_renders_home_from_the_cms_page`
+      `tests/Feature/Cms/HomePageTest.php::it_redirects_the_home_slug_to_root`
+- [x] The data migration creates a public `home` page with today's content and does nothing if one exists
+      `tests/Feature/Cms/HomePageTest.php::it_creates_the_home_page_once`
+- [x] Admin edits to home, including hero title and tagline, save and produce a revision through the existing inline endpoint
+      `tests/Feature/Cms/HomePageTest.php::it_saves_inline_edits_to_the_home_page`
+- [x] The News slot survives saves on home, is restored if omitted, and is stripped from any other page
+      `tests/Feature/Cms/CmsSanitizerTest.php::it_keeps_the_news_slot_on_home_only`
+      `tests/Feature/Cms/CmsSanitizerTest.php::it_restores_a_missing_news_slot_on_home`
+- [x] Existing spans migrate to named widths in pages and revisions and roll back cleanly
+      `tests/Feature/Cms/ContentMigrationTest.php::it_converts_spans_to_named_widths`
+      `tests/Feature/Cms/ContentMigrationTest.php::it_reverts_named_widths_to_spans`
+- [x] The sanitizer accepts `half` width and `band` style and falls back on unknown values
+      `tests/Feature/Cms/CmsSanitizerTest.php::it_accepts_half_width_and_band_style`
+- [x] Home can't be hidden or deleted from the admin page list, and the controls show as disabled
+- [x] Home looks unchanged from the current `Welcome.vue` at desktop and phone widths, including the season-cycling hero and the links band, confirmed in a browser
+- [x] 1/2 width and band boxes can be added and render correctly on a non-home CMS page, confirmed in a browser
+
+---
+
 ## [037] Inline WYSIWYG Page Editing
 
 **Status:** `done`

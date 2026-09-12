@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\CmsPage;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
 
@@ -38,6 +39,31 @@ class CmsSanitizer
         'br' => [],
     ];
 
+    /**
+     * Named box widths on the six-column grid.
+     *
+     * @var list<string>
+     */
+    public const WIDTHS = ['third', 'half', 'two-thirds', 'full'];
+
+    /**
+     * @var list<string>
+     */
+    public const STYLES = ['box', 'box-alt', 'box-centered', 'band'];
+
+    /**
+     * The pre-[040] three-column `span` and the width it becomes.
+     *
+     * @var array<int, string>
+     */
+    public const SPAN_WIDTHS = [1 => 'third', 2 => 'two-thirds', 3 => 'full'];
+
+    /**
+     * The pinned announcements slot. It has no html of its own and only
+     * exists on the home page.
+     */
+    public const KIND_NEWS = 'news';
+
     private static ?HtmlSanitizer $sanitizer = null;
 
     public static function sanitize(string $html): string
@@ -48,31 +74,92 @@ class CmsSanitizer
     /**
      * The single write path for page content: sanitize each box's HTML and
      * normalise the rest of the box, so a hand-edited JSON payload cannot
-     * store a box without an id or with an out-of-range span.
+     * store a box without an id or with an unknown width or style.
+     *
+     * The slug decides the news slot: home keeps exactly one (restored at the
+     * end if the payload dropped it), every other page loses it.
      *
      * @param  array<int, array<string, mixed>>  $boxes
-     * @return list<array{id: string, span: int, style: string, html: string}>
+     * @return list<array{id: string, width: string, style: string, html: string, kind?: string}>
      */
-    public static function sanitizeBoxes(array $boxes): array
+    public static function sanitizeBoxes(array $boxes, ?string $slug = null): array
     {
+        $isHome = $slug === CmsPage::HOME_SLUG;
         $normalised = [];
+        $hasNews = false;
 
         foreach (array_values($boxes) as $index => $box) {
             $box = is_array($box) ? $box : [];
-            $span = (int) ($box['span'] ?? 3);
+            $isNews = ($box['kind'] ?? null) === self::KIND_NEWS;
+
+            if ($isNews && (! $isHome || $hasNews)) {
+                continue;
+            }
+
             $style = (string) ($box['style'] ?? 'box');
 
-            $normalised[] = [
+            $clean = [
                 'id' => isset($box['id']) && $box['id'] !== ''
                     ? (string) $box['id']
                     : 'b'.($index + 1),
-                'span' => in_array($span, [1, 2, 3], true) ? $span : 3,
-                'style' => in_array($style, ['box', 'box-alt', 'box-centered'], true) ? $style : 'box',
-                'html' => static::sanitize((string) ($box['html'] ?? '')),
+                'width' => static::width($box),
+                'style' => in_array($style, self::STYLES, true) ? $style : 'box',
+                'html' => $isNews ? '' : static::sanitize((string) ($box['html'] ?? '')),
             ];
+
+            if ($isNews) {
+                $clean['kind'] = self::KIND_NEWS;
+                $hasNews = true;
+            }
+
+            $normalised[] = $clean;
+        }
+
+        if ($isHome && ! $hasNews) {
+            $normalised[] = static::newsBox(array_column($normalised, 'id'));
         }
 
         return $normalised;
+    }
+
+    /**
+     * A box's named width, reading the legacy int `span` when no width is set.
+     * Anything unrecognised is full width.
+     *
+     * @param  array<string, mixed>  $box
+     */
+    public static function width(array $box): string
+    {
+        if (array_key_exists('width', $box)) {
+            return in_array($box['width'], self::WIDTHS, true) ? $box['width'] : 'full';
+        }
+
+        if (array_key_exists('span', $box)) {
+            return self::SPAN_WIDTHS[(int) $box['span']] ?? 'full';
+        }
+
+        return 'full';
+    }
+
+    /**
+     * @param  list<string>  $takenIds
+     * @return array{id: string, width: string, style: string, html: string, kind: string}
+     */
+    private static function newsBox(array $takenIds): array
+    {
+        $id = 'news';
+
+        for ($suffix = 2; in_array($id, $takenIds, true); $suffix++) {
+            $id = 'news-'.$suffix;
+        }
+
+        return [
+            'id' => $id,
+            'width' => 'third',
+            'style' => 'box-centered',
+            'html' => '',
+            'kind' => self::KIND_NEWS,
+        ];
     }
 
     private static function sanitizer(): HtmlSanitizer

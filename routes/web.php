@@ -27,7 +27,6 @@ use App\Http\Controllers\RedeemVoucherController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\StaticPageController;
 use App\Http\Controllers\TradeController;
-use App\Models\Announcement;
 use App\Models\Herd;
 use App\Models\Horse;
 use App\Models\Item;
@@ -236,9 +235,11 @@ Route::get('/u/{user}/inventory', [InventoryController::class, 'publicIndex'])->
 Route::get('/dev-password', [DevPasswordController::class, 'show'])->name('dev-password');
 Route::post('/dev-password', [DevPasswordController::class, 'authenticate'])->name('dev-password.authenticate');
 
-Route::get('/', fn () => Inertia::render('Welcome', [
-    'announcements' => Announcement::publicFeed(),
-]))->name('home');
+Route::get('/', [StaticPageController::class, 'home'])->name('home');
+
+// Home is the `home` CMS page, but it lives at the root, so the slug URL the
+// catch-all would otherwise serve points back there.
+Route::permanentRedirect('/home', '/');
 
 Route::get('/getting-started', [StaticPageController::class, 'show'])
     ->defaults('slug', 'getting-started')
